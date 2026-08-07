@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f6f78"/>
+      <stop offset="100%" stop-color="#14505a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="60" fill="url(#badgeGrad)"/>
+  <path d="M32 44c0-8.837 7.163-16 16-16h24c8.837 0 16 7.163 16 16v14c0 8.837-7.163 16-16 16H55l-14 12v-12h-1c-4.418 0-8-3.582-8-8V44z"
+        fill="#ffffff"/>
+  <rect x="41" y="46" width="5" height="10" rx="2.5" fill="#25d366"/>
+  <rect x="50" y="40" width="5" height="22" rx="2.5" fill="#1f6f78"/>
+  <rect x="59" y="44" width="5" height="14" rx="2.5" fill="#25d366"/>
+  <rect x="68" y="38" width="5" height="26" rx="2.5" fill="#1f6f78"/>
+  <rect x="77" y="46" width="5" height="10" rx="2.5" fill="#25d366"/>
+</svg>

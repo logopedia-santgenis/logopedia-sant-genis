@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal de administración — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="img/icono.svg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="barra-portal">
-  <div class="marca">Logopedia Sant Genís — Administración</div>
+  <div class="marca"><img src="img/icono.svg" alt=""> Logopedia Sant Genís — Administración</div>
   <div>
     <span id="nombreUsuario" style="margin-right:16px;"></span>
     <button onclick="cerrarSesion()">Cerrar sesión</button>
@@ -142,7 +143,7 @@ async function crearPaciente() {
   const estado = document.getElementById('estadoPaciente');
   if (!nombre) return;
   if (!tutor_id) {
-    estado.textContent = 'Si el paciente es adulto con cuenta propia, vinculalo luego editando usuario_id en Supabase (o decime el email y lo hago).';
+    estado.textContent = 'Si el paciente es adulto con cuenta propia, vincúlalo luego editando usuario_id en Supabase (o indícame el email y lo hago).';
   }
   const { error } = await supabaseClient.from('pacientes').insert({
     nombre, fecha_nacimiento, tutor_id, logopeda_id, estado: 'activo'

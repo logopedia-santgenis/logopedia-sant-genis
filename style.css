@@ -289,7 +289,8 @@ footer.sitio a { color: #fff; }
   align-items: center;
 }
 
-.barra-portal .marca { font-weight: 700; }
+.barra-portal .marca { font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.barra-portal .marca img { height: 30px; }
 .barra-portal button {
   background: transparent;
   border: 1px solid #fff;
@@ -353,4 +354,44 @@ footer.sitio a { color: #fff; }
 @media (max-width: 720px) {
   nav.menu { display: none; }
   .hero h1 { font-size: 1.9rem; }
+}
+
+/* Logo e imágenes */
+.logo-img { height: 46px; display: block; }
+
+.hero-imagen {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.hero-imagen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(31,111,120,.90) 0%, rgba(20,80,90,.94) 100%);
+}
+
+.hero-imagen > * { position: relative; z-index: 1; }
+
+.tarjeta-imagen {
+  width: calc(100% + 64px);
+  height: 190px;
+  object-fit: cover;
+  margin: -32px -32px 20px -32px;
+  border-radius: var(--radio) var(--radio) 0 0;
+}
+
+.banner-imagen {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  margin-bottom: 40px;
+}
+
+@media (max-width: 720px) {
+  .logo-img { height: 38px; }
 }

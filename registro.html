@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crear cuenta — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="img/icono.svg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="pagina-auth">
   <div class="caja-auth">
+    <img src="img/icono.svg" alt="" style="height:56px;display:block;margin:0 auto 16px;">
     <h1>Crear cuenta de paciente</h1>
     <p style="font-size:.85rem;color:var(--texto-suave);text-align:center;margin-top:-10px;">Para padres/madres o pacientes adultos. Las cuentas de logopeda las crea el centro.</p>
     <div class="mensaje-error" id="msgError"></div>
@@ -72,7 +74,7 @@ document.getElementById('formRegistro').addEventListener('submit', async (e) => 
   if (data.session) {
     window.location.href = 'portal-cliente.html';
   } else {
-    msgOk.textContent = 'Cuenta creada. Revisá tu correo para confirmar la cuenta antes de iniciar sesión.';
+    msgOk.textContent = 'Cuenta creada. Revisa tu correo para confirmar la cuenta antes de iniciar sesión.';
     msgOk.style.display = 'block';
     document.getElementById('formRegistro').reset();
   }
