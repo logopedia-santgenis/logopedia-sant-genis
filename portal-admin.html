@@ -69,6 +69,16 @@
   <div id="listaCuotas"><div class="cargando">Cargando…</div></div>
 </div>
 
+<div class="panel">
+  <h2>Solicitudes y mensajes</h2>
+  <h3>Método de estudio (Otros servicios)</h3>
+  <div id="listaSolicitudesServicio"><div class="cargando">Cargando…</div></div>
+  <h3 style="margin-top:24px;">Mensajes de contacto</h3>
+  <div id="listaMensajesContacto"><div class="cargando">Cargando…</div></div>
+  <h3 style="margin-top:24px;">Solicitudes de afiliación (logopedas externos)</h3>
+  <div id="listaSolicitudesAfiliacion"><div class="cargando">Cargando…</div></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js"></script>
 <script>
@@ -180,6 +190,55 @@ async function crearCuota() {
   await cargarCuotas();
 }
 
+async function actualizarEstado(tabla, id, estado, recargar) {
+  await supabaseClient.from(tabla).update({ estado }).eq('id', id);
+  await recargar();
+}
+
+function selectorEstado(tabla, id, estadoActual, opciones, recargarFn) {
+  return `<select onchange="actualizarEstado('${tabla}','${id}',this.value,${recargarFn})" style="margin-left:8px;">
+    ${opciones.map(o => `<option value="${o}" ${o === estadoActual ? 'selected' : ''}>${o}</option>`).join('')}
+  </select>`;
+}
+
+async function cargarSolicitudesServicio() {
+  const { data } = await supabaseClient.from('solicitudes_servicio').select('*').order('created_at', { ascending: false });
+  const cont = document.getElementById('listaSolicitudesServicio');
+  cont.innerHTML = (data && data.length) ? data.map(s => `
+    <div class="lista-item">
+      <strong>${s.nombre}</strong> — ${s.email}${s.telefono ? ' · ' + s.telefono : ''}
+      <span class="etiqueta-pill">${s.servicio}</span>
+      ${selectorEstado('solicitudes_servicio', s.id, s.estado, ['nueva','contactada','agendada','descartada'], 'cargarSolicitudesServicio')}
+      <div class="meta">Disponibilidad: ${s.disponibilidad || '—'} · ${formatearFecha(s.created_at)}</div>
+      ${s.mensaje ? `<div class="meta">"${s.mensaje}"</div>` : ''}
+    </div>`).join('') : '<p class="meta">Todavía no hay solicitudes.</p>';
+}
+
+async function cargarMensajesContacto() {
+  const { data } = await supabaseClient.from('mensajes_contacto').select('*').order('created_at', { ascending: false });
+  const cont = document.getElementById('listaMensajesContacto');
+  cont.innerHTML = (data && data.length) ? data.map(m => `
+    <div class="lista-item">
+      <strong>${m.nombre}</strong> — ${m.email}${m.telefono ? ' · ' + m.telefono : ''}
+      ${selectorEstado('mensajes_contacto', m.id, m.estado, ['nuevo','contactado','cerrado'], 'cargarMensajesContacto')}
+      <div class="meta">${formatearFecha(m.created_at)}</div>
+      <div class="meta">"${m.mensaje}"</div>
+    </div>`).join('') : '<p class="meta">Todavía no hay mensajes.</p>';
+}
+
+async function cargarSolicitudesAfiliacion() {
+  const { data } = await supabaseClient.from('solicitudes_afiliacion').select('*').order('created_at', { ascending: false });
+  const cont = document.getElementById('listaSolicitudesAfiliacion');
+  cont.innerHTML = (data && data.length) ? data.map(a => `
+    <div class="lista-item">
+      <strong>${a.nombre}</strong> — ${a.email}${a.telefono ? ' · ' + a.telefono : ''}
+      ${selectorEstado('solicitudes_afiliacion', a.id, a.estado, ['nueva','contactada','aceptada','descartada'], 'cargarSolicitudesAfiliacion')}
+      <div class="meta">${a.ciudad || '—'} · Colegiado: ${a.numero_colegiado || '—'} · ${formatearFecha(a.created_at)}</div>
+      ${a.experiencia ? `<div class="meta">Experiencia: ${a.experiencia}</div>` : ''}
+      ${a.mensaje ? `<div class="meta">"${a.mensaje}"</div>` : ''}
+    </div>`).join('') : '<p class="meta">Todavía no hay solicitudes de afiliación.</p>';
+}
+
 (async () => {
   const session = await exigirSesion();
   if (!session) return;
@@ -191,6 +250,9 @@ async function crearCuota() {
   await cargarLogopedas();
   await cargarPacientesAdmin();
   await cargarCuotas();
+  await cargarSolicitudesServicio();
+  await cargarMensajesContacto();
+  await cargarSolicitudesAfiliacion();
 })();
 </script>
 

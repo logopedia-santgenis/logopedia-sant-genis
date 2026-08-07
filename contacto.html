@@ -36,7 +36,7 @@
       <h3>Dirección</h3>
       <p>Avenida Jordán 30 local 4<br>Barcelona, 08035</p>
       <h3>Teléfono</h3>
-      <p>931 25 76 27</p>
+      <p><a href="tel:+34931257627">931 25 76 27</a> — llámanos directamente</p>
       <h3>Horario de atención</h3>
       <p>Lunes a Viernes de 10:00 a 14:00 y de 16:00 a 20:00<br>Sábado de 9:00 a 13:00</p>
     </div>
@@ -48,10 +48,88 @@
   </div>
 </section>
 
+<section style="background:var(--tarjeta);">
+  <h2>Envíanos un mensaje</h2>
+  <p class="subtitulo">Cuéntanos qué necesitas y te responderemos lo antes posible.</p>
+  <div class="tarjeta" style="max-width:520px;margin:0 auto;">
+    <div class="mensaje-error" id="msgErrorContacto"></div>
+    <div class="mensaje-ok" id="msgOkContacto"></div>
+    <form id="formContacto">
+      <div class="campo">
+        <label for="cNombre">Nombre</label>
+        <input type="text" id="cNombre" required>
+      </div>
+      <div class="campo">
+        <label for="cEmail">Correo electrónico</label>
+        <input type="email" id="cEmail" required>
+      </div>
+      <div class="campo">
+        <label for="cTelefono">Teléfono (opcional)</label>
+        <input type="tel" id="cTelefono">
+      </div>
+      <div class="campo">
+        <label for="cMensaje">Mensaje</label>
+        <textarea id="cMensaje" rows="4" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-secundario" style="width:100%;">Enviar mensaje</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <h2>Visítanos</h2>
+  <p class="subtitulo">Dinos desde dónde vienes y te abrimos la ruta hasta el centro en Google Maps.</p>
+  <div class="tarjeta" style="max-width:520px;margin:0 auto;text-align:center;">
+    <div class="campo" style="text-align:left;">
+      <label for="origenMapa">Tu calle o punto de partida</label>
+      <input type="text" id="origenMapa" placeholder="Ej: Passeig de Gràcia 1, Barcelona">
+    </div>
+    <button type="button" class="btn btn-primario" id="btnVerRuta" style="width:100%;">Ver ruta en Google Maps</button>
+    <p class="meta" style="margin-top:10px;">Se abrirá Google Maps en una pestaña nueva con la ruta hasta Avenida Jordán 30, local 4, Barcelona.</p>
+  </div>
+</section>
+
 <footer class="sitio">
   <p>Avenida Jordán 30 local 4, Barcelona 08035 · Tel: 931 25 76 27</p>
   <p>© 2026 Logopedia Sant Genís · <a href="terminos-condiciones.html">Términos y condiciones</a> · <a href="politica-privacidad.html">Privacidad</a> · <a href="login.html">Acceso a la plataforma</a></p>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+document.getElementById('formContacto').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msgError = document.getElementById('msgErrorContacto');
+  const msgOk = document.getElementById('msgOkContacto');
+  msgError.style.display = 'none';
+  msgOk.style.display = 'none';
+
+  const { error } = await supabaseClient.from('mensajes_contacto').insert({
+    nombre: document.getElementById('cNombre').value.trim(),
+    email: document.getElementById('cEmail').value.trim(),
+    telefono: document.getElementById('cTelefono').value.trim(),
+    mensaje: document.getElementById('cMensaje').value.trim()
+  });
+
+  if (error) {
+    msgError.textContent = 'No se pudo enviar el mensaje. Prueba de nuevo o escríbenos por WhatsApp.';
+    msgError.style.display = 'block';
+    return;
+  }
+  msgOk.textContent = '¡Mensaje enviado! Te responderemos lo antes posible.';
+  msgOk.style.display = 'block';
+  document.getElementById('formContacto').reset();
+});
+
+document.getElementById('btnVerRuta').addEventListener('click', () => {
+  const origen = document.getElementById('origenMapa').value.trim();
+  const destino = encodeURIComponent('Avenida Jordán 30 local 4, 08035 Barcelona');
+  const url = origen
+    ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origen)}&destination=${destino}`
+    : `https://www.google.com/maps/search/?api=1&query=${destino}`;
+  window.open(url, '_blank', 'noopener');
+});
+</script>
 
 </body>
 </html>
