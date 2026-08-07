@@ -628,3 +628,80 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 }
 
 .hueco-chip:hover { background: var(--azul); color: #fff; }
+
+/* Sidebar de aplicación (vista tipo Nubimed para el portal del logopeda) */
+.app-shell {
+  display: flex;
+  align-items: flex-start;
+}
+
+.app-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--azul-oscuro);
+  min-height: calc(100vh - 60px);
+  padding: 18px 0 40px;
+}
+
+.app-sidebar .sidebar-grupo-titulo {
+  color: rgba(255,255,255,.5);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-weight: 700;
+  padding: 18px 22px 6px;
+}
+
+.app-sidebar button.tab-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,.82);
+  text-align: left;
+  padding: 10px 22px;
+  font-size: .88rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+
+.app-sidebar button.tab-link:hover { background: rgba(255,255,255,.06); color: #fff; }
+
+.app-sidebar button.tab-link.activo {
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  border-left-color: var(--mostaza);
+  font-weight: 600;
+}
+
+.app-sidebar button.tab-link .icono-mini { font-size: 1rem; width: 18px; text-align: center; }
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 24px 60px;
+}
+
+.app-main .kpis { margin: 0 0 24px; }
+
+.stub-panel {
+  background: var(--tarjeta);
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.stub-panel h3 { color: var(--azul-oscuro); margin-top: 0; }
+
+@media (max-width: 860px) {
+  .app-shell { flex-direction: column; }
+  .app-sidebar { width: 100%; min-height: auto; display: flex; flex-wrap: wrap; padding: 10px; }
+  .app-sidebar .sidebar-grupo-titulo { width: 100%; padding: 8px 10px 2px; }
+  .app-sidebar button.tab-link { width: auto; border-left: none; border-radius: 999px; }
+  .app-sidebar button.tab-link.activo { border-left: none; }
+}

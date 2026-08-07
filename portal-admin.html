@@ -34,6 +34,7 @@
   <button class="tab-link" data-tab="cuotas">Cuotas</button>
   <button class="tab-link" data-tab="tratamientos">Tratamientos</button>
   <button class="tab-link" data-tab="solicitudes">Solicitudes y mensajes</button>
+  <button class="tab-link" data-tab="funcionalidades">Funcionalidades</button>
 </div>
 
 <!-- RESUMEN -->
@@ -170,11 +171,90 @@
   <div id="listaSolicitudesAfiliacion"><div class="cargando">Cargando…</div></div>
 </div>
 
+<!-- FUNCIONALIDADES -->
+<div class="panel seccion-tab" data-panel="funcionalidades">
+  <div class="seccion-titulo-fila">
+    <h2>Funcionalidades — comparativa con Nubimed</h2>
+  </div>
+  <p class="meta" style="margin-bottom:20px;">
+    Investigado en vivo en la cuenta real de Ester (07-08/08/2026). Aquí está el 100% de lo que tiene Nubimed —
+    lo que ya está <span class="badge badge-verde">Activa</span> en nuestra plataforma y lo que sigue
+    <span class="badge badge-gris">Pendiente</span> para irlo desarrollando poco a poco.
+  </p>
+  <div id="listaFuncionalidades"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js"></script>
 <script>
 let PACIENTES = [];
 let LOGOPEDAS = [];
+
+const FUNCIONALIDADES_NUBIMED = [
+  { grupo: 'Agenda', nombre: 'Calendario semanal de citas', estado: 'activa' },
+  { grupo: 'Agenda', nombre: 'Búsqueda automática de huecos libres', estado: 'activa' },
+  { grupo: 'Agenda', nombre: 'Portal de Cita Online (autoagenda pública)', estado: 'activa', nota: 'mejorado: pasa por confirmación del equipo antes de crear la cita, evita huecos duplicados' },
+  { grupo: 'Agenda', nombre: 'Sala de espera', estado: 'activa' },
+  { grupo: 'Agenda', nombre: 'Gabinetes (salas) asignables a citas', estado: 'activa' },
+  { grupo: 'Agenda', nombre: 'Filtros de agenda por estado', estado: 'activa' },
+  { grupo: 'Agenda', nombre: 'Trabajos externos (derivaciones a otros profesionales)', estado: 'pendiente' },
+  { grupo: 'Agenda', nombre: 'Recordatorios automáticos por SMS/WhatsApp', estado: 'pendiente', nota: 'de momento el canal de recordatorio se guarda pero no se envía solo' },
+  { grupo: 'Pacientes', nombre: 'Ficha completa (identificativos, contacto, dirección…)', estado: 'activa' },
+  { grupo: 'Pacientes', nombre: 'Foto de paciente', estado: 'activa' },
+  { grupo: 'Pacientes', nombre: 'Tutores / contactos como registros independientes', estado: 'activa' },
+  { grupo: 'Pacientes', nombre: 'Archivos adjuntos con permisos', estado: 'activa', nota: 'mejorado: incluye Portal del Paciente propio y gratis (en Nubimed cuesta 15€/cuenta y Ester no lo tiene activo)' },
+  { grupo: 'Pacientes', nombre: 'Tareas / recordatorios por paciente', estado: 'activa' },
+  { grupo: 'Pacientes', nombre: 'Ficha de contacto (preferencias de comunicación)', estado: 'pendiente' },
+  { grupo: 'Pacientes', nombre: 'Historia clínica estructurada (por fecha/documento/profesional)', estado: 'pendiente', nota: 'Ester tampoco la usa hoy en Nubimed' },
+  { grupo: 'Pacientes', nombre: 'Notas buscables por profesional/especialidad/fecha', estado: 'parcial', nota: 'tenemos notas de seguimiento, falta el buscador' },
+  { grupo: 'Pacientes', nombre: 'Datos auxiliares (campos personalizados por clínica)', estado: 'pendiente' },
+  { grupo: 'Tratamientos y catálogo', nombre: 'Catálogo de tratamientos con precio/descuento/impuestos', estado: 'activa' },
+  { grupo: 'Tratamientos y catálogo', nombre: 'Catálogo de servicios (distinto de tratamientos)', estado: 'pendiente' },
+  { grupo: 'Tratamientos y catálogo', nombre: 'Textos predefinidos', estado: 'activa' },
+  { grupo: 'Documentación', nombre: 'Plantillas de documentos con autorrelleno', estado: 'pendiente', nota: 'siguiente en la lista — falta elegir proveedor de firma' },
+  { grupo: 'Documentación', nombre: 'Firma digital / firmas pendientes', estado: 'pendiente' },
+  { grupo: 'Facturación', nombre: 'Cuotas / pagos simples', estado: 'activa' },
+  { grupo: 'Facturación', nombre: 'Facturación completa (facturas, presupuestos, bonos)', estado: 'pendiente' },
+  { grupo: 'Facturación', nombre: 'Pasarela de pago online (Stripe / Redsys)', estado: 'pendiente' },
+  { grupo: 'Marketing y comunicación', nombre: 'Campañas de email/WhatsApp a pacientes', estado: 'pendiente' },
+  { grupo: 'Marketing y comunicación', nombre: 'Integración WhatsApp Business (recordatorios, chatbot)', estado: 'pendiente', nota: 'de las más valiosas a futuro según lo que usa Nubimed' },
+  { grupo: 'Marketing y comunicación', nombre: 'Encuestas de satisfacción (tipo Survey Monkey)', estado: 'pendiente' },
+  { grupo: 'Integraciones', nombre: 'Sincronización con Google Calendar', estado: 'pendiente', nota: 'Ester la usa activamente en Nubimed' },
+  { grupo: 'Integraciones', nombre: 'Videollamadas integradas', estado: 'pendiente' },
+  { grupo: 'Integraciones', nombre: 'Zapier / automatizaciones externas', estado: 'pendiente' },
+  { grupo: 'Integraciones', nombre: 'Asistente de IA', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Gestión de actividades grupales (terapia en grupo)', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Registro de jornada laboral', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Almacén y venta de productos', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Dashboard / Business Intelligence', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Multi-clínica / múltiples cuentas', estado: 'pendiente', nota: 'no aplica de momento, un solo centro' },
+  { grupo: 'Gestión interna', nombre: 'Receta electrónica (REMPE)', estado: 'pendiente', nota: 'no aplica a logopedia' },
+];
+
+function badgeFuncionalidad(estado) {
+  const mapa = { activa: 'badge-verde', parcial: 'badge-ambar', pendiente: 'badge-gris' };
+  const texto = { activa: 'Activa', parcial: 'Parcial', pendiente: 'Pendiente' };
+  return `<span class="badge ${mapa[estado]}">${texto[estado]}</span>`;
+}
+
+function pintarFuncionalidades() {
+  const grupos = {};
+  FUNCIONALIDADES_NUBIMED.forEach(f => { (grupos[f.grupo] = grupos[f.grupo] || []).push(f); });
+  const cont = document.getElementById('listaFuncionalidades');
+  cont.innerHTML = Object.keys(grupos).map(g => `
+    <div class="seccion-titulo-fila" style="margin-top:24px;"><h3 style="margin:0;color:var(--azul-oscuro);">${g}</h3></div>
+    <div class="tabla-envoltorio">
+      <table class="tabla-datos">
+        <tbody>
+          ${grupos[g].map(f => `
+            <tr>
+              <td style="width:60%;">${f.nombre}${f.nota ? `<div class="meta">${f.nota}</div>` : ''}</td>
+              <td>${badgeFuncionalidad(f.estado)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`).join('');
+}
 
 function cambiarTab(tab) {
   document.querySelectorAll('.tab-link').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
@@ -579,6 +659,7 @@ async function cargarResumen() {
   await cargarMensajesContacto();
   await cargarSolicitudesAfiliacion();
   await cargarResumen();
+  pintarFuncionalidades();
 })();
 </script>
 

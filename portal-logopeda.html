@@ -19,37 +19,104 @@
 
 <div id="barraVistaAdmin"></div>
 
-<div class="kpis">
-  <div class="kpi-card"><div class="kpi-numero" id="kpiPacientes">—</div><div class="kpi-label">Mis pacientes</div></div>
-  <div class="kpi-card"><div class="kpi-numero" id="kpiCitas">—</div><div class="kpi-label">Citas próximos 7 días</div></div>
-  <div class="kpi-card"><div class="kpi-numero" id="kpiRecursos">—</div><div class="kpi-label">Recursos en biblioteca</div></div>
-</div>
+<div class="app-shell">
+  <nav class="app-sidebar">
+    <button class="tab-link" data-tab="inicio"><span class="icono-mini">🏠</span> Inicio</button>
 
-<div class="tabs-portal">
-  <button class="tab-link" data-tab="pacientes">Mis pacientes</button>
-  <button class="tab-link" data-tab="agenda">Agenda</button>
-  <button class="tab-link" data-tab="recursos">Biblioteca de recursos</button>
-</div>
+    <div class="sidebar-grupo-titulo">Agenda</div>
+    <button class="tab-link" data-tab="agenda"><span class="icono-mini">📅</span> Calendario</button>
+    <button class="tab-link" data-tab="peticiones"><span class="icono-mini">📨</span> Peticiones de cita</button>
+    <button class="tab-link" data-tab="tareas"><span class="icono-mini">✅</span> Tareas</button>
+    <button class="tab-link" data-tab="trabajos-externos"><span class="icono-mini">🔗</span> Trabajos externos</button>
+    <button class="tab-link" data-tab="pacientes"><span class="icono-mini">👥</span> Pacientes / Contactos</button>
 
-<!-- PACIENTES -->
-<div class="panel seccion-tab" data-panel="pacientes">
-  <div class="seccion-titulo-fila"><h2>Mis pacientes</h2></div>
-  <input type="text" class="buscador-portal" id="buscarPacientes" placeholder="Buscar paciente por nombre…" oninput="pintarPacientes()">
-  <div id="listaPacientes"><div class="cargando">Cargando…</div></div>
-</div>
+    <div class="sidebar-grupo-titulo">Documentación</div>
+    <button class="tab-link" data-tab="firmas"><span class="icono-mini">✍️</span> Firmas pendientes</button>
+    <button class="tab-link" data-tab="plantillas-doc"><span class="icono-mini">📄</span> Plantillas</button>
 
-<!-- AGENDA -->
-<div class="panel seccion-tab" data-panel="agenda">
-  <div class="seccion-titulo-fila"><h2>Agenda</h2></div>
+    <div class="sidebar-grupo-titulo">Marketing</div>
+    <button class="tab-link" data-tab="campanas"><span class="icono-mini">📣</span> Campañas</button>
 
-  <div id="bloqueCitasOnline"></div>
+    <div class="sidebar-grupo-titulo">Biblioteca (exclusivo nuestro)</div>
+    <button class="tab-link" data-tab="recursos"><span class="icono-mini">📚</span> Biblioteca de recursos</button>
+  </nav>
 
-  <div class="tarjeta" id="tarjetaSalaEspera" style="margin-bottom:20px;display:none;">
-    <h3 style="margin-top:0;">Sala de espera — hoy</h3>
-    <div id="listaSalaEspera"></div>
-  </div>
+  <main class="app-main">
+    <div class="kpis">
+      <div class="kpi-card"><div class="kpi-numero" id="kpiPacientes">—</div><div class="kpi-label">Mis pacientes</div></div>
+      <div class="kpi-card"><div class="kpi-numero" id="kpiCitas">—</div><div class="kpi-label">Citas próximos 7 días</div></div>
+      <div class="kpi-card"><div class="kpi-numero" id="kpiRecursos">—</div><div class="kpi-label">Recursos en biblioteca</div></div>
+    </div>
 
-  <div class="semana-nav">
+    <!-- INICIO -->
+    <div class="panel seccion-tab" data-panel="inicio" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Inicio</h2></div>
+      <div class="tarjeta" id="tarjetaSalaEspera" style="margin-bottom:20px;display:none;">
+        <h3 style="margin-top:0;">Sala de espera — hoy</h3>
+        <div id="listaSalaEspera"></div>
+      </div>
+      <div class="tarjeta">
+        <h3 style="margin-top:0;">Accesos rápidos</h3>
+        <div class="fila-acciones">
+          <button class="btn btn-outline" onclick="cambiarTab('agenda')">Ver calendario »</button>
+          <button class="btn btn-outline" onclick="cambiarTab('peticiones')">Peticiones de cita »</button>
+          <button class="btn btn-outline" onclick="cambiarTab('pacientes')">Mis pacientes »</button>
+          <button class="btn btn-outline" onclick="cambiarTab('tareas')">Tareas »</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PACIENTES -->
+    <div class="panel seccion-tab" data-panel="pacientes" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Mis pacientes</h2></div>
+      <input type="text" class="buscador-portal" id="buscarPacientes" placeholder="Buscar paciente por nombre…" oninput="pintarPacientes()">
+      <div id="listaPacientes"><div class="cargando">Cargando…</div></div>
+    </div>
+
+    <!-- PETICIONES DE CITA -->
+    <div class="panel seccion-tab" data-panel="peticiones" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Peticiones de cita online</h2></div>
+      <div id="bloqueCitasOnline"></div>
+    </div>
+
+    <!-- TAREAS (agregadas) -->
+    <div class="panel seccion-tab" data-panel="tareas" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Tareas de todos mis pacientes</h2></div>
+      <div class="fila-acciones" style="margin-bottom:14px;">
+        <label class="meta">Filtrar:</label>
+        <select id="filtroEstadoTareas" onchange="cargarTareasAgregadas()">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="en_curso">En curso</option>
+          <option value="completada">Completada</option>
+        </select>
+      </div>
+      <div id="listaTareasAgregadas"><div class="cargando">Cargando…</div></div>
+    </div>
+
+    <!-- STUBS: pendientes de construir -->
+    <div class="panel seccion-tab" data-panel="trabajos-externos" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Trabajos externos</h2></div>
+      <div class="stub-panel"><h3>Próximamente</h3><p>Derivaciones y trabajos con profesionales externos. Todavía no está construido — lo iremos añadiendo según prioridad.</p></div>
+    </div>
+    <div class="panel seccion-tab" data-panel="firmas" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Firmas pendientes</h2></div>
+      <div class="stub-panel"><h3>Próximamente</h3><p>Firma digital de documentos (consentimientos, informes). Falta decidir el proveedor de firma antes de construirlo.</p></div>
+    </div>
+    <div class="panel seccion-tab" data-panel="plantillas-doc" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Plantillas de documentos</h2></div>
+      <div class="stub-panel"><h3>Próximamente</h3><p>Generador de documentos con autorrelleno de datos del paciente/tratamiento. Va junto con Firmas pendientes.</p></div>
+    </div>
+    <div class="panel seccion-tab" data-panel="campanas" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Campañas de marketing</h2></div>
+      <div class="stub-panel"><h3>Próximamente</h3><p>Envío de campañas por email/WhatsApp a pacientes. Todavía no está construido.</p></div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="panel seccion-tab" data-panel="agenda" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Calendario</h2></div>
+
+      <div class="semana-nav">
     <button class="btn btn-outline" onclick="cambiarSemana(-1)">« Semana anterior</button>
     <span class="etiqueta-semana" id="etiquetaSemana"></span>
     <div>
@@ -87,7 +154,7 @@
 </div>
 
 <!-- RECURSOS -->
-<div class="panel seccion-tab" data-panel="recursos">
+<div class="panel seccion-tab" data-panel="recursos" style="max-width:none;margin:0;padding:0;">
   <div class="seccion-titulo-fila"><h2>Biblioteca de recursos</h2></div>
 
   <div class="tarjeta" style="margin-bottom:20px;">
@@ -126,6 +193,9 @@
     </div>
   </div>
   <div id="listaTextos"><div class="cargando">Cargando…</div></div>
+</div>
+
+  </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -530,6 +600,28 @@ function usarHueco(fecha, hora) {
   alert(`Hueco ${formatearFecha(fecha)} a las ${hora} guardado. Elige el paciente y pulsa "+ Cita": la fecha y hora aparecerán ya rellenadas.`);
 }
 
+async function cargarTareasAgregadas() {
+  const filtro = document.getElementById('filtroEstadoTareas')?.value || '';
+  let query = supabaseClient.from('tareas_paciente').select('*, pacientes(nombre)').eq('logopeda_id', UID);
+  query = filtro ? query.eq('estado', filtro) : query.neq('estado', 'cancelada');
+  const { data } = await query.order('fecha_inicio', { ascending: false });
+
+  const cont = document.getElementById('listaTareasAgregadas');
+  cont.innerHTML = (data && data.length) ? data.map(t => `
+    <div class="lista-item">
+      <strong>${t.pacientes?.nombre || '—'}</strong> — ${t.tipo_tarea || 'Tarea'} ${badgeEstado(t.estado)}
+      <div class="meta">${t.fecha_inicio ? formatearFecha(t.fecha_inicio) : '—'}${t.fecha_fin ? ' a ' + formatearFecha(t.fecha_fin) : ''} · Recordatorio: ${t.canal_recordatorio}</div>
+      <select onchange="actualizarEstadoTareaAgregada('${t.id}', this.value)" style="margin-top:6px;">
+        ${['pendiente', 'en_curso', 'completada', 'cancelada'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>
+    </div>`).join('') : '<p class="vacio-panel">No hay tareas con ese filtro.</p>';
+}
+
+async function actualizarEstadoTareaAgregada(id, estado) {
+  await supabaseClient.from('tareas_paciente').update({ estado }).eq('id', id);
+  await cargarTareasAgregadas();
+}
+
 async function cargarRecursos() {
   const { data: recursos, error } = await supabaseClient
     .from('recursos').select('*').eq('logopeda_id', UID).order('categoria');
@@ -633,13 +725,14 @@ async function borrarTextoPredefinido(id) {
   UID = session.user.id;
   document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
 
-  cambiarTab(localStorage.getItem('logopedaTabActiva') || 'pacientes');
+  cambiarTab(localStorage.getItem('logopedaTabActiva') || 'inicio');
 
   await cargarGabinetesOpts();
   await cargarPacientes();
   await cargarAgenda();
   await cargarSalaEspera();
   await cargarCitasOnlinePendientes();
+  await cargarTareasAgregadas();
   await cargarRecursos();
   await cargarTextosPredefinidos();
 })();
