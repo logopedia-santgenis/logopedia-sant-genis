@@ -82,14 +82,14 @@
       .eq('paciente_id', p.id);
 
     const tituloRecursos = document.createElement('h3');
-    tituloRecursos.textContent = 'Recursos para vos';
+    tituloRecursos.textContent = 'Recursos para ti';
     tituloRecursos.style.marginTop = '20px';
     bloque.appendChild(tituloRecursos);
 
     if (!recursosHab || recursosHab.length === 0) {
       const vacio = document.createElement('p');
       vacio.className = 'meta';
-      vacio.textContent = 'Tu logopeda todavía no habilitó recursos para vos.';
+      vacio.textContent = 'Tu logopeda todavía no ha habilitado recursos para ti.';
       bloque.appendChild(vacio);
     } else {
       const porCategoria = {};

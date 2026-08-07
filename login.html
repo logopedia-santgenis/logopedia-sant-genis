@@ -23,7 +23,7 @@
       </div>
       <button type="submit" class="btn btn-secundario" style="width:100%;">Iniciar sesión</button>
     </form>
-    <p class="enlace-secundario">¿Todavía no tenés cuenta? <a href="registro.html">Registrate acá</a></p>
+    <p class="enlace-secundario">¿Todavía no tienes cuenta? <a href="registro.html">Regístrate aquí</a></p>
     <p class="enlace-secundario"><a href="index.html">« Volver al sitio</a></p>
   </div>
 </div>
@@ -49,7 +49,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
 
   const perfil = await obtenerPerfil(data.user.id);
   if (!perfil) {
-    msg.textContent = 'No se encontró tu perfil. Contactá al centro.';
+    msg.textContent = 'No se encontró tu perfil. Contacta con el centro.';
     msg.style.display = 'block';
     return;
   }
