@@ -33,6 +33,10 @@
         <label for="password">Contraseña (mínimo 6 caracteres)</label>
         <input type="password" id="password" minlength="6" required>
       </div>
+      <div class="campo" style="display:flex;align-items:flex-start;gap:8px;">
+        <input type="checkbox" id="aceptaTerminos" required style="width:auto;margin-top:4px;">
+        <label for="aceptaTerminos" style="font-weight:400;font-size:.85rem;">He leído y acepto los <a href="terminos-condiciones.html" target="_blank" rel="noopener">Términos y Condiciones</a> y la <a href="politica-privacidad.html" target="_blank" rel="noopener">Política de Privacidad</a>, y presto mi consentimiento explícito para el tratamiento de mis datos, incluidos los relativos a la salud, con la finalidad de prestar el servicio logopédico. Si el paciente es menor de 14 años, confirmo que soy su padre/madre o tutor/a legal.</label>
+      </div>
       <button type="submit" class="btn btn-secundario" style="width:100%;">Crear cuenta</button>
     </form>
     <p class="enlace-secundario">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
@@ -53,6 +57,12 @@ document.getElementById('formRegistro').addEventListener('submit', async (e) => 
   const msgOk = document.getElementById('msgOk');
   msgError.style.display = 'none';
   msgOk.style.display = 'none';
+
+  if (!document.getElementById('aceptaTerminos').checked) {
+    msgError.textContent = 'Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear una cuenta.';
+    msgError.style.display = 'block';
+    return;
+  }
 
   const { data, error } = await supabaseClient.auth.signUp({
     email,
