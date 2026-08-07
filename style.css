@@ -1,26 +1,35 @@
-/* Logopedia Sant Genís — hoja de estilos compartida */
+/* Logopedia Sant Genís — hoja de estilos compartida
+   Identidad v3: índigo + mostaza, tipografía Baloo 2 / Work Sans */
+
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  --azul: #1f6f78;
-  --azul-oscuro: #14505a;
+  --azul: #3D5A80;
+  --azul-oscuro: #28405F;
+  --mostaza: #F2B134;
   --verde-whatsapp: #25d366;
-  --fondo: #f7faf9;
+  --fondo: #FFF8EC;
   --tarjeta: #ffffff;
-  --texto: #2b2f30;
-  --texto-suave: #5c6567;
-  --borde: #e1e8e7;
-  --radio: 14px;
-  --sombra: 0 4px 18px rgba(20, 80, 90, 0.08);
+  --texto: #2E2A24;
+  --texto-suave: #776F63;
+  --borde: #EFE6D6;
+  --radio: 18px;
+  --sombra: 0 8px 26px rgba(40, 64, 95, 0.12);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Work Sans', "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--fondo);
   color: var(--texto);
   line-height: 1.6;
+}
+
+h1, h2, h3 {
+  font-family: 'Baloo 2', 'Segoe UI', sans-serif;
+  font-weight: 700;
 }
 
 a { color: var(--azul); text-decoration: none; }
@@ -91,8 +100,8 @@ nav.menu a {
 }
 
 .btn-secundario {
-  background: var(--azul);
-  color: #fff;
+  background: var(--mostaza);
+  color: var(--azul-oscuro);
 }
 
 .btn-outline {
@@ -370,7 +379,7 @@ footer.sitio a { color: #fff; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(31,111,120,.90) 0%, rgba(20,80,90,.94) 100%);
+  background: linear-gradient(135deg, rgba(61,90,128,.90) 0%, rgba(40,64,95,.94) 100%);
 }
 
 .hero-imagen > * { position: relative; z-index: 1; }
@@ -519,7 +528,7 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 }
 
 .badge-ambar { background: #fff3d6; color: #8a5b00; }
-.badge-azul { background: #dbe9ee; color: #1f6f78; }
+.badge-azul { background: #dde5f0; color: #3D5A80; }
 .badge-verde { background: #dcf3e2; color: #146c3a; }
 .badge-rojo { background: #fdeceb; color: #b3261e; }
 .badge-gris { background: var(--fondo); color: var(--texto-suave); border: 1px solid var(--borde); }
