@@ -24,8 +24,10 @@
   <div class="tabs-portal" id="tabsPortal" style="margin:0 0 20px;padding:0;">
     <button class="tab-link" data-tab="datos">Datos</button>
     <button class="tab-link" data-tab="contactos">Tutores / Contactos</button>
+    <button class="tab-link" data-tab="ficha-contacto">Ficha Contacto</button>
     <button class="tab-link" data-tab="citas">Citas</button>
     <button class="tab-link" data-tab="tareas">Tareas</button>
+    <button class="tab-link" data-tab="notas">Notas</button>
     <button class="tab-link" data-tab="documentos">Documentos</button>
   </div>
 
@@ -64,6 +66,43 @@
       <p class="meta">El tutor no necesita tener cuenta en la plataforma — esto es solo un dato de contacto. Si además quieres que pueda entrar a ver el portal del paciente, pídele que se registre y vincúlalo desde el listado de pacientes.</p>
     </div>
     <div id="listaContactos"><div class="cargando">Cargando…</div></div>
+  </div>
+
+  <!-- FICHA CONTACTO -->
+  <div class="seccion-tab" data-panel="ficha-contacto">
+    <div class="tarjeta">
+      <h3 style="margin-top:0;">Ficha Contacto</h3>
+      <p class="meta">Preferencias de comunicación y profesional habitual del paciente.</p>
+      <div class="campo">
+        <textarea id="fPreferenciaContacto" rows="3" placeholder="Ej. Prefiere WhatsApp por las tardes. Profesional habitual: Ester."></textarea>
+      </div>
+      <button class="btn btn-secundario" onclick="guardarFichaContacto()">Guardar</button>
+      <span class="meta" id="estadoFichaContacto" style="margin-left:10px;"></span>
+    </div>
+  </div>
+
+  <!-- NOTAS -->
+  <div class="seccion-tab" data-panel="notas">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Buscar notas</h3>
+      <div class="fila-acciones">
+        <input type="date" id="nFechaDesde">
+        <input type="date" id="nFechaHasta">
+        <input type="text" id="nTexto" placeholder="Buscar por texto…" style="flex:2;">
+        <button class="btn btn-outline" onclick="buscarNotas()">Buscar</button>
+      </div>
+    </div>
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Nueva nota</h3>
+      <div class="fila-acciones">
+        <textarea id="nuevaNota" placeholder="Notas de la sesión / evolución" style="flex:3;"></textarea>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;">
+          <input type="checkbox" id="nuevaNotaVisible"> Visible para el paciente
+        </label>
+        <button class="btn btn-secundario" onclick="crearNota()">Guardar</button>
+      </div>
+    </div>
+    <div id="listaNotas"><div class="cargando">Cargando…</div></div>
   </div>
 
   <!-- CITAS -->
@@ -170,6 +209,8 @@ async function cargarDatos() {
   document.getElementById('tituloPaciente').textContent = p.nombre;
   document.title = p.nombre + ' — Ficha del paciente';
 
+  document.getElementById('fPreferenciaContacto').value = p.preferencia_contacto || '';
+
   if (p.foto_url) {
     const { data } = await supabaseClient.storage.from('documentos-pacientes').createSignedUrl(p.foto_url, 300);
     if (data?.signedUrl) document.getElementById('fotoPaciente').src = data.signedUrl;
@@ -251,6 +292,46 @@ async function subirFoto() {
   const { data } = await supabaseClient.storage.from('documentos-pacientes').createSignedUrl(ruta, 300);
   if (data?.signedUrl) document.getElementById('fotoPaciente').src = data.signedUrl;
   estado.textContent = 'Foto actualizada ✓';
+}
+
+async function guardarFichaContacto() {
+  const preferencia_contacto = document.getElementById('fPreferenciaContacto').value.trim() || null;
+  const estado = document.getElementById('estadoFichaContacto');
+  const { error } = await supabaseClient.from('pacientes').update({ preferencia_contacto }).eq('id', pacienteId);
+  estado.textContent = error ? 'Error: ' + error.message : 'Guardado ✓';
+}
+
+async function buscarNotas() {
+  const desde = document.getElementById('nFechaDesde').value;
+  const hasta = document.getElementById('nFechaHasta').value;
+  const texto = document.getElementById('nTexto').value.trim();
+  let query = supabaseClient.from('fichas_seguimiento').select('*, logopedas(profiles(nombre))').eq('paciente_id', pacienteId);
+  if (desde) query = query.gte('fecha', desde);
+  if (hasta) query = query.lte('fecha', hasta);
+  if (texto) query = query.ilike('notas', `%${texto}%`);
+  const { data } = await query.order('fecha', { ascending: false });
+  pintarNotas(data || []);
+}
+
+function pintarNotas(notas) {
+  const cont = document.getElementById('listaNotas');
+  cont.innerHTML = notas.length ? notas.map(n => `
+    <div class="lista-item">
+      <div class="meta">${formatearFecha(n.fecha)} · ${n.logopedas?.profiles?.nombre || 'Profesional'} ${n.visible_para_cliente ? '· <em>visible para el paciente</em>' : ''}</div>
+      <p style="color:var(--texto);margin:6px 0 0;">${n.notas}</p>
+    </div>`).join('') : '<p class="vacio-panel">No hay notas con esos criterios.</p>';
+}
+
+async function crearNota() {
+  const notas = document.getElementById('nuevaNota').value.trim();
+  const visible_para_cliente = document.getElementById('nuevaNotaVisible').checked;
+  if (!notas) return;
+  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
+  const { error } = await supabaseClient.from('fichas_seguimiento').insert({
+    paciente_id: pacienteId, logopeda_id: pac?.logopeda_id, notas, visible_para_cliente
+  });
+  document.getElementById('nuevaNota').value = '';
+  await buscarNotas();
 }
 
 async function cargarContactos() {
@@ -426,6 +507,7 @@ async function subirDocumento() {
   await cargarContactos();
   await cargarCitasFicha();
   await cargarTareasFicha();
+  await buscarNotas();
   await cargarDocumentos();
 })();
 </script>
