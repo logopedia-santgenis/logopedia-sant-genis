@@ -165,6 +165,17 @@
   <!-- DOCUMENTOS -->
   <div class="seccion-tab" data-panel="documentos">
     <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Generar documento desde plantilla</h3>
+      <div class="fila-acciones">
+        <select id="genPlantilla" style="flex:2;"><option value="">— Elegir plantilla —</option></select>
+        <button class="btn btn-outline" onclick="generarDocumentoDesdePlantilla()">Generar</button>
+      </div>
+      <textarea id="resultadoGenerado" rows="6" style="display:none;margin-top:10px;width:100%;" readonly></textarea>
+      <div class="fila-acciones" id="accionesGenerado" style="display:none;margin-top:10px;">
+        <button class="btn btn-outline" onclick="descargarDocumentoGenerado()">Descargar .txt</button>
+      </div>
+    </div>
+    <div class="tarjeta" style="margin-bottom:20px;">
       <h3 style="margin-top:0;">Subir documento</h3>
       <div class="fila-acciones">
         <input type="text" id="dTitulo" placeholder="Título del documento" style="flex:2;">
@@ -533,6 +544,52 @@ async function borrarDatoAuxiliar(id) {
   await cargarDatosAuxiliares();
 }
 
+let PLANTILLAS_DOC = [];
+let contenidoGenerado = '';
+
+async function cargarPlantillasParaGenerar() {
+  const { data } = await supabaseClient.from('plantillas_documentos').select('*').order('titulo');
+  PLANTILLAS_DOC = data || [];
+  document.getElementById('genPlantilla').innerHTML = '<option value="">— Elegir plantilla —</option>' +
+    PLANTILLAS_DOC.map(p => `<option value="${p.id}">${p.titulo}</option>`).join('');
+}
+
+async function generarDocumentoDesdePlantilla() {
+  const id = document.getElementById('genPlantilla').value;
+  const plantilla = PLANTILLAS_DOC.find(p => p.id === id);
+  if (!plantilla) return;
+
+  const { data: p } = await supabaseClient.from('pacientes').select('*, logopedas(profiles(nombre))').eq('id', pacienteId).single();
+  const { data: contactos } = await supabaseClient.from('contactos_paciente').select('nombre').eq('paciente_id', pacienteId).limit(1);
+
+  const variables = {
+    '{{paciente_nombre}}': p?.nombre || '',
+    '{{paciente_fecha_nacimiento}}': formatearFecha(p?.fecha_nacimiento),
+    '{{tutor_nombre}}': contactos?.[0]?.nombre || '',
+    '{{logopeda_nombre}}': p?.logopedas?.profiles?.nombre || '',
+    '{{fecha_hoy}}': formatearFecha(new Date().toISOString().slice(0, 10)),
+  };
+  let contenido = plantilla.contenido;
+  Object.keys(variables).forEach(v => { contenido = contenido.split(v).join(variables[v]); });
+
+  contenidoGenerado = contenido;
+  const area = document.getElementById('resultadoGenerado');
+  area.value = contenido;
+  area.style.display = 'block';
+  document.getElementById('accionesGenerado').style.display = 'flex';
+}
+
+function descargarDocumentoGenerado() {
+  if (!contenidoGenerado) return;
+  const blob = new Blob([contenidoGenerado], { type: 'text/plain;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'documento.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function cargarDocumentos() {
   const { data, error } = await supabaseClient.from('documentos_paciente').select('*').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
   const cont = document.getElementById('listaDocumentos');
@@ -595,6 +652,7 @@ async function subirDocumento() {
   await buscarNotas();
   await cargarHistoriaClinica();
   await cargarDatosAuxiliares();
+  await cargarPlantillasParaGenerar();
   await cargarDocumentos();
 })();
 </script>

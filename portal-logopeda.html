@@ -114,15 +114,42 @@
     </div>
     <div class="panel seccion-tab" data-panel="firmas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Firmas pendientes</h2></div>
-      <div class="stub-panel"><h3>Próximamente</h3><p>Firma digital de documentos (consentimientos, informes). Falta decidir el proveedor de firma antes de construirlo.</p></div>
+      <div class="stub-panel"><h3>Próximamente</h3><p>Firma digital de documentos (consentimientos, informes). Ya puedes generar documentos desde Plantillas — falta decidir el proveedor de firma para poder firmarlos electrónicamente.</p></div>
     </div>
     <div class="panel seccion-tab" data-panel="plantillas-doc" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Plantillas de documentos</h2></div>
-      <div class="stub-panel"><h3>Próximamente</h3><p>Generador de documentos con autorrelleno de datos del paciente/tratamiento. Va junto con Firmas pendientes.</p></div>
+      <div class="tarjeta" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Nueva plantilla</h3>
+        <p class="meta">Variables disponibles: <code>{{paciente_nombre}}</code> <code>{{paciente_fecha_nacimiento}}</code> <code>{{tutor_nombre}}</code> <code>{{logopeda_nombre}}</code> <code>{{fecha_hoy}}</code></p>
+        <div class="fila-acciones">
+          <input type="text" id="plTitulo" placeholder="Título (ej. Informe de evaluación)" style="flex:2;">
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <textarea id="plContenido" rows="6" placeholder="Contenido de la plantilla, usa las variables de arriba…" style="flex:3;"></textarea>
+          <button class="btn btn-secundario" onclick="crearPlantilla()">Guardar</button>
+        </div>
+      </div>
+      <div id="listaPlantillas"><div class="cargando">Cargando…</div></div>
+      <p class="meta" style="margin-top:16px;">Para generar un documento a partir de una plantilla, entra en la ficha completa de un paciente → pestaña Documentos.</p>
     </div>
     <div class="panel seccion-tab" data-panel="campanas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Campañas de marketing</h2></div>
-      <div class="stub-panel"><h3>Próximamente</h3><p>Envío de campañas por email/WhatsApp a pacientes. Todavía no está construido.</p></div>
+      <p class="meta" style="margin-bottom:16px;">De momento el envío real (email/WhatsApp) no está conectado — puedes redactar la campaña y exportar los destinatarios en CSV para enviarla desde tu propio correo, mientras decidimos un proveedor de envío.</p>
+      <div class="tarjeta" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Nueva campaña</h3>
+        <div class="fila-acciones">
+          <input type="text" id="caTitulo" placeholder="Título interno" style="flex:2;">
+          <select id="caSegmento">
+            <option value="todos">Todos los pacientes</option>
+            <option value="activos">Solo pacientes activos</option>
+          </select>
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <textarea id="caMensaje" rows="4" placeholder="Mensaje de la campaña" style="flex:3;"></textarea>
+          <button class="btn btn-secundario" onclick="crearCampana()">Guardar borrador</button>
+        </div>
+      </div>
+      <div id="listaCampanas"><div class="cargando">Cargando…</div></div>
     </div>
 
     <!-- AGENDA -->
@@ -613,6 +640,83 @@ function usarHueco(fecha, hora) {
   alert(`Hueco ${formatearFecha(fecha)} a las ${hora} guardado. Elige el paciente y pulsa "+ Cita": la fecha y hora aparecerán ya rellenadas.`);
 }
 
+async function cargarPlantillas() {
+  const { data } = await supabaseClient
+    .from('plantillas_documentos').select('*')
+    .or(`logopeda_id.eq.${UID},logopeda_id.is.null`)
+    .order('titulo');
+  const cont = document.getElementById('listaPlantillas');
+  cont.innerHTML = (data && data.length) ? data.map(p => `
+    <div class="lista-item">
+      <strong>${p.titulo}</strong>
+      <p class="meta" style="white-space:pre-wrap;">${p.contenido}</p>
+      ${p.logopeda_id === UID ? `<button class="btn btn-outline" onclick="borrarPlantilla('${p.id}')">Eliminar</button>` : ''}
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay plantillas creadas.</p>';
+}
+
+async function crearPlantilla() {
+  const titulo = document.getElementById('plTitulo').value.trim();
+  const contenido = document.getElementById('plContenido').value.trim();
+  if (!titulo || !contenido) return;
+  await supabaseClient.from('plantillas_documentos').insert({ titulo, contenido, logopeda_id: UID });
+  document.getElementById('plTitulo').value = '';
+  document.getElementById('plContenido').value = '';
+  await cargarPlantillas();
+}
+
+async function borrarPlantilla(id) {
+  await supabaseClient.from('plantillas_documentos').delete().eq('id', id);
+  await cargarPlantillas();
+}
+
+async function cargarCampanas() {
+  const { data } = await supabaseClient
+    .from('campanas_marketing').select('*').eq('logopeda_id', UID)
+    .order('created_at', { ascending: false });
+  const cont = document.getElementById('listaCampanas');
+  cont.innerHTML = (data && data.length) ? data.map(c => `
+    <div class="lista-item">
+      <strong>${c.titulo}</strong> ${badgeEstado(c.estado === 'enviada' ? 'realizada' : 'pendiente')}
+      <span class="etiqueta-pill">${c.segmento === 'todos' ? 'Todos los pacientes' : 'Solo activos'}</span>
+      <p class="meta" style="white-space:pre-wrap;">${c.mensaje}</p>
+      <div class="fila-acciones">
+        <button class="btn btn-outline" onclick="exportarDestinatariosCampana('${c.segmento}')">Exportar destinatarios (CSV)</button>
+        ${c.estado === 'borrador' ? `<button class="btn btn-outline" onclick="marcarCampanaEnviada('${c.id}')">Marcar como enviada</button>` : ''}
+      </div>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay campañas.</p>';
+}
+
+async function crearCampana() {
+  const titulo = document.getElementById('caTitulo').value.trim();
+  const mensaje = document.getElementById('caMensaje').value.trim();
+  const segmento = document.getElementById('caSegmento').value;
+  if (!titulo || !mensaje) return;
+  await supabaseClient.from('campanas_marketing').insert({ titulo, mensaje, segmento, logopeda_id: UID, estado: 'borrador' });
+  document.getElementById('caTitulo').value = '';
+  document.getElementById('caMensaje').value = '';
+  await cargarCampanas();
+}
+
+async function marcarCampanaEnviada(id) {
+  await supabaseClient.from('campanas_marketing').update({ estado: 'enviada', enviada_at: new Date().toISOString() }).eq('id', id);
+  await cargarCampanas();
+}
+
+async function exportarDestinatariosCampana(segmento) {
+  let query = supabaseClient.from('pacientes').select('nombre, email, telefono').eq('logopeda_id', UID).not('email', 'is', null);
+  if (segmento === 'activos') query = query.eq('estado', 'activo');
+  const { data } = await query;
+  if (!data || !data.length) { alert('No hay pacientes con email registrado para este segmento.'); return; }
+  const filas = ['nombre,email,telefono', ...data.map(p => `"${p.nombre}","${p.email}","${p.telefono || ''}"`)];
+  const blob = new Blob([filas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'destinatarios-campana.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function cargarTrabajosExternos() {
   const sel = document.getElementById('tePaciente');
   if (sel && sel.options.length === 0) {
@@ -790,6 +894,8 @@ async function borrarTextoPredefinido(id) {
   await cargarSalaEspera();
   await cargarCitasOnlinePendientes();
   await cargarTareasAgregadas();
+  await cargarPlantillas();
+  await cargarCampanas();
   await cargarRecursos();
   await cargarTextosPredefinidos();
 })();

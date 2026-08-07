@@ -145,6 +145,19 @@
     </table>
   </div>
 
+  <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Servicios (no clínicos)</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Nuevo servicio</h3>
+    <div class="fila-acciones">
+      <input type="text" id="svNombre" placeholder="Nombre del servicio (ej. Material didáctico)" style="flex:2;">
+      <input type="text" id="svDescripcion" placeholder="Descripción" style="flex:2;">
+      <input type="number" id="svPrecio" placeholder="Precio €" step="0.01" style="flex:1;">
+      <button class="btn btn-secundario" onclick="crearServicio()">Crear</button>
+    </div>
+    <p class="meta" id="estadoServicio"></p>
+  </div>
+  <div id="listaServicios"><div class="cargando">Cargando…</div></div>
+
   <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Gabinetes (salas)</h2></div>
   <div class="tarjeta" style="margin-bottom:20px;">
     <div class="fila-acciones">
@@ -411,6 +424,42 @@ function selectorEstado(tabla, id, estadoActual, opciones, recargarFn) {
   </select>`;
 }
 
+async function cargarServicios() {
+  const { data } = await supabaseClient.from('servicios').select('*').order('nombre');
+  const cont = document.getElementById('listaServicios');
+  cont.innerHTML = (data && data.length) ? data.map(s => `
+    <div class="lista-item">
+      <strong>${s.nombre}</strong> ${s.precio != null ? Number(s.precio).toFixed(2) + ' €' : ''}
+      <select onchange="cambiarEstadoServicio('${s.id}', this.value)" style="margin-left:8px;">
+        <option value="true" ${s.activo ? 'selected' : ''}>Activo</option>
+        <option value="false" ${!s.activo ? 'selected' : ''}>Inactivo</option>
+      </select>
+      ${s.descripcion ? `<div class="meta">${s.descripcion}</div>` : ''}
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay servicios creados.</p>';
+}
+
+async function cambiarEstadoServicio(id, valor) {
+  await supabaseClient.from('servicios').update({ activo: valor === 'true' }).eq('id', id);
+  await cargarServicios();
+}
+
+async function crearServicio() {
+  const nombre = document.getElementById('svNombre').value.trim();
+  const estado = document.getElementById('estadoServicio');
+  if (!nombre) return;
+  const { error } = await supabaseClient.from('servicios').insert({
+    nombre,
+    descripcion: document.getElementById('svDescripcion').value.trim() || null,
+    precio: document.getElementById('svPrecio').value ? parseFloat(document.getElementById('svPrecio').value) : null,
+    activo: true,
+  });
+  estado.textContent = error ? 'Error: ' + error.message : 'Servicio creado ✓';
+  document.getElementById('svNombre').value = '';
+  document.getElementById('svDescripcion').value = '';
+  document.getElementById('svPrecio').value = '';
+  await cargarServicios();
+}
+
 async function cargarGabinetes() {
   const { data } = await supabaseClient.from('gabinetes').select('*').order('nombre');
   const cont = document.getElementById('listaGabinetes');
@@ -653,6 +702,7 @@ async function cargarResumen() {
   await cargarPacientesAdmin();
   await cargarCuotas();
   await cargarTratamientos();
+  await cargarServicios();
   await cargarGabinetes();
   await cargarCitasOnline();
   await cargarSolicitudesServicio();
