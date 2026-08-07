@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método de estudio para padres — Logopedia Sant Genís</title>
+<meta name="description" content="Sesiones online para padres y madres: aprende a enseñar a tus hijos a estudiar, a concentrarse y a crear un hábito de estudio en casa. 30€/hora, bajo disponibilidad.">
+<link rel="icon" type="image/svg+xml" href="img/icono.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="index.html" class="logo"><img src="img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+    <nav class="menu">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="quienes-somos.html">¿Quiénes somos?</a></li>
+        <li><a href="otros-servicios.html">Otros servicios</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="contacto.html">Contacto</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-secundario" href="login.html">Acceso plataforma</a>
+  </div>
+</header>
+
+<section class="hero" style="padding:56px 24px;">
+  <h1>Método de estudio para padres</h1>
+  <p>Enseñamos a padres y madres a ayudar a sus hijos a estudiar mejor, a concentrarse y a crear un hábito de estudio real en casa.</p>
+</section>
+
+<section>
+  <div class="grid-2" style="align-items:center;max-width:900px;">
+    <div style="text-align:center;">
+      <img src="img/pablo-metodo-estudio.png" alt="Pablo Serrano, especialista en método de estudio" style="max-width:280px;margin:0 auto;">
+    </div>
+    <div class="tarjeta">
+      <h3>¿En qué consiste?</h3>
+      <p>Soy Pablo Serrano y llevo años ayudando a padres y madres a acompañar a sus hijos en el estudio: cómo generar concentración, cómo construir un hábito de estudio sostenible y cómo enfocar el trabajo en casa sin que se convierta en una pelea diaria.</p>
+      <p>No son clases directas para niños: son sesiones para vosotros, los padres, con herramientas concretas para aplicar en casa desde el primer día.</p>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--tarjeta);">
+  <h2>Cómo funciona</h2>
+  <p class="subtitulo">Sesiones 100% online, pensadas para adaptarse a tu disponibilidad.</p>
+  <div class="grid-2" style="max-width:900px;">
+    <div class="tarjeta">
+      <h3>Modalidad y precio</h3>
+      <p>Sesión online individual con Pablo Serrano.</p>
+      <p style="font-size:1.6rem;font-weight:700;color:var(--azul-oscuro);margin:12px 0;">30€ / hora</p>
+      <p class="meta">Las sesiones se agendan a demanda, según disponibilidad — consulta primero con el formulario de abajo.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>¿Para quién es?</h3>
+      <p>Para padres y madres de niños y adolescentes en edad escolar que quieren mejorar su relación con el estudio: más concentración, más autonomía y menos conflicto en casa a la hora de sentarse a estudiar.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Solicitar información</h2>
+  <p class="subtitulo">Cuéntanos tu disponibilidad y te contactamos para coordinar la primera sesión.</p>
+  <div class="tarjeta" style="max-width:520px;margin:0 auto;">
+    <div class="mensaje-error" id="msgError"></div>
+    <div class="mensaje-ok" id="msgOk"></div>
+    <form id="formSolicitud">
+      <div class="campo">
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" required>
+      </div>
+      <div class="campo">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="campo">
+        <label for="telefono">Teléfono</label>
+        <input type="tel" id="telefono">
+      </div>
+      <div class="campo">
+        <label for="disponibilidad">¿Qué días/horarios te vienen mejor?</label>
+        <input type="text" id="disponibilidad" placeholder="Ej: tardes entre semana">
+      </div>
+      <div class="campo">
+        <label for="mensaje">Cuéntanos brevemente tu situación (opcional)</label>
+        <textarea id="mensaje" rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn btn-secundario" style="width:100%;">Solicitar información</button>
+    </form>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>Avenida Jordán 30 local 4, Barcelona 08035 · Tel: 931 25 76 27</p>
+  <p>© 2026 Logopedia Sant Genís · <a href="login.html">Acceso a la plataforma</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+document.getElementById('formSolicitud').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msgError = document.getElementById('msgError');
+  const msgOk = document.getElementById('msgOk');
+  msgError.style.display = 'none';
+  msgOk.style.display = 'none';
+
+  const { error } = await supabaseClient.from('solicitudes_servicio').insert({
+    servicio: 'metodo_estudio',
+    nombre: document.getElementById('nombre').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    telefono: document.getElementById('telefono').value.trim(),
+    disponibilidad: document.getElementById('disponibilidad').value.trim(),
+    mensaje: document.getElementById('mensaje').value.trim()
+  });
+
+  if (error) {
+    msgError.textContent = 'No se pudo enviar la solicitud. Prueba de nuevo o escríbenos por WhatsApp.';
+    msgError.style.display = 'block';
+    return;
+  }
+  msgOk.textContent = '¡Solicitud enviada! Te contactaremos pronto para coordinar.';
+  msgOk.style.display = 'block';
+  document.getElementById('formSolicitud').reset();
+});
+</script>
+
+</body>
+</html>
