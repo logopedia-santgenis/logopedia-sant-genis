@@ -553,3 +553,78 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 @media (max-width: 720px) {
   .tabs-portal { overflow-x: auto; flex-wrap: nowrap; }
 }
+
+/* Agenda en vista calendario (semana) + búsqueda de huecos */
+.semana-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.semana-nav .etiqueta-semana {
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.calendario-semana {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.dia-columna {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  padding: 10px;
+  min-height: 120px;
+}
+
+.dia-columna.hoy { border-color: var(--azul); box-shadow: 0 0 0 2px rgba(61,90,128,.15); }
+
+.dia-cabecera {
+  font-weight: 700;
+  color: var(--azul-oscuro);
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.dia-cabecera .num-dia { display: block; font-size: 1.1rem; color: var(--texto); text-transform: none; }
+
+.cita-mini {
+  background: var(--fondo);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  font-size: .8rem;
+}
+
+.cita-mini .hora-mini { font-weight: 700; color: var(--azul); }
+.dia-sin-citas { font-size: .78rem; color: var(--texto-suave); }
+
+.buscador-huecos {
+  margin-top: 32px;
+}
+
+.hueco-chip {
+  display: inline-block;
+  padding: 6px 14px;
+  margin: 4px 6px 0 0;
+  border-radius: 999px;
+  border: 1px solid var(--azul);
+  color: var(--azul);
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+}
+
+.hueco-chip:hover { background: var(--azul); color: #fff; }

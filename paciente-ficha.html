@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha del paciente — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="img/icono.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="barra-portal">
+  <div class="marca"><img src="img/icono.svg" alt=""> Logopedia Sant Genís</div>
+  <div>
+    <span id="nombreUsuario" style="margin-right:16px;"></span>
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="panel">
+  <p class="enlace-secundario" style="text-align:left;"><a href="#" id="volverPortal">« Volver</a></p>
+  <div class="seccion-titulo-fila"><h2 id="tituloPaciente">Cargando…</h2></div>
+
+  <div class="tabs-portal" id="tabsPortal" style="margin:0 0 20px;padding:0;">
+    <button class="tab-link" data-tab="datos">Datos</button>
+    <button class="tab-link" data-tab="contactos">Tutores / Contactos</button>
+    <button class="tab-link" data-tab="documentos">Documentos</button>
+  </div>
+
+  <!-- DATOS -->
+  <div class="seccion-tab" data-panel="datos">
+    <div class="tarjeta" id="formDatosCont">
+      <div class="cargando">Cargando…</div>
+    </div>
+  </div>
+
+  <!-- CONTACTOS / TUTORES -->
+  <div class="seccion-tab" data-panel="contactos">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Añadir tutor / contacto</h3>
+      <div class="fila-acciones">
+        <input type="text" id="cNombre" placeholder="Nombre completo" style="flex:2;">
+        <input type="text" id="cNif" placeholder="NIF (opcional)" style="flex:1;">
+        <select id="cRelacion" style="flex:1;">
+          <option value="tutor">Tutor/a</option>
+          <option value="familiar">Familiar</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="fila-acciones" style="margin-top:10px;">
+        <input type="tel" id="cTelefono" placeholder="Teléfono" style="flex:1;">
+        <input type="email" id="cEmail" placeholder="Email" style="flex:1;">
+        <input type="text" id="cAnotaciones" placeholder="Anotaciones" style="flex:2;">
+        <button class="btn btn-secundario" onclick="crearContacto()">Añadir</button>
+      </div>
+      <p class="meta">El tutor no necesita tener cuenta en la plataforma — esto es solo un dato de contacto. Si además quieres que pueda entrar a ver el portal del paciente, pídele que se registre y vincúlalo desde el listado de pacientes.</p>
+    </div>
+    <div id="listaContactos"><div class="cargando">Cargando…</div></div>
+  </div>
+
+  <!-- DOCUMENTOS -->
+  <div class="seccion-tab" data-panel="documentos">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Subir documento</h3>
+      <div class="fila-acciones">
+        <input type="text" id="dTitulo" placeholder="Título del documento" style="flex:2;">
+        <select id="dTipo" style="flex:1;">
+          <option value="informe">Informe</option>
+          <option value="foto">Foto</option>
+          <option value="justificante">Justificante</option>
+          <option value="consentimiento">Consentimiento</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="fila-acciones" style="margin-top:10px;">
+        <input type="file" id="dArchivo" style="flex:2;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;">
+          <input type="checkbox" id="dVisible"> Visible para el paciente
+        </label>
+        <button class="btn btn-secundario" onclick="subirDocumento()">Subir</button>
+      </div>
+      <p class="meta" id="estadoDocumento"></p>
+    </div>
+    <div id="listaDocumentos"><div class="cargando">Cargando…</div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const pacienteId = params.get('id');
+let PERFIL = null;
+
+function cambiarTab(tab) {
+  document.querySelectorAll('.tab-link').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
+  document.querySelectorAll('.seccion-tab').forEach(p => p.classList.toggle('activo', p.dataset.panel === tab));
+}
+document.querySelectorAll('.tab-link').forEach(b => b.addEventListener('click', () => cambiarTab(b.dataset.tab)));
+
+function campo(label, id, valor, tipo) {
+  tipo = tipo || 'text';
+  return `<div class="campo" style="display:inline-block;width:calc(33% - 10px);margin-right:10px;vertical-align:top;">
+    <label>${label}</label>
+    <input type="${tipo}" id="${id}" value="${valor ?? ''}">
+  </div>`;
+}
+
+async function cargarDatos() {
+  const { data: p, error } = await supabaseClient.from('pacientes').select('*').eq('id', pacienteId).single();
+  if (error || !p) {
+    document.getElementById('formDatosCont').innerHTML = '<p class="vacio-panel">No se encontró el paciente.</p>';
+    return;
+  }
+  document.getElementById('tituloPaciente').textContent = p.nombre;
+  document.title = p.nombre + ' — Ficha del paciente';
+
+  const cont = document.getElementById('formDatosCont');
+  cont.innerHTML = `
+    ${campo('Nombre', 'fNombre', p.nombre)}
+    ${campo('Fecha de nacimiento', 'fNacimiento', p.fecha_nacimiento, 'date')}
+    ${campo('Sexo', 'fSexo', p.sexo)}
+    ${campo('NIF', 'fNif', p.nif)}
+    ${campo('Nacionalidad', 'fNacionalidad', p.nacionalidad)}
+    ${campo('Tipo de documento', 'fTipoDoc', p.tipo_documento)}
+    ${campo('Nº de documento', 'fNumDoc', p.num_documento)}
+    ${campo('Estado civil', 'fEstadoCivil', p.estado_civil)}
+    ${campo('Profesión', 'fProfesion', p.profesion)}
+    ${campo('Centro de trabajo', 'fCentroTrabajo', p.centro_trabajo)}
+    ${campo('Número de hijos', 'fNumHijos', p.num_hijos, 'number')}
+    ${campo('¿Cómo nos conoció?', 'fComoConocio', p.como_nos_conocio)}
+    ${campo('Teléfono móvil', 'fTelefono', p.telefono, 'tel')}
+    ${campo('Teléfono fijo', 'fTelefonoFijo', p.telefono_fijo, 'tel')}
+    ${campo('Email', 'fEmail', p.email, 'email')}
+    ${campo('Dirección', 'fDireccion', p.direccion)}
+    ${campo('Código postal', 'fCP', p.codigo_postal)}
+    ${campo('Localidad', 'fLocalidad', p.localidad)}
+    ${campo('Provincia', 'fProvincia', p.provincia)}
+    ${campo('País', 'fPais', p.pais)}
+    ${campo('Fecha de alta médica', 'fAltaMedica', p.fecha_alta_medica, 'date')}
+    <div class="campo" style="width:100%;">
+      <label>Observaciones</label>
+      <textarea id="fObservaciones" rows="3">${p.observaciones ?? ''}</textarea>
+    </div>
+    <button class="btn btn-secundario" onclick="guardarDatos()">Guardar cambios</button>
+    <span class="meta" id="estadoDatos" style="margin-left:10px;"></span>
+  `;
+}
+
+async function guardarDatos() {
+  const val = id => document.getElementById(id).value.trim() || null;
+  const payload = {
+    nombre: val('fNombre'),
+    fecha_nacimiento: val('fNacimiento'),
+    sexo: val('fSexo'),
+    nif: val('fNif'),
+    nacionalidad: val('fNacionalidad'),
+    tipo_documento: val('fTipoDoc'),
+    num_documento: val('fNumDoc'),
+    estado_civil: val('fEstadoCivil'),
+    profesion: val('fProfesion'),
+    centro_trabajo: val('fCentroTrabajo'),
+    num_hijos: val('fNumHijos') ? parseInt(val('fNumHijos')) : null,
+    como_nos_conocio: val('fComoConocio'),
+    telefono: val('fTelefono'),
+    telefono_fijo: val('fTelefonoFijo'),
+    email: val('fEmail'),
+    direccion: val('fDireccion'),
+    codigo_postal: val('fCP'),
+    localidad: val('fLocalidad'),
+    provincia: val('fProvincia'),
+    pais: val('fPais'),
+    fecha_alta_medica: val('fAltaMedica'),
+    observaciones: document.getElementById('fObservaciones').value.trim() || null,
+  };
+  const { error } = await supabaseClient.from('pacientes').update(payload).eq('id', pacienteId);
+  document.getElementById('estadoDatos').textContent = error ? 'Error: ' + error.message : 'Guardado ✓';
+  document.getElementById('tituloPaciente').textContent = payload.nombre;
+}
+
+async function cargarContactos() {
+  const { data, error } = await supabaseClient.from('contactos_paciente').select('*').eq('paciente_id', pacienteId).order('created_at');
+  const cont = document.getElementById('listaContactos');
+  cont.innerHTML = (data && data.length) ? data.map(c => `
+    <div class="lista-item">
+      <strong>${c.nombre}</strong> <span class="etiqueta-pill">${c.relacion}</span>
+      <div class="meta">${c.telefono || '—'} · ${c.email || '—'} ${c.nif ? '· NIF ' + c.nif : ''}</div>
+      ${c.anotaciones ? `<div class="meta">${c.anotaciones}</div>` : ''}
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay tutores o contactos añadidos.</p>';
+}
+
+async function crearContacto() {
+  const nombre = document.getElementById('cNombre').value.trim();
+  if (!nombre) return;
+  const { error } = await supabaseClient.from('contactos_paciente').insert({
+    paciente_id: pacienteId,
+    nombre,
+    nif: document.getElementById('cNif').value.trim() || null,
+    relacion: document.getElementById('cRelacion').value,
+    telefono: document.getElementById('cTelefono').value.trim() || null,
+    email: document.getElementById('cEmail').value.trim() || null,
+    anotaciones: document.getElementById('cAnotaciones').value.trim() || null,
+  });
+  if (!error) {
+    document.getElementById('cNombre').value = '';
+    document.getElementById('cNif').value = '';
+    document.getElementById('cTelefono').value = '';
+    document.getElementById('cEmail').value = '';
+    document.getElementById('cAnotaciones').value = '';
+  }
+  await cargarContactos();
+}
+
+async function cargarDocumentos() {
+  const { data, error } = await supabaseClient.from('documentos_paciente').select('*').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
+  const cont = document.getElementById('listaDocumentos');
+  if (!data || !data.length) {
+    cont.innerHTML = '<p class="vacio-panel">Todavía no hay documentos.</p>';
+    return;
+  }
+  cont.innerHTML = data.map(d => `
+    <div class="lista-item">
+      <strong>${d.titulo}</strong> <span class="etiqueta-pill">${d.tipo}</span>
+      ${d.visible_para_cliente ? '<span class="badge badge-verde">Visible para el paciente</span>' : ''}
+      <div class="meta">${formatearFecha(d.created_at)}</div>
+      <a href="#" onclick="abrirDocumento('${d.storage_path}');return false;">Abrir »</a>
+    </div>`).join('');
+}
+
+async function abrirDocumento(path) {
+  const { data, error } = await supabaseClient.storage.from('documentos-pacientes').createSignedUrl(path, 60);
+  if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener');
+}
+
+async function subirDocumento() {
+  const titulo = document.getElementById('dTitulo').value.trim();
+  const tipo = document.getElementById('dTipo').value;
+  const archivo = document.getElementById('dArchivo').files[0];
+  const visible = document.getElementById('dVisible').checked;
+  const estado = document.getElementById('estadoDocumento');
+  if (!titulo || !archivo) { estado.textContent = 'Falta título o archivo.'; return; }
+
+  estado.textContent = 'Subiendo…';
+  const rutaArchivo = `${pacienteId}/${Date.now()}-${archivo.name}`;
+  const { error: errSubida } = await supabaseClient.storage.from('documentos-pacientes').upload(rutaArchivo, archivo);
+  if (errSubida) { estado.textContent = 'Error subiendo el archivo: ' + errSubida.message; return; }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const { error: errInsert } = await supabaseClient.from('documentos_paciente').insert({
+    paciente_id: pacienteId, titulo, tipo, storage_path: rutaArchivo, subido_por: user.id, visible_para_cliente: visible
+  });
+  estado.textContent = errInsert ? 'Error guardando el registro: ' + errInsert.message : 'Documento subido ✓';
+  document.getElementById('dTitulo').value = '';
+  document.getElementById('dArchivo').value = '';
+  await cargarDocumentos();
+}
+
+(async () => {
+  const session = await exigirSesion();
+  if (!session) return;
+  PERFIL = await obtenerPerfil(session.user.id);
+  if (!PERFIL || (PERFIL.rol !== 'admin' && PERFIL.rol !== 'logopeda')) { redirigirSegunRol(PERFIL?.rol); return; }
+  document.getElementById('nombreUsuario').textContent = PERFIL.nombre || PERFIL.email;
+  document.getElementById('volverPortal').href = PERFIL.rol === 'admin' ? 'portal-admin.html' : 'portal-logopeda.html';
+
+  if (!pacienteId) { document.getElementById('tituloPaciente').textContent = 'Falta el paciente.'; return; }
+
+  cambiarTab('datos');
+  await cargarDatos();
+  await cargarContactos();
+  await cargarDocumentos();
+})();
+</script>
+
+</body>
+</html>

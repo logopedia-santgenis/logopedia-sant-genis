@@ -184,6 +184,37 @@ function cambiarPaciente(id) {
       }
     }
 
+    const { data: documentos } = await supabaseClient
+      .from('documentos_paciente')
+      .select('*')
+      .eq('paciente_id', p.id)
+      .eq('visible_para_cliente', true)
+      .order('created_at', { ascending: false });
+
+    const tituloDoc = document.createElement('h3');
+    tituloDoc.textContent = 'Documentos';
+    tituloDoc.style.marginTop = '20px';
+    bloque.appendChild(tituloDoc);
+
+    if (!documentos || documentos.length === 0) {
+      const vacio = document.createElement('p');
+      vacio.className = 'vacio-panel';
+      vacio.textContent = 'Todavía no hay documentos compartidos contigo.';
+      bloque.appendChild(vacio);
+    } else {
+      for (const d of documentos) {
+        const item = document.createElement('div');
+        item.className = 'lista-item';
+        item.innerHTML = `<strong>${d.titulo}</strong> <span class="etiqueta-pill">${d.tipo}</span><div class="meta">${formatearFecha(d.created_at)}</div><a href="#" data-ruta="${d.storage_path}">Abrir »</a>`;
+        item.querySelector('a').addEventListener('click', async (e) => {
+          e.preventDefault();
+          const { data } = await supabaseClient.storage.from('documentos-pacientes').createSignedUrl(d.storage_path, 60);
+          if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener');
+        });
+        bloque.appendChild(item);
+      }
+    }
+
     cont.appendChild(bloque);
   }
 })();

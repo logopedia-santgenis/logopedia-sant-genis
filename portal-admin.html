@@ -32,6 +32,7 @@
   <button class="tab-link" data-tab="pacientes">Pacientes</button>
   <button class="tab-link" data-tab="logopedas">Logopedas</button>
   <button class="tab-link" data-tab="cuotas">Cuotas</button>
+  <button class="tab-link" data-tab="tratamientos">Tratamientos</button>
   <button class="tab-link" data-tab="solicitudes">Solicitudes y mensajes</button>
 </div>
 
@@ -63,8 +64,8 @@
   <input type="text" class="buscador-portal" id="buscarPacientes" placeholder="Buscar paciente por nombre…" oninput="pintarPacientes()">
   <div class="tabla-envoltorio">
     <table class="tabla-datos">
-      <thead><tr><th>Nombre</th><th>Nacimiento</th><th>Logopeda</th><th>Estado</th></tr></thead>
-      <tbody id="listaPacientes"><tr><td colspan="4" class="cargando">Cargando…</td></tr></tbody>
+      <thead><tr><th>Nombre</th><th>Nacimiento</th><th>Logopeda</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="listaPacientes"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -111,6 +112,34 @@
     <table class="tabla-datos">
       <thead><tr><th>Paciente</th><th>Mes</th><th>Importe</th><th>Estado</th></tr></thead>
       <tbody id="listaCuotas"><tr><td colspan="4" class="cargando">Cargando…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TRATAMIENTOS -->
+<div class="panel seccion-tab" data-panel="tratamientos">
+  <div class="seccion-titulo-fila"><h2>Catálogo de tratamientos</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Nuevo tratamiento</h3>
+    <div class="fila-acciones">
+      <input type="text" id="tNombre" placeholder="Nombre del tratamiento" style="flex:2;">
+      <input type="text" id="tArea" placeholder="Área (ej. Lenguaje, Voz…)" style="flex:1;">
+      <select id="tLogopeda" style="flex:1;"><option value="">— General (todos) —</option></select>
+    </div>
+    <div class="fila-acciones" style="margin-top:10px;">
+      <input type="number" id="tPrecio" placeholder="Precio €" step="0.01" style="flex:1;">
+      <input type="number" id="tDescuento" placeholder="Descuento %" step="0.01" style="flex:1;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;">
+        <input type="checkbox" id="tOnline" checked> Disponible en cita online
+      </label>
+      <button class="btn btn-secundario" onclick="crearTratamiento()">Crear</button>
+    </div>
+    <p class="meta" id="estadoTratamiento"></p>
+  </div>
+  <div class="tabla-envoltorio">
+    <table class="tabla-datos">
+      <thead><tr><th>Nombre</th><th>Área</th><th>Precio</th><th>Logopeda</th><th>Estado</th></tr></thead>
+      <tbody id="listaTratamientos"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -191,7 +220,7 @@ function pintarPacientes() {
   const cont = document.getElementById('listaPacientes');
   const filtrados = PACIENTES.filter(p => p.nombre.toLowerCase().includes(filtro));
   if (!filtrados.length) {
-    cont.innerHTML = `<tr><td colspan="4" class="vacio-panel">${PACIENTES.length ? 'Sin resultados.' : 'Todavía no hay pacientes cargados.'}</td></tr>`;
+    cont.innerHTML = `<tr><td colspan="5" class="vacio-panel">${PACIENTES.length ? 'Sin resultados.' : 'Todavía no hay pacientes cargados.'}</td></tr>`;
     return;
   }
   cont.innerHTML = filtrados.map(p => `
@@ -200,6 +229,7 @@ function pintarPacientes() {
       <td>${formatearFecha(p.fecha_nacimiento)}</td>
       <td>${p.logopedas?.profiles?.nombre || '<span class="meta">sin asignar</span>'}</td>
       <td>${badgeEstado(p.estado)}</td>
+      <td><a href="paciente-ficha.html?id=${p.id}">Ver ficha »</a></td>
     </tr>`).join('');
 }
 
@@ -328,6 +358,55 @@ async function cargarSolicitudesAfiliacion() {
   return data || [];
 }
 
+async function cargarTratamientos() {
+  const selLog = document.getElementById('tLogopeda');
+  if (LOGOPEDAS.length && selLog.options.length <= 1) {
+    selLog.innerHTML = '<option value="">— General (todos) —</option>' +
+      LOGOPEDAS.map(l => `<option value="${l.id}">${l.profiles?.nombre || l.profiles?.email}</option>`).join('');
+  }
+  const { data } = await supabaseClient.from('tratamientos').select('*, logopedas(profiles(nombre))').order('nombre');
+  const cont = document.getElementById('listaTratamientos');
+  cont.innerHTML = (data && data.length) ? data.map(t => `
+    <tr>
+      <td><strong>${t.nombre}</strong>${t.disponible_cita_online ? '' : ' <span class="meta">(no online)</span>'}</td>
+      <td>${t.area ? `<span class="etiqueta-pill">${t.area}</span>` : '—'}</td>
+      <td>${t.precio != null ? Number(t.precio).toFixed(2) + ' €' : '—'}${t.descuento_pct ? ` <span class="meta">(-${t.descuento_pct}%)</span>` : ''}</td>
+      <td>${t.logopedas?.profiles?.nombre || '<span class="meta">general</span>'}</td>
+      <td>
+        <select onchange="cambiarEstadoTratamiento('${t.id}', this.value)">
+          <option value="true" ${t.activo ? 'selected' : ''}>Activo</option>
+          <option value="false" ${!t.activo ? 'selected' : ''}>Inactivo</option>
+        </select>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="5" class="vacio-panel">Todavía no hay tratamientos en el catálogo.</td></tr>';
+}
+
+async function cambiarEstadoTratamiento(id, valor) {
+  await supabaseClient.from('tratamientos').update({ activo: valor === 'true' }).eq('id', id);
+  await cargarTratamientos();
+}
+
+async function crearTratamiento() {
+  const nombre = document.getElementById('tNombre').value.trim();
+  const estado = document.getElementById('estadoTratamiento');
+  if (!nombre) return;
+  const { error } = await supabaseClient.from('tratamientos').insert({
+    nombre,
+    area: document.getElementById('tArea').value.trim() || null,
+    logopeda_id: document.getElementById('tLogopeda').value || null,
+    precio: document.getElementById('tPrecio').value ? parseFloat(document.getElementById('tPrecio').value) : null,
+    descuento_pct: document.getElementById('tDescuento').value ? parseFloat(document.getElementById('tDescuento').value) : 0,
+    disponible_cita_online: document.getElementById('tOnline').checked,
+    activo: true,
+  });
+  estado.textContent = error ? 'Error: ' + error.message : 'Tratamiento creado ✓';
+  document.getElementById('tNombre').value = '';
+  document.getElementById('tArea').value = '';
+  document.getElementById('tPrecio').value = '';
+  document.getElementById('tDescuento').value = '';
+  await cargarTratamientos();
+}
+
 async function cargarResumen() {
   const hoy = new Date().toISOString().slice(0, 10);
   const en7dias = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
@@ -373,6 +452,7 @@ async function cargarResumen() {
   await cargarLogopedas();
   await cargarPacientesAdmin();
   await cargarCuotas();
+  await cargarTratamientos();
   await cargarSolicitudesServicio();
   await cargarMensajesContacto();
   await cargarSolicitudesAfiliacion();
