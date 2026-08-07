@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reservar cita online — Logopedia Sant Genís</title>
+<meta name="description" content="Reserva tu cita online con Logopedia Sant Genís. Elige tratamiento, profesional y horario disponible en unos segundos.">
+<link rel="icon" type="image/svg+xml" href="img/icono.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="index.html" class="logo"><img src="img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+    <nav class="menu">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="quienes-somos.html">¿Quiénes somos?</a></li>
+        <li><a href="otros-servicios.html">Otros servicios</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="contacto.html">Contacto</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-secundario" href="login.html">Acceso plataforma</a>
+  </div>
+</header>
+
+<section class="hero hero-imagen" style="padding:56px 24px;background-image:url('img/comunicacion.jpg');">
+  <h1>Reserva tu cita online</h1>
+  <p>Elige el tratamiento, el profesional y el horario que mejor te vaya. En 2 minutos.</p>
+</section>
+
+<section>
+  <div class="tarjeta" style="max-width:640px;margin:0 auto;">
+
+    <div id="pasoFormulario">
+      <div class="campo">
+        <label for="rTratamiento">¿Qué necesitas?</label>
+        <select id="rTratamiento"><option value="">Cargando tratamientos…</option></select>
+      </div>
+      <div class="campo">
+        <label for="rLogopeda">Profesional</label>
+        <select id="rLogopeda"><option value="">Cargando…</option></select>
+      </div>
+      <div class="campo">
+        <label for="rFecha">Fecha</label>
+        <input type="date" id="rFecha">
+      </div>
+      <button type="button" class="btn btn-secundario" style="width:100%;" onclick="buscarHuecosPublico()">Ver horarios disponibles</button>
+
+      <div id="resultadoHuecosPublico" style="margin-top:18px;"></div>
+    </div>
+
+    <form id="formReserva" style="display:none;margin-top:20px;border-top:1px solid var(--borde);padding-top:20px;">
+      <p class="meta" id="resumenReserva" style="margin-bottom:14px;"></p>
+      <div class="campo">
+        <label for="rNombre">Nombre completo</label>
+        <input type="text" id="rNombre" required>
+      </div>
+      <div class="campo">
+        <label for="rEmail">Correo electrónico</label>
+        <input type="email" id="rEmail" required>
+      </div>
+      <div class="campo">
+        <label for="rTelefono">Teléfono</label>
+        <input type="tel" id="rTelefono" required>
+      </div>
+      <div class="campo">
+        <label><input type="checkbox" id="rNuevoPaciente" checked style="width:auto;display:inline-block;margin-right:6px;">Soy paciente nuevo (primera vez en el centro)</label>
+      </div>
+      <div class="campo">
+        <label for="rNotas">¿Algo que debamos saber? (opcional)</label>
+        <textarea id="rNotas" rows="3"></textarea>
+      </div>
+      <div class="mensaje-error" id="msgErrorReserva"></div>
+      <button type="submit" class="btn btn-secundario" style="width:100%;">Confirmar solicitud de cita</button>
+      <p class="meta" style="margin-top:10px;text-align:center;">No se cobra nada ahora. Nuestro equipo confirmará tu cita por email o WhatsApp en las próximas horas.</p>
+    </form>
+
+    <div id="pasoOk" style="display:none;text-align:center;padding:20px 0;">
+      <h3>¡Solicitud recibida!</h3>
+      <p>Te confirmaremos la cita por email o WhatsApp lo antes posible. Si tienes prisa, también puedes escribirnos directamente:</p>
+      <a class="btn btn-primario" href="https://api.whatsapp.com/send?phone=34651316989&text=%C2%A1Hola!%20Acabo%20de%20solicitar%20una%20cita%20online%20y%20quer%C3%ADa%20confirmarla." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+    </div>
+
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>Avenida Jordán 30 local 4, Barcelona 08035 · Tel: 931 25 76 27</p>
+  <p>© 2026 Logopedia Sant Genís · <a href="terminos-condiciones.html">Términos y condiciones</a> · <a href="politica-privacidad.html">Privacidad</a> · <a href="login.html">Acceso a la plataforma</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+let TRATAMIENTOS = [];
+let LOGOPEDAS = [];
+let huecoElegido = null;
+
+async function cargarCatalogoPublico() {
+  const [{ data: tratamientos }, { data: logopedas }] = await Promise.all([
+    supabaseClient.rpc('tratamientos_disponibles'),
+    supabaseClient.rpc('logopedas_disponibles'),
+  ]);
+  TRATAMIENTOS = tratamientos || [];
+  LOGOPEDAS = logopedas || [];
+
+  document.getElementById('rTratamiento').innerHTML =
+    '<option value="">— Elige un tratamiento —</option>' +
+    TRATAMIENTOS.map(t => `<option value="${t.id}" data-logopeda="${t.logopeda_id || ''}">${t.nombre}${t.precio != null ? ' (' + Number(t.precio).toFixed(0) + ' €)' : ''}</option>`).join('');
+
+  document.getElementById('rLogopeda').innerHTML =
+    '<option value="">— Cualquier profesional disponible —</option>' +
+    LOGOPEDAS.map(l => `<option value="${l.id}">${l.nombre}${l.especialidad ? ' — ' + l.especialidad : ''}</option>`).join('');
+
+  document.getElementById('rFecha').min = new Date().toISOString().slice(0, 10);
+}
+
+document.getElementById('rTratamiento').addEventListener('change', (e) => {
+  const opt = e.target.selectedOptions[0];
+  const logopedaSugerido = opt?.dataset?.logopeda;
+  if (logopedaSugerido) document.getElementById('rLogopeda').value = logopedaSugerido;
+});
+
+async function buscarHuecosPublico() {
+  const logopedaId = document.getElementById('rLogopeda').value;
+  const fecha = document.getElementById('rFecha').value;
+  const cont = document.getElementById('resultadoHuecosPublico');
+
+  if (!fecha) { cont.innerHTML = '<p class="meta">Elige una fecha.</p>'; return; }
+  if (!logopedaId) {
+    if (LOGOPEDAS.length === 1) { document.getElementById('rLogopeda').value = LOGOPEDAS[0].id; }
+    else { cont.innerHTML = '<p class="meta">Elige un profesional (o un tratamiento que ya tenga uno asignado).</p>'; return; }
+  }
+
+  cont.innerHTML = '<p class="meta">Buscando horarios…</p>';
+  const logopedaFinal = document.getElementById('rLogopeda').value;
+  const { data: huecos, error } = await supabaseClient.rpc('huecos_disponibles', {
+    p_logopeda_id: logopedaFinal, p_fecha: fecha, p_duracion: 60, p_desde: '09:00', p_hasta: '20:00'
+  });
+
+  if (error || !huecos || !huecos.length) {
+    cont.innerHTML = '<p class="vacio-panel">No hay horarios libres ese día. Prueba con otra fecha o escríbenos por WhatsApp.</p>';
+    return;
+  }
+  cont.innerHTML = huecos.map(h => `<span class="hueco-chip" onclick="elegirHuecoPublico('${fecha}','${h.slice(0,5)}')">${h.slice(0, 5)}</span>`).join('');
+}
+
+function elegirHuecoPublico(fecha, hora) {
+  huecoElegido = { fecha, hora };
+  const tratamientoNombre = document.getElementById('rTratamiento').selectedOptions[0]?.text || 'tu cita';
+  document.getElementById('resumenReserva').textContent = `${tratamientoNombre} — ${new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long' })} a las ${hora}`;
+  document.getElementById('pasoFormulario').querySelectorAll('select, input, button').forEach(el => el.disabled = true);
+  document.getElementById('formReserva').style.display = 'block';
+  document.getElementById('formReserva').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+document.getElementById('formReserva').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msgError = document.getElementById('msgErrorReserva');
+  msgError.style.display = 'none';
+  if (!huecoElegido) return;
+
+  const { error } = await supabaseClient.from('solicitudes_cita_online').insert({
+    nombre: document.getElementById('rNombre').value.trim(),
+    email: document.getElementById('rEmail').value.trim(),
+    telefono: document.getElementById('rTelefono').value.trim(),
+    tratamiento_id: document.getElementById('rTratamiento').value || null,
+    logopeda_id: document.getElementById('rLogopeda').value || null,
+    fecha: huecoElegido.fecha,
+    hora: huecoElegido.hora,
+    es_paciente_nuevo: document.getElementById('rNuevoPaciente').checked,
+    notas: document.getElementById('rNotas').value.trim() || null,
+  });
+
+  if (error) {
+    msgError.textContent = 'No se pudo enviar la solicitud. Prueba de nuevo o escríbenos por WhatsApp.';
+    msgError.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('pasoFormulario').style.display = 'none';
+  document.getElementById('formReserva').style.display = 'none';
+  document.getElementById('pasoOk').style.display = 'block';
+});
+
+cargarCatalogoPublico();
+</script>
+
+</body>
+</html>

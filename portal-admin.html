@@ -143,11 +143,24 @@
       <tbody id="listaTratamientos"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
     </table>
   </div>
+
+  <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Gabinetes (salas)</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <div class="fila-acciones">
+      <input type="text" id="gNombre" placeholder="Nombre del gabinete (ej. Sala 1)" style="flex:2;">
+      <button class="btn btn-secundario" onclick="crearGabinete()">Añadir</button>
+    </div>
+    <p class="meta" id="estadoGabinete"></p>
+  </div>
+  <div id="listaGabinetes"><div class="cargando">Cargando…</div></div>
 </div>
 
 <!-- SOLICITUDES -->
 <div class="panel seccion-tab" data-panel="solicitudes">
-  <div class="seccion-titulo-fila"><h2>Método de estudio (Otros servicios)</h2></div>
+  <div class="seccion-titulo-fila"><h2>Reservas de cita online</h2></div>
+  <div id="listaCitasOnline"><div class="cargando">Cargando…</div></div>
+
+  <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Método de estudio (Otros servicios)</h2></div>
   <div id="listaSolicitudesServicio"><div class="cargando">Cargando…</div></div>
 
   <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Mensajes de contacto</h2></div>
@@ -175,7 +188,7 @@ function badgeEstado(estado) {
     pendiente: 'badge-ambar', nueva: 'badge-ambar', nuevo: 'badge-ambar',
     confirmada: 'badge-azul', contactada: 'badge-azul', contactado: 'badge-azul',
     pagado: 'badge-verde', agendada: 'badge-verde', aceptada: 'badge-verde', activo: 'badge-verde',
-    cancelada: 'badge-rojo', descartada: 'badge-rojo', vencido: 'badge-rojo', cerrado: 'badge-gris',
+    cancelada: 'badge-rojo', descartada: 'badge-rojo', vencido: 'badge-rojo', rechazada: 'badge-rojo', cerrado: 'badge-gris',
   };
   return `<span class="badge ${mapa[estado] || 'badge-gris'}">${estado}</span>`;
 }
@@ -318,6 +331,108 @@ function selectorEstado(tabla, id, estadoActual, opciones, recargarFn) {
   </select>`;
 }
 
+async function cargarGabinetes() {
+  const { data } = await supabaseClient.from('gabinetes').select('*').order('nombre');
+  const cont = document.getElementById('listaGabinetes');
+  cont.innerHTML = (data && data.length) ? data.map(g => `
+    <div class="lista-item">
+      <strong>${g.nombre}</strong>
+      <select onchange="cambiarEstadoGabinete('${g.id}', this.value)" style="margin-left:8px;">
+        <option value="true" ${g.activo ? 'selected' : ''}>Activo</option>
+        <option value="false" ${!g.activo ? 'selected' : ''}>Inactivo</option>
+      </select>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay gabinetes creados.</p>';
+}
+
+async function cambiarEstadoGabinete(id, valor) {
+  await supabaseClient.from('gabinetes').update({ activo: valor === 'true' }).eq('id', id);
+  await cargarGabinetes();
+}
+
+async function crearGabinete() {
+  const nombre = document.getElementById('gNombre').value.trim();
+  const estado = document.getElementById('estadoGabinete');
+  if (!nombre) return;
+  const { error } = await supabaseClient.from('gabinetes').insert({ nombre, activo: true });
+  estado.textContent = error ? 'Error: ' + error.message : 'Gabinete creado ✓';
+  document.getElementById('gNombre').value = '';
+  await cargarGabinetes();
+}
+
+async function cargarCitasOnline() {
+  const { data } = await supabaseClient
+    .from('solicitudes_cita_online').select('*, tratamientos(nombre)')
+    .order('created_at', { ascending: false });
+  const cont = document.getElementById('listaCitasOnline');
+
+  if (!data || !data.length) {
+    cont.innerHTML = '<p class="vacio-panel">Todavía no hay solicitudes de cita online.</p>';
+    return data || [];
+  }
+
+  cont.innerHTML = data.map(s => `
+    <div class="lista-item">
+      <strong>${s.nombre}</strong> — ${s.email}${s.telefono ? ' · ' + s.telefono : ''}
+      ${s.tratamientos?.nombre ? `<span class="etiqueta-pill">${s.tratamientos.nombre}</span>` : ''}
+      ${badgeEstado(s.estado)}
+      <div class="meta">${formatearFecha(s.fecha)} · ${s.hora} · ${s.es_paciente_nuevo ? 'Paciente nuevo' : 'Ya es paciente'}</div>
+      ${s.notas ? `<div class="meta">"${s.notas}"</div>` : ''}
+      ${s.estado === 'nueva' ? `
+        <div class="fila-acciones" style="margin-top:8px;">
+          <select id="logAsignar-${s.id}">
+            <option value="">— Asignar logopeda —</option>
+            ${LOGOPEDAS.map(l => `<option value="${l.id}" ${l.id === s.logopeda_id ? 'selected' : ''}>${l.profiles?.nombre || l.profiles?.email}</option>`).join('')}
+          </select>
+          <button class="btn btn-secundario" onclick="confirmarCitaOnline('${s.id}')">Confirmar y crear cita</button>
+          <button class="btn btn-outline" onclick="rechazarCitaOnline('${s.id}')">Rechazar</button>
+        </div>
+        <span class="meta" id="estadoConfirmar-${s.id}"></span>
+      ` : ''}
+    </div>`).join('');
+  return data;
+}
+
+async function confirmarCitaOnline(id) {
+  const estado = document.getElementById(`estadoConfirmar-${id}`);
+  const logopedaId = document.getElementById(`logAsignar-${id}`).value;
+  if (!logopedaId) { estado.textContent = 'Asigna un logopeda antes de confirmar.'; return; }
+  estado.textContent = 'Confirmando…';
+
+  const { data: solicitud } = await supabaseClient.from('solicitudes_cita_online').select('*').eq('id', id).single();
+  if (!solicitud) { estado.textContent = 'Error: solicitud no encontrada.'; return; }
+
+  let pacienteId = null;
+  const { data: existente } = await supabaseClient.from('pacientes').select('id').ilike('email', solicitud.email).limit(1);
+  if (existente && existente.length) {
+    pacienteId = existente[0].id;
+  } else {
+    const { data: nuevo, error: errPac } = await supabaseClient.from('pacientes').insert({
+      nombre: solicitud.nombre, email: solicitud.email, telefono: solicitud.telefono,
+      logopeda_id: logopedaId, estado: 'activo'
+    }).select('id').single();
+    if (errPac) { estado.textContent = 'Error creando el paciente: ' + errPac.message; return; }
+    pacienteId = nuevo.id;
+  }
+
+  const { error: errCita } = await supabaseClient.from('citas').insert({
+    paciente_id: pacienteId, logopeda_id: logopedaId, fecha: solicitud.fecha, hora: solicitud.hora,
+    modalidad: 'presencial', estado: 'confirmada', tratamiento_id: solicitud.tratamiento_id
+  });
+  if (errCita) { estado.textContent = 'Error creando la cita: ' + errCita.message; return; }
+
+  await supabaseClient.from('solicitudes_cita_online').update({ estado: 'confirmada', paciente_id: pacienteId, logopeda_id: logopedaId }).eq('id', id);
+  estado.textContent = 'Cita creada ✓';
+  await cargarCitasOnline();
+  await cargarPacientesAdmin();
+  await cargarResumen();
+}
+
+async function rechazarCitaOnline(id) {
+  await supabaseClient.from('solicitudes_cita_online').update({ estado: 'rechazada' }).eq('id', id);
+  await cargarCitasOnline();
+  await cargarResumen();
+}
+
 async function cargarSolicitudesServicio() {
   const { data } = await supabaseClient.from('solicitudes_servicio').select('*').order('created_at', { ascending: false });
   const cont = document.getElementById('listaSolicitudesServicio');
@@ -424,16 +539,18 @@ async function cargarResumen() {
     ? citas.map(c => `<div class="lista-item"><strong>${c.pacientes?.nombre || '—'}</strong> <span class="meta">${formatearFecha(c.fecha)} · ${c.hora} · ${c.modalidad}</span> ${badgeEstado(c.estado)}</div>`).join('')
     : '<p class="vacio-panel">No hay citas en los próximos 7 días.</p>';
 
-  const [sol, msj, afi] = await Promise.all([
+  const [sol, msj, afi, cit] = await Promise.all([
     supabaseClient.from('solicitudes_servicio').select('id', { count: 'exact', head: true }).eq('estado', 'nueva'),
     supabaseClient.from('mensajes_contacto').select('id', { count: 'exact', head: true }).eq('estado', 'nuevo'),
     supabaseClient.from('solicitudes_afiliacion').select('id', { count: 'exact', head: true }).eq('estado', 'nueva'),
+    supabaseClient.from('solicitudes_cita_online').select('id', { count: 'exact', head: true }).eq('estado', 'nueva'),
   ]);
-  const totalPend = (sol.count || 0) + (msj.count || 0) + (afi.count || 0);
+  const totalPend = (sol.count || 0) + (msj.count || 0) + (afi.count || 0) + (cit.count || 0);
   document.getElementById('kpiSolicitudes').textContent = totalPend;
 
   const contPend = document.getElementById('resumenPendientes');
   const items = [];
+  if (cit.count) items.push(`<div class="lista-item">📅 ${cit.count} solicitud(es) de cita online sin confirmar <a href="#" onclick="cambiarTab('solicitudes');return false;">Ver »</a></div>`);
   if (sol.count) items.push(`<div class="lista-item">📩 ${sol.count} solicitud(es) de "Otros servicios" sin atender <a href="#" onclick="cambiarTab('solicitudes');return false;">Ver »</a></div>`);
   if (msj.count) items.push(`<div class="lista-item">✉️ ${msj.count} mensaje(s) de contacto sin atender <a href="#" onclick="cambiarTab('solicitudes');return false;">Ver »</a></div>`);
   if (afi.count) items.push(`<div class="lista-item">🧑‍⚕️ ${afi.count} solicitud(es) de afiliación sin atender <a href="#" onclick="cambiarTab('solicitudes');return false;">Ver »</a></div>`);
@@ -456,6 +573,8 @@ async function cargarResumen() {
   await cargarPacientesAdmin();
   await cargarCuotas();
   await cargarTratamientos();
+  await cargarGabinetes();
+  await cargarCitasOnline();
   await cargarSolicitudesServicio();
   await cargarMensajesContacto();
   await cargarSolicitudesAfiliacion();
