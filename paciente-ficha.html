@@ -31,6 +31,7 @@
     <button class="tab-link" data-tab="historia-clinica">Historia clínica</button>
     <button class="tab-link" data-tab="bonos">Bonos</button>
     <button class="tab-link" data-tab="documentos">Documentos</button>
+    <button class="tab-link" data-tab="firmas">Firmas</button>
     <button class="tab-link" data-tab="datos-auxiliares">Datos auxiliares</button>
   </div>
 
@@ -212,6 +213,22 @@
       <p class="meta" id="estadoDocumento"></p>
     </div>
     <div id="listaDocumentos"><div class="cargando">Cargando…</div></div>
+  </div>
+
+  <!-- FIRMAS -->
+  <div class="seccion-tab" data-panel="firmas">
+    <p class="meta" style="margin-bottom:16px;">Firma simple: el firmante confirma con su nombre + fecha/hora + IP registrados. No es firma electrónica cualificada — vale para consentimientos informativos, no para todo tipo de contrato.</p>
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Solicitar firma</h3>
+      <div class="fila-acciones">
+        <input type="text" id="fiTitulo" placeholder="Título (ej. Consentimiento informado)" style="flex:2;">
+      </div>
+      <div class="fila-acciones" style="margin-top:10px;">
+        <textarea id="fiContenido" rows="5" placeholder="Texto que la persona va a firmar…" style="flex:3;"></textarea>
+        <button class="btn btn-secundario" onclick="crearFirma()">Crear</button>
+      </div>
+    </div>
+    <div id="listaFirmas"><div class="cargando">Cargando…</div></div>
   </div>
 
   <!-- DATOS AUXILIARES -->
@@ -642,6 +659,38 @@ async function crearBono() {
   await cargarBonos();
 }
 
+async function cargarFirmas() {
+  const { data } = await supabaseClient.from('firmas_documento').select('*').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
+  const cont = document.getElementById('listaFirmas');
+  cont.innerHTML = (data && data.length) ? data.map(f => `
+    <div class="lista-item">
+      <strong>${f.titulo}</strong> ${badgeEstado(f.estado === 'firmado' ? 'realizada' : 'pendiente')}
+      ${f.estado === 'pendiente'
+        ? `<div class="meta">Sin firmar todavía.</div>
+           <div class="fila-acciones" style="margin-top:6px;">
+             <input type="text" readonly value="${location.origin}${location.pathname.replace('paciente-ficha.html', '')}firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
+             <button class="btn btn-outline" onclick="copiarEnlaceFirma('${f.id}')">Copiar enlace</button>
+           </div>`
+        : `<div class="meta">Firmado por ${f.nombre_firmante || '—'} el ${formatearFecha(f.firmado_en?.slice(0,10))} · IP ${f.ip_firmante || '—'}</div>`}
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay solicitudes de firma para este paciente.</p>';
+}
+
+function copiarEnlaceFirma(id) {
+  const url = `${location.origin}${location.pathname.replace('paciente-ficha.html', '')}firmar-documento.html?id=${id}`;
+  navigator.clipboard?.writeText(url);
+}
+
+async function crearFirma() {
+  const titulo = document.getElementById('fiTitulo').value.trim();
+  const contenido = document.getElementById('fiContenido').value.trim();
+  if (!titulo || !contenido) return;
+  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
+  await supabaseClient.from('firmas_documento').insert({ paciente_id: pacienteId, logopeda_id: pac?.logopeda_id, titulo, contenido, estado: 'pendiente' });
+  document.getElementById('fiTitulo').value = '';
+  document.getElementById('fiContenido').value = '';
+  await cargarFirmas();
+}
+
 async function cargarDocumentos() {
   const { data, error } = await supabaseClient.from('documentos_paciente').select('*').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
   const cont = document.getElementById('listaDocumentos');
@@ -706,6 +755,7 @@ async function subirDocumento() {
   await cargarBonos();
   await cargarDatosAuxiliares();
   await cargarPlantillasParaGenerar();
+  await cargarFirmas();
   await cargarDocumentos();
 })();
 </script>

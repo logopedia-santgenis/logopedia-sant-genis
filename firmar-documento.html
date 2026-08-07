@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firmar documento — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="img/icono.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="index.html" class="logo"><img src="img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="tarjeta" style="max-width:640px;margin:40px auto;">
+    <div id="contenidoFirma"><div class="cargando">Cargando…</div></div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const firmaId = params.get('id');
+
+function formatearFechaHora(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function obtenerIp() {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    return d.ip || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function cargar() {
+  const cont = document.getElementById('contenidoFirma');
+  if (!firmaId) { cont.innerHTML = '<p>Enlace no válido.</p>'; return; }
+
+  const { data: f, error } = await supabaseClient.from('firmas_documento').select('*').eq('id', firmaId).single();
+  if (error || !f) { cont.innerHTML = '<p>No se encontró este documento. Pide un nuevo enlace a tu logopeda.</p>'; return; }
+
+  if (f.estado === 'firmado') {
+    cont.innerHTML = `
+      <h2>${f.titulo}</h2>
+      <p style="white-space:pre-wrap;">${f.contenido}</p>
+      <div class="mensaje-ok" style="display:block;margin-top:16px;">Firmado por <strong>${f.nombre_firmante}</strong> el ${formatearFechaHora(f.firmado_en)}.</div>`;
+    return;
+  }
+
+  cont.innerHTML = `
+    <h2>${f.titulo}</h2>
+    <p style="white-space:pre-wrap;">${f.contenido}</p>
+    <div class="campo" style="margin-top:20px;">
+      <label for="nombreFirmante">Nombre completo</label>
+      <input type="text" id="nombreFirmante" placeholder="Escribe tu nombre completo">
+    </div>
+    <div class="campo">
+      <label><input type="checkbox" id="aceptoFirma" style="width:auto;display:inline-block;margin-right:6px;">He leído y acepto el contenido de este documento.</label>
+    </div>
+    <div class="mensaje-error" id="errorFirma"></div>
+    <button class="btn btn-secundario" style="width:100%;" onclick="firmarAhora()">Firmar documento</button>`;
+}
+
+async function firmarAhora() {
+  const nombre = document.getElementById('nombreFirmante').value.trim();
+  const acepto = document.getElementById('aceptoFirma').checked;
+  const error = document.getElementById('errorFirma');
+  error.style.display = 'none';
+  if (!nombre || !acepto) {
+    error.textContent = 'Escribe tu nombre completo y marca la casilla de aceptación.';
+    error.style.display = 'block';
+    return;
+  }
+  const ip = await obtenerIp();
+  const { data: ok, error: errRpc } = await supabaseClient.rpc('firmar_documento', {
+    p_firma_id: firmaId, p_nombre_firmante: nombre, p_ip: ip, p_user_agent: navigator.userAgent
+  });
+  if (errRpc || !ok) {
+    error.textContent = 'No se pudo firmar el documento. Puede que ya esté firmado o el enlace haya caducado.';
+    error.style.display = 'block';
+    return;
+  }
+  await cargar();
+}
+
+cargar();
+</script>
+
+</body>
+</html>

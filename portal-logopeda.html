@@ -126,7 +126,8 @@
     </div>
     <div class="panel seccion-tab" data-panel="firmas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Firmas pendientes</h2></div>
-      <div class="stub-panel"><h3>Próximamente</h3><p>Firma digital de documentos (consentimientos, informes). Ya puedes generar documentos desde Plantillas — falta decidir el proveedor de firma para poder firmarlos electrónicamente.</p></div>
+      <p class="meta" style="margin-bottom:16px;">Firma simple (nombre + fecha/hora + IP) — para pedir una firma nueva, entra en la ficha del paciente → pestaña Firmas.</p>
+      <div id="listaFirmasPendientes"><div class="cargando">Cargando…</div></div>
     </div>
     <div class="panel seccion-tab" data-panel="plantillas-doc" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Plantillas de documentos</h2></div>
@@ -690,6 +691,21 @@ function usarHueco(fecha, hora) {
   alert(`Hueco ${formatearFecha(fecha)} a las ${hora} guardado. Elige el paciente y pulsa "+ Cita": la fecha y hora aparecerán ya rellenadas.`);
 }
 
+async function cargarFirmasPendientes() {
+  const { data } = await supabaseClient
+    .from('firmas_documento').select('*, pacientes(nombre)').eq('logopeda_id', UID)
+    .eq('estado', 'pendiente').order('created_at', { ascending: false });
+  const cont = document.getElementById('listaFirmasPendientes');
+  cont.innerHTML = (data && data.length) ? data.map(f => `
+    <div class="lista-item">
+      <strong>${f.pacientes?.nombre || '—'}</strong> — ${f.titulo}
+      <div class="fila-acciones" style="margin-top:6px;">
+        <input type="text" readonly value="${location.origin}${location.pathname.replace('portal-logopeda.html', '')}firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
+        <a class="btn btn-outline" href="paciente-ficha.html?id=${f.paciente_id}">Ver ficha »</a>
+      </div>
+    </div>`).join('') : '<p class="vacio-panel">No hay firmas pendientes.</p>';
+}
+
 async function cargarPlantillas() {
   const { data } = await supabaseClient
     .from('plantillas_documentos').select('*')
@@ -992,6 +1008,7 @@ async function borrarTextoPredefinido(id) {
   await cargarSalaEspera();
   await cargarCitasOnlinePendientes();
   await cargarTareasAgregadas();
+  await cargarFirmasPendientes();
   await cargarPlantillas();
   await cargarCampanas();
   await cargarActividadesGrupales();
