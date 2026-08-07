@@ -118,7 +118,7 @@ function cambiarPaciente(id) {
     const cajaCita = document.createElement('div');
     cajaCita.className = 'lista-item';
     cajaCita.innerHTML = proxima
-      ? `<strong>Próxima cita</strong><div class="meta">${formatearFecha(proxima.fecha)} — ${proxima.hora} — ${proxima.modalidad === 'online' ? 'Online' : 'Presencial'}</div> ${badgeEstado(proxima.estado)}`
+      ? `<strong>Próxima cita</strong><div class="meta">${formatearFecha(proxima.fecha)} — ${proxima.hora} — ${proxima.modalidad === 'online' ? 'Online' : 'Presencial'}</div> ${badgeEstado(proxima.estado)}${proxima.modalidad === 'online' ? `<div style="margin-top:8px;"><a class="btn btn-outline" href="https://meet.jit.si/LogopediaSantGenis-${proxima.id}" target="_blank" rel="noopener">📹 Unirse a la videollamada</a></div>` : ''}`
       : `<strong>Próxima cita</strong><div class="meta">Todavía no hay una cita agendada.</div>`;
     bloque.appendChild(cajaCita);
 

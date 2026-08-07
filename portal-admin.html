@@ -34,6 +34,7 @@
   <button class="tab-link" data-tab="cuotas">Cuotas</button>
   <button class="tab-link" data-tab="tratamientos">Tratamientos</button>
   <button class="tab-link" data-tab="solicitudes">Solicitudes y mensajes</button>
+  <button class="tab-link" data-tab="estadisticas">Estadísticas</button>
   <button class="tab-link" data-tab="funcionalidades">Funcionalidades</button>
 </div>
 
@@ -184,6 +185,23 @@
   <div id="listaSolicitudesAfiliacion"><div class="cargando">Cargando…</div></div>
 </div>
 
+<!-- ESTADÍSTICAS -->
+<div class="panel seccion-tab" data-panel="estadisticas">
+  <div class="seccion-titulo-fila"><h2>Estadísticas (Dashboard básico)</h2></div>
+
+  <div class="seccion-titulo-fila" style="margin-top:20px;"><h3 style="margin:0;color:var(--azul-oscuro);">Citas por mes (últimos 6 meses)</h3></div>
+  <div id="statsCitasMes"><div class="cargando">Cargando…</div></div>
+
+  <div class="seccion-titulo-fila" style="margin-top:28px;"><h3 style="margin:0;color:var(--azul-oscuro);">Ingresos por mes — cuotas pagadas (€)</h3></div>
+  <div id="statsIngresosMes"><div class="cargando">Cargando…</div></div>
+
+  <div class="seccion-titulo-fila" style="margin-top:28px;"><h3 style="margin:0;color:var(--azul-oscuro);">Citas por estado</h3></div>
+  <div id="statsCitasEstado"><div class="cargando">Cargando…</div></div>
+
+  <div class="seccion-titulo-fila" style="margin-top:28px;"><h3 style="margin:0;color:var(--azul-oscuro);">Tratamientos más solicitados</h3></div>
+  <div id="statsTratamientos"><div class="cargando">Cargando…</div></div>
+</div>
+
 <!-- FUNCIONALIDADES -->
 <div class="panel seccion-tab" data-panel="funcionalidades">
   <div class="seccion-titulo-fila">
@@ -233,13 +251,13 @@ const FUNCIONALIDADES_NUBIMED = [
   { grupo: 'Marketing y comunicación', nombre: 'Integración WhatsApp Business (recordatorios, chatbot)', estado: 'pendiente', nota: 'de las más valiosas a futuro según lo que usa Nubimed' },
   { grupo: 'Marketing y comunicación', nombre: 'Encuestas de satisfacción (tipo Survey Monkey)', estado: 'pendiente' },
   { grupo: 'Integraciones', nombre: 'Sincronización con Google Calendar', estado: 'pendiente', nota: 'Ester la usa activamente en Nubimed' },
-  { grupo: 'Integraciones', nombre: 'Videollamadas integradas', estado: 'pendiente' },
+  { grupo: 'Integraciones', nombre: 'Videollamadas integradas', estado: 'activa', nota: 'con Jitsi Meet (gratis, sin necesidad de cuenta) — enlace automático en cada cita online' },
   { grupo: 'Integraciones', nombre: 'Zapier / automatizaciones externas', estado: 'pendiente' },
   { grupo: 'Integraciones', nombre: 'Asistente de IA', estado: 'pendiente' },
   { grupo: 'Gestión interna', nombre: 'Gestión de actividades grupales (terapia en grupo)', estado: 'pendiente' },
-  { grupo: 'Gestión interna', nombre: 'Registro de jornada laboral', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Registro de jornada laboral', estado: 'activa' },
   { grupo: 'Gestión interna', nombre: 'Almacén y venta de productos', estado: 'pendiente' },
-  { grupo: 'Gestión interna', nombre: 'Dashboard / Business Intelligence', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Dashboard / Business Intelligence', estado: 'activa', nota: 'estadísticas básicas — citas por mes, ingresos, tratamientos más pedidos' },
   { grupo: 'Gestión interna', nombre: 'Multi-clínica / múltiples cuentas', estado: 'pendiente', nota: 'no aplica de momento, un solo centro' },
   { grupo: 'Gestión interna', nombre: 'Receta electrónica (REMPE)', estado: 'pendiente', nota: 'no aplica a logopedia' },
 ];
@@ -603,6 +621,70 @@ async function cargarSolicitudesAfiliacion() {
   return data || [];
 }
 
+function barraStat(etiqueta, valor, maximo, sufijo) {
+  const pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
+  return `<div style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:3px;">
+      <span>${etiqueta}</span><span><strong>${valor}${sufijo || ''}</strong></span>
+    </div>
+    <div style="background:var(--fondo);border-radius:6px;height:10px;overflow:hidden;">
+      <div style="background:var(--azul);width:${pct}%;height:100%;"></div>
+    </div>
+  </div>`;
+}
+
+async function cargarEstadisticas() {
+  const meses = [];
+  const hoy = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    meses.push({ label: d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }), inicio: d, fin: new Date(d.getFullYear(), d.getMonth() + 1, 0) });
+  }
+  const fmt = d => d.toISOString().slice(0, 10);
+
+  // Citas por mes
+  const { data: todasCitas } = await supabaseClient.from('citas').select('fecha, estado, tratamiento_id');
+  const citasPorMes = meses.map(m => ({
+    label: m.label,
+    total: (todasCitas || []).filter(c => c.fecha >= fmt(m.inicio) && c.fecha <= fmt(m.fin)).length,
+  }));
+  const maxCitas = Math.max(1, ...citasPorMes.map(c => c.total));
+  document.getElementById('statsCitasMes').innerHTML = citasPorMes.map(c => barraStat(c.label, c.total, maxCitas)).join('');
+
+  // Ingresos por mes (cuotas pagadas)
+  const { data: cuotas } = await supabaseClient.from('cuotas').select('monto, mes, estado').eq('estado', 'pagado');
+  const ingresosPorMes = meses.map(m => {
+    const total = (cuotas || [])
+      .filter(c => c.mes >= fmt(m.inicio) && c.mes <= fmt(m.fin))
+      .reduce((s, c) => s + Number(c.monto), 0);
+    return { label: m.label, total };
+  });
+  const maxIngresos = Math.max(1, ...ingresosPorMes.map(c => c.total));
+  document.getElementById('statsIngresosMes').innerHTML = ingresosPorMes.map(c => barraStat(c.label, c.total.toFixed(0), maxIngresos, ' €')).join('');
+
+  // Citas por estado
+  const porEstado = {};
+  (todasCitas || []).forEach(c => { porEstado[c.estado] = (porEstado[c.estado] || 0) + 1; });
+  const maxEstado = Math.max(1, ...Object.values(porEstado));
+  document.getElementById('statsCitasEstado').innerHTML = Object.keys(porEstado).length
+    ? Object.entries(porEstado).map(([estado, n]) => barraStat(estado, n, maxEstado)).join('')
+    : '<p class="vacio-panel">Todavía no hay citas registradas.</p>';
+
+  // Tratamientos más solicitados
+  const conteoTrat = {};
+  (todasCitas || []).forEach(c => { if (c.tratamiento_id) conteoTrat[c.tratamiento_id] = (conteoTrat[c.tratamiento_id] || 0) + 1; });
+  const idsTrat = Object.keys(conteoTrat);
+  if (idsTrat.length) {
+    const { data: tratInfo } = await supabaseClient.from('tratamientos').select('id, nombre').in('id', idsTrat);
+    const maxTrat = Math.max(1, ...Object.values(conteoTrat));
+    document.getElementById('statsTratamientos').innerHTML = (tratInfo || [])
+      .sort((a, b) => conteoTrat[b.id] - conteoTrat[a.id])
+      .map(t => barraStat(t.nombre, conteoTrat[t.id], maxTrat)).join('');
+  } else {
+    document.getElementById('statsTratamientos').innerHTML = '<p class="vacio-panel">Todavía no hay citas con tratamiento asociado.</p>';
+  }
+}
+
 async function cargarTratamientos() {
   const selLog = document.getElementById('tLogopeda');
   if (LOGOPEDAS.length && selLog.options.length <= 1) {
@@ -709,6 +791,7 @@ async function cargarResumen() {
   await cargarMensajesContacto();
   await cargarSolicitudesAfiliacion();
   await cargarResumen();
+  await cargarEstadisticas();
   pintarFuncionalidades();
 })();
 </script>

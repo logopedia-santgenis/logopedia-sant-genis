@@ -427,6 +427,7 @@ async function cargarCitasFicha() {
       <strong>${formatearFecha(c.fecha)}</strong> · ${c.hora} · ${c.modalidad === 'online' ? 'Online' : 'Presencial'}
       ${c.tratamientos?.nombre ? `<span class="etiqueta-pill">${c.tratamientos.nombre}</span>` : ''}
       ${badgeEstado(c.estado)}
+      ${c.modalidad === 'online' ? `<a href="https://meet.jit.si/LogopediaSantGenis-${c.id}" target="_blank" rel="noopener" style="margin-left:8px;">📹 Videollamada</a>` : ''}
       <select onchange="actualizarEstadoCitaFicha('${c.id}', this.value)" style="margin-left:8px;">
         ${['pendiente','confirmada','realizada','cancelada'].map(o => `<option value="${o}" ${o === c.estado ? 'selected' : ''}>${o}</option>`).join('')}
       </select>

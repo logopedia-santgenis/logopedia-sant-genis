@@ -51,6 +51,15 @@
     <!-- INICIO -->
     <div class="panel seccion-tab" data-panel="inicio" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Inicio</h2></div>
+      <div class="tarjeta" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Registro de jornada laboral</h3>
+        <div class="fila-acciones">
+          <button class="btn btn-secundario" id="btnFicharEntrada" onclick="ficharJornada('entrada')">Fichar entrada</button>
+          <button class="btn btn-outline" id="btnFicharSalida" onclick="ficharJornada('salida')">Fichar salida</button>
+          <span class="meta" id="estadoFichaje"></span>
+        </div>
+        <div id="listaJornadaHoy" style="margin-top:10px;"></div>
+      </div>
       <div class="tarjeta" id="tarjetaSalaEspera" style="margin-bottom:20px;display:none;">
         <h3 style="margin-top:0;">Sala de espera — hoy</h3>
         <div id="listaSalaEspera"></div>
@@ -566,11 +575,33 @@ async function cargarAgendaSemana() {
     html += `<div class="dia-columna ${fStr === hoyStr ? 'hoy' : ''}">
       <div class="dia-cabecera">${nombresDias[i]}<span class="num-dia">${d.getDate()}/${d.getMonth() + 1}</span></div>
       ${lista.length
-        ? lista.map(c => `<div class="cita-mini"><span class="hora-mini">${c.hora}</span> — ${c.pacientes?.nombre || '—'}${c.gabinetes?.nombre ? ` <span class="meta">(${c.gabinetes.nombre})</span>` : ''}<div>${badgeEstado(c.estado)}</div></div>`).join('')
+        ? lista.map(c => `<div class="cita-mini"><span class="hora-mini">${c.hora}</span> — ${c.pacientes?.nombre || '—'}${c.gabinetes?.nombre ? ` <span class="meta">(${c.gabinetes.nombre})</span>` : ''}<div>${badgeEstado(c.estado)}</div>${c.modalidad === 'online' ? `<a href="${urlVideollamada(c.id)}" target="_blank" rel="noopener" style="font-size:.78rem;">📹 Unirse a videollamada</a>` : ''}</div>`).join('')
         : '<div class="dia-sin-citas">Sin citas</div>'}
     </div>`;
   }
   document.getElementById('calendarioSemana').innerHTML = html;
+}
+
+function urlVideollamada(citaId) {
+  return `https://meet.jit.si/LogopediaSantGenis-${citaId}`;
+}
+
+async function cargarJornadaHoy() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const { data } = await supabaseClient
+    .from('registro_jornada').select('*').eq('logopeda_id', UID)
+    .gte('fecha_hora', hoy + 'T00:00:00').order('fecha_hora', { ascending: true });
+  const cont = document.getElementById('listaJornadaHoy');
+  cont.innerHTML = (data && data.length)
+    ? data.map(r => `<span class="etiqueta-pill">${r.tipo === 'entrada' ? '▶' : '⏹'} ${new Date(r.fecha_hora).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>`).join(' ')
+    : '<span class="meta">Todavía no has fichado hoy.</span>';
+}
+
+async function ficharJornada(tipo) {
+  const estado = document.getElementById('estadoFichaje');
+  const { error } = await supabaseClient.from('registro_jornada').insert({ logopeda_id: UID, tipo });
+  estado.textContent = error ? 'Error: ' + error.message : `Fichaje de ${tipo} registrado ✓`;
+  await cargarJornadaHoy();
 }
 
 async function cargarSalaEspera() {
@@ -888,6 +919,7 @@ async function borrarTextoPredefinido(id) {
   cambiarTab(localStorage.getItem('logopedaTabActiva') || 'inicio');
 
   await cargarGabinetesOpts();
+  await cargarJornadaHoy();
   await cargarPacientes();
   await cargarTrabajosExternos();
   await cargarAgenda();
