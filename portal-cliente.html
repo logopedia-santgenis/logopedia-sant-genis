@@ -19,6 +19,8 @@
 
 <div id="barraVistaAdmin"></div>
 
+<div class="tabs-portal" id="tabsPacientes" style="display:none;"></div>
+
 <div class="panel" id="panelPacientes">
   <div class="cargando">Cargando tu información…</div>
 </div>
@@ -26,6 +28,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js"></script>
 <script>
+function badgeEstado(estado) {
+  const mapa = { pendiente: 'badge-ambar', confirmada: 'badge-azul', realizada: 'badge-verde', cancelada: 'badge-rojo' };
+  return `<span class="badge ${mapa[estado] || 'badge-gris'}">${estado}</span>`;
+}
+
+function cambiarPaciente(id) {
+  document.querySelectorAll('#tabsPacientes .tab-link').forEach(b => b.classList.toggle('activo', b.dataset.id === id));
+  document.querySelectorAll('#panelPacientes [data-paciente]').forEach(el => el.classList.toggle('activo', el.dataset.paciente === id));
+}
+
 (async () => {
   const session = await exigirSesion();
   if (!session) return;
@@ -55,13 +67,20 @@
     return;
   }
 
+  if (pacientes.length > 1) {
+    const tabs = document.getElementById('tabsPacientes');
+    tabs.style.display = 'flex';
+    tabs.innerHTML = pacientes.map((p, i) => `<button class="tab-link ${i === 0 ? 'activo' : ''}" data-id="${p.id}" onclick="cambiarPaciente('${p.id}')">${p.nombre}</button>`).join('');
+  }
+
   const hoy = new Date().toISOString().slice(0, 10);
 
-  for (const p of pacientes) {
+  for (const [i, p] of pacientes.entries()) {
     const bloque = document.createElement('div');
+    bloque.dataset.paciente = p.id;
+    if (pacientes.length > 1) bloque.className = 'seccion-tab' + (i === 0 ? ' activo' : '');
     bloque.innerHTML = `<h2>${p.nombre}</h2>`;
 
-    // Próxima cita
     const { data: citas } = await supabaseClient
       .from('citas')
       .select('*')
@@ -75,11 +94,10 @@
     const cajaCita = document.createElement('div');
     cajaCita.className = 'lista-item';
     cajaCita.innerHTML = proxima
-      ? `<strong>Próxima cita</strong><div class="meta">${formatearFecha(proxima.fecha)} — ${proxima.hora} — ${proxima.modalidad === 'online' ? 'Online' : 'Presencial'}</div>`
+      ? `<strong>Próxima cita</strong><div class="meta">${formatearFecha(proxima.fecha)} — ${proxima.hora} — ${proxima.modalidad === 'online' ? 'Online' : 'Presencial'}</div> ${badgeEstado(proxima.estado)}`
       : `<strong>Próxima cita</strong><div class="meta">Todavía no hay una cita agendada.</div>`;
     bloque.appendChild(cajaCita);
 
-    // Recursos habilitados, agrupados por categoría
     const { data: recursosHab } = await supabaseClient
       .from('recursos_habilitados')
       .select('fecha, recursos(*)')
@@ -92,7 +110,7 @@
 
     if (!recursosHab || recursosHab.length === 0) {
       const vacio = document.createElement('p');
-      vacio.className = 'meta';
+      vacio.className = 'vacio-panel';
       vacio.textContent = 'Tu logopeda todavía no ha habilitado recursos para ti.';
       bloque.appendChild(vacio);
     } else {
@@ -102,9 +120,13 @@
         const cat = rh.recursos.categoria || 'General';
         (porCategoria[cat] = porCategoria[cat] || []).push(rh.recursos);
       }
+      const gridRecursos = document.createElement('div');
+      gridRecursos.className = 'grid-2';
+      gridRecursos.style.maxWidth = 'none';
+      gridRecursos.style.margin = '0';
       for (const cat of Object.keys(porCategoria)) {
         const catDiv = document.createElement('div');
-        catDiv.className = 'lista-item';
+        catDiv.className = 'tarjeta';
         catDiv.innerHTML = `<span class="etiqueta-pill">${cat}</span>` +
           porCategoria[cat].map(r => `
             <div style="margin-top:10px;">
@@ -112,11 +134,11 @@
               ${r.descripcion ? `<p class="meta">${r.descripcion}</p>` : ''}
               ${r.contenido_url ? `<a href="${r.contenido_url}" target="_blank" rel="noopener">Abrir recurso »</a>` : ''}
             </div>`).join('');
-        bloque.appendChild(catDiv);
+        gridRecursos.appendChild(catDiv);
       }
+      bloque.appendChild(gridRecursos);
     }
 
-    // Seguimiento visible para el cliente
     const { data: fichas } = await supabaseClient
       .from('fichas_seguimiento')
       .select('*')
@@ -131,7 +153,7 @@
 
     if (!fichas || fichas.length === 0) {
       const vacio = document.createElement('p');
-      vacio.className = 'meta';
+      vacio.className = 'vacio-panel';
       vacio.textContent = 'Todavía no hay notas de seguimiento compartidas.';
       bloque.appendChild(vacio);
     } else {

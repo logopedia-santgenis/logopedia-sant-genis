@@ -19,23 +19,34 @@
 
 <div id="barraVistaAdmin"></div>
 
-<div class="panel">
-  <h2>Logopedas</h2>
-  <div class="tarjeta" style="margin-bottom:20px;">
-    <h3 style="margin-top:0;">Dar de alta un logopeda</h3>
-    <p class="meta">La persona primero tiene que registrarse como cliente en <code>registro.html</code> con su propio correo. Después la promocionas aquí.</p>
-    <div class="fila-acciones">
-      <select id="selPromover" style="flex:2;"></select>
-      <input type="text" id="especialidad" placeholder="Especialidad" style="flex:1;">
-      <button class="btn btn-secundario" onclick="promoverLogopeda()">Promover a logopeda</button>
-    </div>
-    <p class="meta" id="estadoPromover"></p>
-  </div>
-  <div id="listaLogopedas"><div class="cargando">Cargando…</div></div>
+<div class="kpis" id="kpis">
+  <div class="kpi-card"><div class="kpi-numero" id="kpiPacientes">—</div><div class="kpi-label">Pacientes activos</div></div>
+  <div class="kpi-card"><div class="kpi-numero" id="kpiLogopedas">—</div><div class="kpi-label">Logopedas activos</div></div>
+  <div class="kpi-card" id="kpiCitasCard"><div class="kpi-numero" id="kpiCitas">—</div><div class="kpi-label">Citas próximos 7 días</div></div>
+  <div class="kpi-card alerta" id="kpiCuotasCard"><div class="kpi-numero" id="kpiCuotas">—</div><div class="kpi-label">Cuotas pendientes (€)</div></div>
+  <div class="kpi-card alerta" id="kpiSolicitudesCard"><div class="kpi-numero" id="kpiSolicitudes">—</div><div class="kpi-label">Solicitudes/mensajes nuevos</div></div>
 </div>
 
-<div class="panel">
-  <h2>Pacientes</h2>
+<div class="tabs-portal" id="tabsPortal">
+  <button class="tab-link" data-tab="resumen">Resumen</button>
+  <button class="tab-link" data-tab="pacientes">Pacientes</button>
+  <button class="tab-link" data-tab="logopedas">Logopedas</button>
+  <button class="tab-link" data-tab="cuotas">Cuotas</button>
+  <button class="tab-link" data-tab="solicitudes">Solicitudes y mensajes</button>
+</div>
+
+<!-- RESUMEN -->
+<div class="panel seccion-tab" data-panel="resumen">
+  <div class="seccion-titulo-fila"><h2>Próximas citas</h2></div>
+  <div id="resumenCitas"><div class="cargando">Cargando…</div></div>
+
+  <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Pendiente de atender</h2></div>
+  <div id="resumenPendientes"><div class="cargando">Cargando…</div></div>
+</div>
+
+<!-- PACIENTES -->
+<div class="panel seccion-tab" data-panel="pacientes">
+  <div class="seccion-titulo-fila"><h2>Pacientes</h2></div>
   <div class="tarjeta" style="margin-bottom:20px;">
     <h3 style="margin-top:0;">Nuevo paciente</h3>
     <div class="fila-acciones">
@@ -49,11 +60,39 @@
     </div>
     <p class="meta" id="estadoPaciente"></p>
   </div>
-  <div id="listaPacientes"><div class="cargando">Cargando…</div></div>
+  <input type="text" class="buscador-portal" id="buscarPacientes" placeholder="Buscar paciente por nombre…" oninput="pintarPacientes()">
+  <div class="tabla-envoltorio">
+    <table class="tabla-datos">
+      <thead><tr><th>Nombre</th><th>Nacimiento</th><th>Logopeda</th><th>Estado</th></tr></thead>
+      <tbody id="listaPacientes"><tr><td colspan="4" class="cargando">Cargando…</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
-<div class="panel">
-  <h2>Cuotas</h2>
+<!-- LOGOPEDAS -->
+<div class="panel seccion-tab" data-panel="logopedas">
+  <div class="seccion-titulo-fila"><h2>Logopedas</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Dar de alta un logopeda</h3>
+    <p class="meta">La persona primero tiene que registrarse como cliente en <code>registro.html</code> con su propio correo. Después la promocionas aquí.</p>
+    <div class="fila-acciones">
+      <select id="selPromover" style="flex:2;"></select>
+      <input type="text" id="especialidad" placeholder="Especialidad" style="flex:1;">
+      <button class="btn btn-secundario" onclick="promoverLogopeda()">Promover a logopeda</button>
+    </div>
+    <p class="meta" id="estadoPromover"></p>
+  </div>
+  <div class="tabla-envoltorio">
+    <table class="tabla-datos">
+      <thead><tr><th>Nombre</th><th>Email</th><th>Especialidad</th><th>Pacientes</th></tr></thead>
+      <tbody id="listaLogopedas"><tr><td colspan="4" class="cargando">Cargando…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CUOTAS -->
+<div class="panel seccion-tab" data-panel="cuotas">
+  <div class="seccion-titulo-fila"><h2>Cuotas</h2></div>
   <div class="tarjeta" style="margin-bottom:20px;">
     <h3 style="margin-top:0;">Registrar cuota</h3>
     <div class="fila-acciones">
@@ -68,16 +107,23 @@
     </div>
     <p class="meta" id="estadoCuota"></p>
   </div>
-  <div id="listaCuotas"><div class="cargando">Cargando…</div></div>
+  <div class="tabla-envoltorio">
+    <table class="tabla-datos">
+      <thead><tr><th>Paciente</th><th>Mes</th><th>Importe</th><th>Estado</th></tr></thead>
+      <tbody id="listaCuotas"><tr><td colspan="4" class="cargando">Cargando…</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
-<div class="panel">
-  <h2>Solicitudes y mensajes</h2>
-  <h3>Método de estudio (Otros servicios)</h3>
+<!-- SOLICITUDES -->
+<div class="panel seccion-tab" data-panel="solicitudes">
+  <div class="seccion-titulo-fila"><h2>Método de estudio (Otros servicios)</h2></div>
   <div id="listaSolicitudesServicio"><div class="cargando">Cargando…</div></div>
-  <h3 style="margin-top:24px;">Mensajes de contacto</h3>
+
+  <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Mensajes de contacto</h2></div>
   <div id="listaMensajesContacto"><div class="cargando">Cargando…</div></div>
-  <h3 style="margin-top:24px;">Solicitudes de afiliación (logopedas externos)</h3>
+
+  <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Solicitudes de afiliación (logopedas externos)</h2></div>
   <div id="listaSolicitudesAfiliacion"><div class="cargando">Cargando…</div></div>
 </div>
 
@@ -86,6 +132,23 @@
 <script>
 let PACIENTES = [];
 let LOGOPEDAS = [];
+
+function cambiarTab(tab) {
+  document.querySelectorAll('.tab-link').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
+  document.querySelectorAll('.seccion-tab').forEach(p => p.classList.toggle('activo', p.dataset.panel === tab));
+  localStorage.setItem('adminTabActiva', tab);
+}
+document.querySelectorAll('.tab-link').forEach(b => b.addEventListener('click', () => cambiarTab(b.dataset.tab)));
+
+function badgeEstado(estado) {
+  const mapa = {
+    pendiente: 'badge-ambar', nueva: 'badge-ambar', nuevo: 'badge-ambar',
+    confirmada: 'badge-azul', contactada: 'badge-azul', contactado: 'badge-azul',
+    pagado: 'badge-verde', agendada: 'badge-verde', aceptada: 'badge-verde', activo: 'badge-verde',
+    cancelada: 'badge-rojo', descartada: 'badge-rojo', vencido: 'badge-rojo', cerrado: 'badge-gris',
+  };
+  return `<span class="badge ${mapa[estado] || 'badge-gris'}">${estado}</span>`;
+}
 
 async function cargarLogopedas() {
   const { data: logopedas } = await supabaseClient
@@ -98,14 +161,18 @@ async function cargarLogopedas() {
 
   const cont = document.getElementById('listaLogopedas');
   cont.innerHTML = LOGOPEDAS.length
-    ? LOGOPEDAS.map(l => `<div class="lista-item"><strong>${l.profiles?.nombre || '—'}</strong> <span class="meta">${l.profiles?.email || ''}</span> ${l.especialidad ? `<span class="etiqueta-pill">${l.especialidad}</span>` : ''}</div>`).join('')
-    : '<p class="meta">Todavía no hay logopedas dados de alta.</p>';
+    ? LOGOPEDAS.map(l => {
+        const numPac = PACIENTES.filter(p => p.logopeda_id === l.id).length;
+        return `<tr><td><strong>${l.profiles?.nombre || '—'}</strong></td><td class="meta">${l.profiles?.email || ''}</td><td>${l.especialidad ? `<span class="etiqueta-pill">${l.especialidad}</span>` : '—'}</td><td>${numPac}</td></tr>`;
+      }).join('')
+    : '<tr><td colspan="4" class="vacio-panel">Todavía no hay logopedas dados de alta.</td></tr>';
 
-  // Perfiles con rol cliente, candidatos a promover
   const { data: candidatos } = await supabaseClient.from('profiles').select('*').eq('rol', 'cliente');
   document.getElementById('selPromover').innerHTML =
     '<option value="">— Elegir cuenta a promover —</option>' +
     (candidatos || []).map(c => `<option value="${c.id}">${c.nombre || c.email} (${c.email})</option>`).join('');
+
+  document.getElementById('kpiLogopedas').textContent = LOGOPEDAS.length;
 }
 
 async function promoverLogopeda() {
@@ -119,6 +186,23 @@ async function promoverLogopeda() {
   await cargarLogopedas();
 }
 
+function pintarPacientes() {
+  const filtro = document.getElementById('buscarPacientes').value.trim().toLowerCase();
+  const cont = document.getElementById('listaPacientes');
+  const filtrados = PACIENTES.filter(p => p.nombre.toLowerCase().includes(filtro));
+  if (!filtrados.length) {
+    cont.innerHTML = `<tr><td colspan="4" class="vacio-panel">${PACIENTES.length ? 'Sin resultados.' : 'Todavía no hay pacientes cargados.'}</td></tr>`;
+    return;
+  }
+  cont.innerHTML = filtrados.map(p => `
+    <tr>
+      <td><strong>${p.nombre}</strong></td>
+      <td>${formatearFecha(p.fecha_nacimiento)}</td>
+      <td>${p.logopedas?.profiles?.nombre || '<span class="meta">sin asignar</span>'}</td>
+      <td>${badgeEstado(p.estado)}</td>
+    </tr>`).join('');
+}
+
 async function cargarPacientesAdmin() {
   const { data: pacientes, error } = await supabaseClient
     .from('pacientes').select('*, logopedas(id, profiles(nombre))').order('nombre');
@@ -128,23 +212,17 @@ async function cargarPacientesAdmin() {
     '<option value="">— Elegir paciente —</option>' +
     PACIENTES.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
 
-  const cont = document.getElementById('listaPacientes');
-  cont.innerHTML = '';
-  if (error || !pacientes || pacientes.length === 0) {
-    cont.innerHTML = '<p class="meta">Todavía no hay pacientes cargados.</p>';
-    return;
-  }
-  cont.innerHTML = pacientes.map(p => `
-    <div class="lista-item">
-      <strong>${p.nombre}</strong> <span class="etiqueta-pill">${p.estado}</span>
-      <div class="meta">Logopeda: ${p.logopedas?.profiles?.nombre || 'sin asignar'} · Nacimiento: ${formatearFecha(p.fecha_nacimiento)}</div>
-    </div>`).join('');
+  pintarPacientes();
 
-  // Tutores candidatos (perfiles rol cliente)
   const { data: tutores } = await supabaseClient.from('profiles').select('*').eq('rol', 'cliente');
   const sel = document.getElementById('pTutor');
   sel.innerHTML = '<option value="">— Sin tutor (paciente adulto con cuenta propia) —</option>' +
     (tutores || []).map(t => `<option value="${t.id}">${t.nombre || t.email}</option>`).join('');
+
+  document.getElementById('kpiPacientes').textContent = PACIENTES.filter(p => p.estado === 'activo').length;
+
+  // Recalcular tabla de logopedas por si ya había cargado antes que pacientes
+  if (LOGOPEDAS.length) cargarLogopedas();
 }
 
 async function crearPaciente() {
@@ -171,17 +249,22 @@ async function cargarCuotas() {
   const cont = document.getElementById('listaCuotas');
   cont.innerHTML = (cuotas && cuotas.length)
     ? cuotas.map(c => `
-      <div class="lista-item">
-        <strong>${c.pacientes?.nombre || '—'}</strong> — ${c.monto} € — ${c.mes}
-        <span class="etiqueta-pill">${c.estado}</span>
-      </div>`).join('')
-    : '<p class="meta">Todavía no hay cuotas registradas.</p>';
+      <tr>
+        <td><strong>${c.pacientes?.nombre || '—'}</strong></td>
+        <td>${c.mes}</td>
+        <td>${Number(c.monto).toFixed(2)} €</td>
+        <td>${badgeEstado(c.estado)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" class="vacio-panel">Todavía no hay cuotas registradas.</td></tr>';
+
+  const pendientes = (cuotas || []).filter(c => c.estado === 'pendiente');
+  document.getElementById('kpiCuotas').textContent = pendientes.reduce((s, c) => s + Number(c.monto), 0).toFixed(0) + ' (' + pendientes.length + ')';
 }
 
 async function crearCuota() {
   const paciente_id = document.getElementById('cPaciente').value;
   const monto = parseFloat(document.getElementById('cMonto').value);
-  const mesInput = document.getElementById('cMes').value; // formato YYYY-MM
+  const mesInput = document.getElementById('cMes').value;
   const estadoSel = document.getElementById('cEstado').value;
   const estado = document.getElementById('estadoCuota');
   if (!paciente_id || !monto || !mesInput) return;
@@ -195,6 +278,7 @@ async function crearCuota() {
 async function actualizarEstado(tabla, id, estado, recargar) {
   await supabaseClient.from(tabla).update({ estado }).eq('id', id);
   await recargar();
+  await cargarResumen();
 }
 
 function selectorEstado(tabla, id, estadoActual, opciones, recargarFn) {
@@ -214,6 +298,7 @@ async function cargarSolicitudesServicio() {
       <div class="meta">Disponibilidad: ${s.disponibilidad || '—'} · ${formatearFecha(s.created_at)}</div>
       ${s.mensaje ? `<div class="meta">"${s.mensaje}"</div>` : ''}
     </div>`).join('') : '<p class="meta">Todavía no hay solicitudes.</p>';
+  return data || [];
 }
 
 async function cargarMensajesContacto() {
@@ -226,6 +311,7 @@ async function cargarMensajesContacto() {
       <div class="meta">${formatearFecha(m.created_at)}</div>
       <div class="meta">"${m.mensaje}"</div>
     </div>`).join('') : '<p class="meta">Todavía no hay mensajes.</p>';
+  return data || [];
 }
 
 async function cargarSolicitudesAfiliacion() {
@@ -239,6 +325,37 @@ async function cargarSolicitudesAfiliacion() {
       ${a.experiencia ? `<div class="meta">Experiencia: ${a.experiencia}</div>` : ''}
       ${a.mensaje ? `<div class="meta">"${a.mensaje}"</div>` : ''}
     </div>`).join('') : '<p class="meta">Todavía no hay solicitudes de afiliación.</p>';
+  return data || [];
+}
+
+async function cargarResumen() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const en7dias = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
+  const { data: citas } = await supabaseClient
+    .from('citas').select('*, pacientes(nombre)')
+    .gte('fecha', hoy).lte('fecha', en7dias).neq('estado', 'cancelada')
+    .order('fecha', { ascending: true });
+  document.getElementById('kpiCitas').textContent = (citas || []).length;
+  const contCitas = document.getElementById('resumenCitas');
+  contCitas.innerHTML = (citas && citas.length)
+    ? citas.map(c => `<div class="lista-item"><strong>${c.pacientes?.nombre || '—'}</strong> <span class="meta">${formatearFecha(c.fecha)} · ${c.hora} · ${c.modalidad}</span> ${badgeEstado(c.estado)}</div>`).join('')
+    : '<p class="vacio-panel">No hay citas en los próximos 7 días.</p>';
+
+  const [sol, msj, afi] = await Promise.all([
+    supabaseClient.from('solicitudes_servicio').select('id', { count: 'exact', head: true }).eq('estado', 'nueva'),
+    supabaseClient.from('mensajes_contacto').select('id', { count: 'exact', head: true }).eq('estado', 'nuevo'),
+    supabaseClient.from('solicitudes_afiliacion').select('id', { count: 'exact', head: true }).eq('estado', 'nueva'),
+  ]);
+  const totalPend = (sol.count || 0) + (msj.count || 0) + (afi.count || 0);
+  document.getElementById('kpiSolicitudes').textContent = totalPend;
+
+  const contPend = document.getElementById('resumenPendientes');
+  const items = [];
+  if (sol.count) items.push(`<div class="lista-item">📩 ${sol.count} solicitud(es) de "Otros servicios" sin atender <a href="#" onclick="cambiarTab('solicitudes');return false;">Ver »</a></div>`);
+  if (msj.count) items.push(`<div class="lista-item">✉️ ${msj.count} mensaje(s) de contacto sin atender <a href="#" onclick="cambiarTab('solicitudes');return false;">Ver »</a></div>`);
+  if (afi.count) items.push(`<div class="lista-item">🧑‍⚕️ ${afi.count} solicitud(es) de afiliación sin atender <a href="#" onclick="cambiarTab('solicitudes');return false;">Ver »</a></div>`);
+  contPend.innerHTML = items.length ? items.join('') : '<p class="vacio-panel">Todo al día — no hay nada pendiente de atender.</p>';
 }
 
 (async () => {
@@ -250,12 +367,16 @@ async function cargarSolicitudesAfiliacion() {
 
   mostrarBarraVistaAdmin(perfil.rol, 'admin', 'barraVistaAdmin');
   document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
+
+  cambiarTab(localStorage.getItem('adminTabActiva') || 'resumen');
+
   await cargarLogopedas();
   await cargarPacientesAdmin();
   await cargarCuotas();
   await cargarSolicitudesServicio();
   await cargarMensajesContacto();
   await cargarSolicitudesAfiliacion();
+  await cargarResumen();
 })();
 </script>
 

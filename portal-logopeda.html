@@ -19,13 +19,34 @@
 
 <div id="barraVistaAdmin"></div>
 
-<div class="panel">
-  <h2>Mis pacientes</h2>
+<div class="kpis">
+  <div class="kpi-card"><div class="kpi-numero" id="kpiPacientes">—</div><div class="kpi-label">Mis pacientes</div></div>
+  <div class="kpi-card"><div class="kpi-numero" id="kpiCitas">—</div><div class="kpi-label">Citas próximos 7 días</div></div>
+  <div class="kpi-card"><div class="kpi-numero" id="kpiRecursos">—</div><div class="kpi-label">Recursos en biblioteca</div></div>
+</div>
+
+<div class="tabs-portal">
+  <button class="tab-link" data-tab="pacientes">Mis pacientes</button>
+  <button class="tab-link" data-tab="agenda">Agenda</button>
+  <button class="tab-link" data-tab="recursos">Biblioteca de recursos</button>
+</div>
+
+<!-- PACIENTES -->
+<div class="panel seccion-tab" data-panel="pacientes">
+  <div class="seccion-titulo-fila"><h2>Mis pacientes</h2></div>
+  <input type="text" class="buscador-portal" id="buscarPacientes" placeholder="Buscar paciente por nombre…" oninput="pintarPacientes()">
   <div id="listaPacientes"><div class="cargando">Cargando…</div></div>
 </div>
 
-<div class="panel">
-  <h2>Biblioteca de recursos</h2>
+<!-- AGENDA -->
+<div class="panel seccion-tab" data-panel="agenda">
+  <div class="seccion-titulo-fila"><h2>Agenda — próximas citas</h2></div>
+  <div id="listaAgenda"><div class="cargando">Cargando…</div></div>
+</div>
+
+<!-- RECURSOS -->
+<div class="panel seccion-tab" data-panel="recursos">
+  <div class="seccion-titulo-fila"><h2>Biblioteca de recursos</h2></div>
 
   <div class="tarjeta" style="margin-bottom:20px;">
     <h3 style="margin-top:0;">Agregar recurso</h3>
@@ -58,23 +79,37 @@
 let UID = null;
 let PACIENTES = [];
 
-async function cargarPacientes() {
-  const { data: pacientes, error } = await supabaseClient
-    .from('pacientes').select('*').eq('logopeda_id', UID).order('nombre');
-  PACIENTES = pacientes || [];
-  const cont = document.getElementById('listaPacientes');
-  cont.innerHTML = '';
+function cambiarTab(tab) {
+  document.querySelectorAll('.tab-link').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
+  document.querySelectorAll('.seccion-tab').forEach(p => p.classList.toggle('activo', p.dataset.panel === tab));
+  localStorage.setItem('logopedaTabActiva', tab);
+}
+document.querySelectorAll('.tab-link').forEach(b => b.addEventListener('click', () => cambiarTab(b.dataset.tab)));
 
-  if (error || !pacientes || pacientes.length === 0) {
-    cont.innerHTML = '<p class="meta">Todavía no tienes pacientes asignados.</p>';
+function badgeEstado(estado) {
+  const mapa = {
+    pendiente: 'badge-ambar', confirmada: 'badge-azul', realizada: 'badge-verde',
+    cancelada: 'badge-rojo', activo: 'badge-verde', pausado: 'badge-gris',
+  };
+  return `<span class="badge ${mapa[estado] || 'badge-gris'}">${estado}</span>`;
+}
+
+function pintarPacientes() {
+  const filtro = document.getElementById('buscarPacientes').value.trim().toLowerCase();
+  const cont = document.getElementById('listaPacientes');
+  const filtrados = PACIENTES.filter(p => p.nombre.toLowerCase().includes(filtro));
+
+  if (!filtrados.length) {
+    cont.innerHTML = `<p class="vacio-panel">${PACIENTES.length ? 'Sin resultados.' : 'Todavía no tienes pacientes asignados.'}</p>`;
     return;
   }
 
-  for (const p of pacientes) {
+  cont.innerHTML = '';
+  for (const p of filtrados) {
     const div = document.createElement('div');
     div.className = 'lista-item';
     div.innerHTML = `
-      <strong>${p.nombre}</strong> <span class="etiqueta-pill">${p.estado}</span>
+      <strong>${p.nombre}</strong> ${badgeEstado(p.estado)}
       <div class="meta">Nacimiento: ${formatearFecha(p.fecha_nacimiento)}</div>
       <div class="fila-acciones">
         <button class="btn btn-outline" data-accion="ficha" data-id="${p.id}">+ Nota de seguimiento</button>
@@ -90,6 +125,14 @@ async function cargarPacientes() {
   cont.querySelectorAll('button[data-accion]').forEach(btn => {
     btn.addEventListener('click', () => manejarAccionPaciente(btn.dataset.accion, btn.dataset.id));
   });
+}
+
+async function cargarPacientes() {
+  const { data: pacientes, error } = await supabaseClient
+    .from('pacientes').select('*').eq('logopeda_id', UID).order('nombre');
+  PACIENTES = pacientes || [];
+  document.getElementById('kpiPacientes').textContent = PACIENTES.length;
+  pintarPacientes();
 }
 
 function manejarAccionPaciente(accion, pacienteId) {
@@ -140,6 +183,7 @@ async function guardarCita(pacienteId) {
   });
   document.getElementById(`zona-${pacienteId}`).innerHTML = error
     ? '<p class="meta">Error agendando la cita.</p>' : '<p class="meta">Cita agendada.</p>';
+  await cargarAgenda();
 }
 
 async function verHistorial(pacienteId) {
@@ -159,14 +203,32 @@ async function verHistorial(pacienteId) {
     </div>`).join('');
 }
 
+async function cargarAgenda() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const en30dias = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  const { data: citas } = await supabaseClient
+    .from('citas').select('*, pacientes(nombre)')
+    .eq('logopeda_id', UID).gte('fecha', hoy).lte('fecha', en30dias).neq('estado', 'cancelada')
+    .order('fecha', { ascending: true }).order('hora', { ascending: true });
+
+  const en7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  document.getElementById('kpiCitas').textContent = (citas || []).filter(c => c.fecha <= en7).length;
+
+  const cont = document.getElementById('listaAgenda');
+  cont.innerHTML = (citas && citas.length)
+    ? citas.map(c => `<div class="lista-item"><strong>${c.pacientes?.nombre || '—'}</strong> <span class="meta">${formatearFecha(c.fecha)} · ${c.hora} · ${c.modalidad === 'online' ? 'Online' : 'Presencial'}</span> ${badgeEstado(c.estado)}</div>`).join('')
+    : '<p class="vacio-panel">No hay citas agendadas en los próximos 30 días.</p>';
+}
+
 async function cargarRecursos() {
   const { data: recursos, error } = await supabaseClient
     .from('recursos').select('*').eq('logopeda_id', UID).order('categoria');
+  document.getElementById('kpiRecursos').textContent = (recursos || []).length;
   const cont = document.getElementById('listaRecursos');
   cont.innerHTML = '';
 
   if (error || !recursos || recursos.length === 0) {
-    cont.innerHTML = '<p class="meta">Todavía no cargaste recursos.</p>';
+    cont.innerHTML = '<p class="vacio-panel">Todavía no cargaste recursos.</p>';
     return;
   }
 
@@ -220,7 +282,11 @@ document.getElementById('formRecurso').addEventListener('submit', async (e) => {
   mostrarBarraVistaAdmin(perfil.rol, 'logopeda', 'barraVistaAdmin');
   UID = session.user.id;
   document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
+
+  cambiarTab(localStorage.getItem('logopedaTabActiva') || 'pacientes');
+
   await cargarPacientes();
+  await cargarAgenda();
   await cargarRecursos();
 })();
 </script>
