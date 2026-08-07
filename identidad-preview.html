@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propuesta de identidad visual v2 — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="img/icono-v2.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage: #2E6B5E;
+    --sage-oscuro: #1F4A40;
+    --coral: #E8825C;
+    --crema: #FBF8F2;
+    --tarjeta: #ffffff;
+    --texto: #2B2622;
+    --texto-suave: #6B6259;
+    --borde: #EAE3D8;
+    --radio: 18px;
+    --sombra: 0 8px 26px rgba(31,74,64,.10);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Inter',sans-serif; background:var(--crema); color:var(--texto); line-height:1.6; }
+  h1,h2,h3 { font-family:'Fraunces',Georgia,serif; font-weight:600; color:var(--sage-oscuro); margin:0 0 .4em; }
+  .nota-interna { background:#1F4A40; color:#fff; text-align:center; padding:10px 20px; font-size:.85rem; }
+  .nota-interna a { color:#E8825C; }
+  .contenedor { max-width:980px; margin:0 auto; padding:0 24px; }
+  header { padding:40px 24px 10px; text-align:center; }
+  .logo-preview { height:70px; margin:0 auto 8px; display:block; }
+  .hero { background:linear-gradient(135deg, var(--sage) 0%, var(--sage-oscuro) 100%); color:#fff; padding:64px 24px; text-align:center; border-radius:0 0 32px 32px; margin-bottom:48px; }
+  .hero h1 { color:#fff; font-size:2.5rem; }
+  .hero p { max-width:600px; margin:0 auto 26px; opacity:.95; font-size:1.1rem; }
+  .btn { display:inline-block; padding:13px 28px; border-radius:999px; font-weight:600; border:none; cursor:pointer; font-family:'Inter',sans-serif; }
+  .btn-primario { background:var(--coral); color:#fff; }
+  .btn-secundario { background:#fff; color:var(--sage-oscuro); }
+  .btn-outline { background:transparent; border:2px solid var(--sage); color:var(--sage-oscuro); }
+  section { padding:36px 24px; }
+  .paleta { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; max-width:900px; margin:0 auto; }
+  .swatch { border-radius:14px; padding:60px 16px 16px; color:#fff; font-family:'Inter',sans-serif; font-weight:600; font-size:.85rem; box-shadow:var(--sombra); }
+  .grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:24px; max-width:900px; margin:0 auto; }
+  .tarjeta { background:var(--tarjeta); border-radius:var(--radio); box-shadow:var(--sombra); padding:28px; }
+  .tarjeta h3 { margin-top:0; }
+  .acento-calido { background:linear-gradient(135deg, #F3A97C 0%, var(--coral) 100%); }
+  .muestra-tipo { max-width:700px; margin:0 auto; }
+  .muestra-tipo .grande { font-size:2.2rem; }
+  .muestra-tipo .mediano { font-size:1.5rem; }
+  .badge-comparar { display:inline-block; background:var(--borde); color:var(--texto-suave); padding:4px 12px; border-radius:999px; font-size:.75rem; margin-bottom:6px; }
+</style>
+</head>
+<body>
+
+<div class="nota-interna">Vista previa interna — no es la web pública todavía. Compara con <a href="index.html">la versión actual</a>.</div>
+
+<header>
+  <img src="img/logo-v2.svg" alt="Logotipo propuesto" class="logo-preview">
+  <p class="badge-comparar">Propuesta de identidad v2</p>
+</header>
+
+<div class="hero contenedor" style="max-width:none;">
+  <h1>Mejorando tu comunicación, transformando tu vida.</h1>
+  <p>Así se vería el hero de la home con la paleta y tipografía nuevas — base en verde salvia (calma, confianza) con acentos cálidos en coral (cercanía, niños).</p>
+  <a class="btn btn-primario" href="#">Clic para informarte</a>
+  <a class="btn btn-secundario" href="#" style="margin-left:10px;">Acceso plataforma</a>
+</div>
+
+<section class="contenedor">
+  <h2 style="text-align:center;">Paleta propuesta</h2>
+  <div class="paleta">
+    <div class="swatch" style="background:#2E6B5E;">Sage · #2E6B5E<br><span style="font-weight:400;opacity:.85;">Primario — confianza</span></div>
+    <div class="swatch" style="background:#1F4A40;">Sage oscuro · #1F4A40<br><span style="font-weight:400;opacity:.85;">Headers, footer</span></div>
+    <div class="swatch acento-calido">Coral · #E8825C<br><span style="font-weight:400;opacity:.85;">Acento cálido — CTA, niños</span></div>
+    <div class="swatch" style="background:#6B6259;">Texto suave · #6B6259<br><span style="font-weight:400;opacity:.85;">Texto secundario</span></div>
+  </div>
+</section>
+
+<section class="contenedor muestra-tipo">
+  <h2 style="text-align:center;">Tipografía propuesta</h2>
+  <div class="tarjeta">
+    <p class="badge-comparar">Títulos — Fraunces (serif cálida, con carácter)</p>
+    <p class="grande" style="font-family:'Fraunces',serif;font-weight:600;">Aa Bb Cc — Detección precoz</p>
+    <p class="badge-comparar" style="margin-top:20px;">Texto — Inter (limpia, muy legible)</p>
+    <p class="mediano" style="font-family:'Inter',sans-serif;">Trabajamos con personas de todas las edades, desde niños hasta adultos y personas de la tercera edad, con un enfoque cercano y profesional.</p>
+  </div>
+</section>
+
+<section class="contenedor">
+  <h2 style="text-align:center;">Cómo se verían las tarjetas</h2>
+  <div class="grid-2">
+    <div class="tarjeta">
+      <h3>Terapia online</h3>
+      <p>Tratamiento con un logopeda profesional de forma remota, con la comodidad de hacerlo desde casa.</p>
+      <a class="btn btn-outline" href="#">Saber más</a>
+    </div>
+    <div class="tarjeta" style="border-top:4px solid var(--coral);">
+      <h3>Para las familias</h3>
+      <p>Ejemplo de tarjeta con acento cálido arriba, pensada para las secciones dirigidas a niños y padres.</p>
+      <a class="btn btn-outline" href="#">Saber más</a>
+    </div>
+  </div>
+</section>
+
+<section class="contenedor" style="text-align:center;padding-bottom:60px;">
+  <p class="meta" style="color:var(--texto-suave);">¿Seguimos con esta dirección para aplicarla a todo el sitio, la ajustamos, o probamos otra variante?</p>
+</section>
+
+</body>
+</html>

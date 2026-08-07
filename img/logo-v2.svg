@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" width="540" height="140">
+  <defs>
+    <linearGradient id="blobGrad2" x1="10%" y1="0%" x2="95%" y2="100%">
+      <stop offset="0%" stop-color="#2E6B5E"/>
+      <stop offset="100%" stop-color="#1F4A40"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(10,10)">
+    <path d="M60 4C88 3 117 22 117.5 57C118 92 92 117 58 116.5C25 116 3 93 3.5 58C4 25 30 5 60 4Z"
+          fill="url(#blobGrad2)"/>
+    <path d="M32 46c0-9.389 7.611-17 17-17h22c9.389 0 17 7.611 17 17v13c0 9.389-7.611 17-17 17H54l-13 11.5v-11.5h-0.5c-4.694 0-8.5-3.806-8.5-8.5V46z"
+          fill="#FBF8F2"/>
+    <rect x="42" y="48" width="5" height="10" rx="2.5" fill="#E8825C"/>
+    <rect x="51" y="42" width="5" height="22" rx="2.5" fill="#2E6B5E"/>
+    <rect x="60" y="46" width="5" height="14" rx="2.5" fill="#E8825C"/>
+    <rect x="69" y="40" width="5" height="26" rx="2.5" fill="#2E6B5E"/>
+    <circle cx="86" cy="30" r="5" fill="#E8825C"/>
+  </g>
+
+  <g transform="translate(150,0)" font-family="Georgia, 'Times New Roman', serif">
+    <text x="0" y="64" font-size="36" font-weight="700" fill="#1F4A40">Logopedia</text>
+    <text x="0" y="102" font-size="36" font-weight="700" fill="#E8825C">Sant Genís</text>
+  </g>
+</svg>
