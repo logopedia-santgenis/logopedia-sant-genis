@@ -24,11 +24,19 @@
   <div class="tabs-portal" id="tabsPortal" style="margin:0 0 20px;padding:0;">
     <button class="tab-link" data-tab="datos">Datos</button>
     <button class="tab-link" data-tab="contactos">Tutores / Contactos</button>
+    <button class="tab-link" data-tab="citas">Citas</button>
+    <button class="tab-link" data-tab="tareas">Tareas</button>
     <button class="tab-link" data-tab="documentos">Documentos</button>
   </div>
 
   <!-- DATOS -->
   <div class="seccion-tab" data-panel="datos">
+    <div class="tarjeta" style="margin-bottom:20px;text-align:center;max-width:220px;">
+      <img id="fotoPaciente" src="img/icono.svg" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:50%;border:2px solid var(--borde);margin:0 auto 10px;display:block;">
+      <input type="file" id="fotoArchivo" accept="image/*" style="font-size:.75rem;">
+      <button class="btn btn-outline" style="margin-top:8px;" onclick="subirFoto()">Subir foto</button>
+      <p class="meta" id="estadoFoto"></p>
+    </div>
     <div class="tarjeta" id="formDatosCont">
       <div class="cargando">Cargando…</div>
     </div>
@@ -56,6 +64,45 @@
       <p class="meta">El tutor no necesita tener cuenta en la plataforma — esto es solo un dato de contacto. Si además quieres que pueda entrar a ver el portal del paciente, pídele que se registre y vincúlalo desde el listado de pacientes.</p>
     </div>
     <div id="listaContactos"><div class="cargando">Cargando…</div></div>
+  </div>
+
+  <!-- CITAS -->
+  <div class="seccion-tab" data-panel="citas">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Nueva cita</h3>
+      <div class="fila-acciones">
+        <input type="date" id="ciFecha">
+        <input type="time" id="ciHora">
+        <select id="ciModalidad">
+          <option value="presencial">Presencial</option>
+          <option value="online">Online</option>
+        </select>
+        <select id="ciTratamiento"><option value="">— Sin tratamiento asociado —</option></select>
+        <button class="btn btn-secundario" onclick="crearCitaFicha()">Agendar</button>
+      </div>
+      <p class="meta" id="estadoCitaFicha"></p>
+    </div>
+    <div id="listaCitasFicha"><div class="cargando">Cargando…</div></div>
+  </div>
+
+  <!-- TAREAS -->
+  <div class="seccion-tab" data-panel="tareas">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Nueva tarea</h3>
+      <div class="fila-acciones">
+        <input type="text" id="taTipo" placeholder="Tipo de tarea (ej. Ejercicios en casa)" style="flex:2;">
+        <input type="date" id="taInicio">
+        <input type="date" id="taFin">
+        <select id="taRecordatorio">
+          <option value="ninguno">Sin recordatorio</option>
+          <option value="email">Recordatorio por email</option>
+          <option value="whatsapp">Recordatorio por WhatsApp</option>
+        </select>
+        <button class="btn btn-secundario" onclick="crearTareaFicha()">Crear</button>
+      </div>
+      <p class="meta" id="estadoTareaFicha"></p>
+    </div>
+    <div id="listaTareasFicha"><div class="cargando">Cargando…</div></div>
   </div>
 
   <!-- DOCUMENTOS -->
@@ -92,6 +139,14 @@ const params = new URLSearchParams(window.location.search);
 const pacienteId = params.get('id');
 let PERFIL = null;
 
+function badgeEstado(estado) {
+  const mapa = {
+    pendiente: 'badge-ambar', confirmada: 'badge-azul', realizada: 'badge-verde',
+    cancelada: 'badge-rojo', en_curso: 'badge-azul', completada: 'badge-verde',
+  };
+  return `<span class="badge ${mapa[estado] || 'badge-gris'}">${estado}</span>`;
+}
+
 function cambiarTab(tab) {
   document.querySelectorAll('.tab-link').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
   document.querySelectorAll('.seccion-tab').forEach(p => p.classList.toggle('activo', p.dataset.panel === tab));
@@ -114,6 +169,11 @@ async function cargarDatos() {
   }
   document.getElementById('tituloPaciente').textContent = p.nombre;
   document.title = p.nombre + ' — Ficha del paciente';
+
+  if (p.foto_url) {
+    const { data } = await supabaseClient.storage.from('documentos-pacientes').createSignedUrl(p.foto_url, 300);
+    if (data?.signedUrl) document.getElementById('fotoPaciente').src = data.signedUrl;
+  }
 
   const cont = document.getElementById('formDatosCont');
   cont.innerHTML = `
@@ -178,6 +238,21 @@ async function guardarDatos() {
   document.getElementById('tituloPaciente').textContent = payload.nombre;
 }
 
+async function subirFoto() {
+  const archivo = document.getElementById('fotoArchivo').files[0];
+  const estado = document.getElementById('estadoFoto');
+  if (!archivo) { estado.textContent = 'Elige una imagen primero.'; return; }
+  estado.textContent = 'Subiendo…';
+  const ruta = `${pacienteId}/foto-${Date.now()}-${archivo.name}`;
+  const { error: errSubida } = await supabaseClient.storage.from('documentos-pacientes').upload(ruta, archivo);
+  if (errSubida) { estado.textContent = 'Error: ' + errSubida.message; return; }
+  const { error: errUpdate } = await supabaseClient.from('pacientes').update({ foto_url: ruta }).eq('id', pacienteId);
+  if (errUpdate) { estado.textContent = 'Error guardando: ' + errUpdate.message; return; }
+  const { data } = await supabaseClient.storage.from('documentos-pacientes').createSignedUrl(ruta, 300);
+  if (data?.signedUrl) document.getElementById('fotoPaciente').src = data.signedUrl;
+  estado.textContent = 'Foto actualizada ✓';
+}
+
 async function cargarContactos() {
   const { data, error } = await supabaseClient.from('contactos_paciente').select('*').eq('paciente_id', pacienteId).order('created_at');
   const cont = document.getElementById('listaContactos');
@@ -209,6 +284,87 @@ async function crearContacto() {
     document.getElementById('cAnotaciones').value = '';
   }
   await cargarContactos();
+}
+
+async function cargarCitasFicha() {
+  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
+  const { data: tratamientos } = await supabaseClient.from('tratamientos').select('id,nombre').eq('activo', true);
+  const selTrat = document.getElementById('ciTratamiento');
+  selTrat.innerHTML = '<option value="">— Sin tratamiento asociado —</option>' +
+    (tratamientos || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+
+  const { data: citas } = await supabaseClient
+    .from('citas').select('*, tratamientos(nombre)').eq('paciente_id', pacienteId)
+    .order('fecha', { ascending: false }).order('hora', { ascending: false });
+
+  const cont = document.getElementById('listaCitasFicha');
+  cont.innerHTML = (citas && citas.length) ? citas.map(c => `
+    <div class="lista-item">
+      <strong>${formatearFecha(c.fecha)}</strong> · ${c.hora} · ${c.modalidad === 'online' ? 'Online' : 'Presencial'}
+      ${c.tratamientos?.nombre ? `<span class="etiqueta-pill">${c.tratamientos.nombre}</span>` : ''}
+      ${badgeEstado(c.estado)}
+      <select onchange="actualizarEstadoCitaFicha('${c.id}', this.value)" style="margin-left:8px;">
+        ${['pendiente','confirmada','realizada','cancelada'].map(o => `<option value="${o}" ${o === c.estado ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay citas registradas.</p>';
+}
+
+async function actualizarEstadoCitaFicha(id, estado) {
+  await supabaseClient.from('citas').update({ estado }).eq('id', id);
+  await cargarCitasFicha();
+}
+
+async function crearCitaFicha() {
+  const fecha = document.getElementById('ciFecha').value;
+  const hora = document.getElementById('ciHora').value;
+  const modalidad = document.getElementById('ciModalidad').value;
+  const tratamiento_id = document.getElementById('ciTratamiento').value || null;
+  const estado = document.getElementById('estadoCitaFicha');
+  if (!fecha || !hora) { estado.textContent = 'Falta fecha u hora.'; return; }
+  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
+  const { error } = await supabaseClient.from('citas').insert({
+    paciente_id: pacienteId, logopeda_id: pac?.logopeda_id, fecha, hora, modalidad, tratamiento_id, estado: 'confirmada'
+  });
+  estado.textContent = error ? 'Error: ' + error.message : 'Cita agendada ✓';
+  await cargarCitasFicha();
+}
+
+async function cargarTareasFicha() {
+  const { data: tareas } = await supabaseClient
+    .from('tareas_paciente').select('*').eq('paciente_id', pacienteId)
+    .order('created_at', { ascending: false });
+
+  const cont = document.getElementById('listaTareasFicha');
+  cont.innerHTML = (tareas && tareas.length) ? tareas.map(t => `
+    <div class="lista-item">
+      <strong>${t.tipo_tarea || 'Tarea'}</strong> ${badgeEstado(t.estado)}
+      <div class="meta">${t.fecha_inicio ? formatearFecha(t.fecha_inicio) : '—'}${t.fecha_fin ? ' a ' + formatearFecha(t.fecha_fin) : ''} · Recordatorio: ${t.canal_recordatorio}</div>
+      ${t.anotaciones ? `<div class="meta">${t.anotaciones}</div>` : ''}
+      <select onchange="actualizarEstadoTareaFicha('${t.id}', this.value)" style="margin-top:6px;">
+        ${['pendiente','en_curso','completada','cancelada'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay tareas asignadas.</p>';
+}
+
+async function actualizarEstadoTareaFicha(id, estado) {
+  await supabaseClient.from('tareas_paciente').update({ estado }).eq('id', id);
+  await cargarTareasFicha();
+}
+
+async function crearTareaFicha() {
+  const tipo_tarea = document.getElementById('taTipo').value.trim();
+  const fecha_inicio = document.getElementById('taInicio').value || null;
+  const fecha_fin = document.getElementById('taFin').value || null;
+  const canal_recordatorio = document.getElementById('taRecordatorio').value;
+  const estado = document.getElementById('estadoTareaFicha');
+  if (!tipo_tarea) { estado.textContent = 'Escribe el tipo de tarea.'; return; }
+  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
+  const { error } = await supabaseClient.from('tareas_paciente').insert({
+    paciente_id: pacienteId, logopeda_id: pac?.logopeda_id, tipo_tarea, fecha_inicio, fecha_fin, canal_recordatorio, estado: 'pendiente'
+  });
+  estado.textContent = error ? 'Error: ' + error.message : 'Tarea creada ✓';
+  document.getElementById('taTipo').value = '';
+  await cargarTareasFicha();
 }
 
 async function cargarDocumentos() {
@@ -268,6 +424,8 @@ async function subirDocumento() {
   cambiarTab('datos');
   await cargarDatos();
   await cargarContactos();
+  await cargarCitasFicha();
+  await cargarTareasFicha();
   await cargarDocumentos();
 })();
 </script>

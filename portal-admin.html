@@ -128,6 +128,7 @@
     </div>
     <div class="fila-acciones" style="margin-top:10px;">
       <input type="number" id="tPrecio" placeholder="Precio €" step="0.01" style="flex:1;">
+      <input type="number" id="tImpuestos" placeholder="Impuestos %" step="0.01" style="flex:1;">
       <input type="number" id="tDescuento" placeholder="Descuento %" step="0.01" style="flex:1;">
       <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;">
         <input type="checkbox" id="tOnline" checked> Disponible en cita online
@@ -370,7 +371,7 @@ async function cargarTratamientos() {
     <tr>
       <td><strong>${t.nombre}</strong>${t.disponible_cita_online ? '' : ' <span class="meta">(no online)</span>'}</td>
       <td>${t.area ? `<span class="etiqueta-pill">${t.area}</span>` : '—'}</td>
-      <td>${t.precio != null ? Number(t.precio).toFixed(2) + ' €' : '—'}${t.descuento_pct ? ` <span class="meta">(-${t.descuento_pct}%)</span>` : ''}</td>
+      <td>${t.precio != null ? Number(t.precio).toFixed(2) + ' €' : '—'}${t.impuestos ? ` <span class="meta">(+${t.impuestos}% imp.)</span>` : ''}${t.descuento_pct ? ` <span class="meta">(-${t.descuento_pct}%)</span>` : ''}</td>
       <td>${t.logopedas?.profiles?.nombre || '<span class="meta">general</span>'}</td>
       <td>
         <select onchange="cambiarEstadoTratamiento('${t.id}', this.value)">
@@ -395,6 +396,7 @@ async function crearTratamiento() {
     area: document.getElementById('tArea').value.trim() || null,
     logopeda_id: document.getElementById('tLogopeda').value || null,
     precio: document.getElementById('tPrecio').value ? parseFloat(document.getElementById('tPrecio').value) : null,
+    impuestos: document.getElementById('tImpuestos').value ? parseFloat(document.getElementById('tImpuestos').value) : 0,
     descuento_pct: document.getElementById('tDescuento').value ? parseFloat(document.getElementById('tDescuento').value) : 0,
     disponible_cita_online: document.getElementById('tOnline').checked,
     activo: true,
@@ -403,6 +405,7 @@ async function crearTratamiento() {
   document.getElementById('tNombre').value = '';
   document.getElementById('tArea').value = '';
   document.getElementById('tPrecio').value = '';
+  document.getElementById('tImpuestos').value = '';
   document.getElementById('tDescuento').value = '';
   await cargarTratamientos();
 }
