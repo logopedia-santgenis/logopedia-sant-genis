@@ -184,6 +184,25 @@ function cambiarPaciente(id) {
       }
     }
 
+    const { data: bonos } = await supabaseClient
+      .from('bonos_sesiones')
+      .select('*, tratamientos(nombre)')
+      .eq('paciente_id', p.id)
+      .eq('estado', 'activo');
+
+    if (bonos && bonos.length) {
+      const tituloBonos = document.createElement('h3');
+      tituloBonos.textContent = 'Bonos de sesiones';
+      tituloBonos.style.marginTop = '20px';
+      bloque.appendChild(tituloBonos);
+      for (const b of bonos) {
+        const item = document.createElement('div');
+        item.className = 'lista-item';
+        item.innerHTML = `<strong>${b.tratamientos?.nombre || 'Bono'}</strong><div class="meta">${b.sesiones_totales - b.sesiones_usadas} de ${b.sesiones_totales} sesiones restantes</div>`;
+        bloque.appendChild(item);
+      }
+    }
+
     const { data: documentos } = await supabaseClient
       .from('documentos_paciente')
       .select('*')

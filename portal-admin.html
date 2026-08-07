@@ -159,6 +159,18 @@
   </div>
   <div id="listaServicios"><div class="cargando">Cargando…</div></div>
 
+  <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Almacén — Productos</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Nuevo producto</h3>
+    <div class="fila-acciones">
+      <input type="text" id="prNombre" placeholder="Nombre del producto" style="flex:2;">
+      <input type="number" id="prPrecio" placeholder="Precio €" step="0.01" style="flex:1;">
+      <input type="number" id="prStock" placeholder="Stock" style="flex:1;">
+      <button class="btn btn-secundario" onclick="crearProducto()">Crear</button>
+    </div>
+  </div>
+  <div id="listaProductos"><div class="cargando">Cargando…</div></div>
+
   <div class="seccion-titulo-fila" style="margin-top:32px;"><h2>Gabinetes (salas)</h2></div>
   <div class="tarjeta" style="margin-bottom:20px;">
     <div class="fila-acciones">
@@ -245,7 +257,7 @@ const FUNCIONALIDADES_NUBIMED = [
   { grupo: 'Documentación', nombre: 'Plantillas de documentos con autorrelleno', estado: 'activa' },
   { grupo: 'Documentación', nombre: 'Firma digital / firmas pendientes', estado: 'pendiente', nota: 'falta elegir proveedor de firma' },
   { grupo: 'Facturación', nombre: 'Cuotas / pagos simples', estado: 'activa' },
-  { grupo: 'Facturación', nombre: 'Facturación completa (facturas, presupuestos, bonos)', estado: 'pendiente' },
+  { grupo: 'Facturación', nombre: 'Facturación completa (facturas, presupuestos)', estado: 'pendiente', nota: 'en España las facturas ya deben cumplir Veri*Factu — hay que evaluar bien antes de construirlo, no es solo una tabla más' },
   { grupo: 'Facturación', nombre: 'Pasarela de pago online (Stripe / Redsys)', estado: 'pendiente' },
   { grupo: 'Marketing y comunicación', nombre: 'Campañas de email/WhatsApp a pacientes', estado: 'parcial', nota: 'se pueden redactar y exportar destinatarios en CSV — el envío real necesita un proveedor de email/WhatsApp' },
   { grupo: 'Marketing y comunicación', nombre: 'Integración WhatsApp Business (recordatorios, chatbot)', estado: 'pendiente', nota: 'de las más valiosas a futuro según lo que usa Nubimed' },
@@ -254,9 +266,10 @@ const FUNCIONALIDADES_NUBIMED = [
   { grupo: 'Integraciones', nombre: 'Videollamadas integradas', estado: 'activa', nota: 'con Jitsi Meet (gratis, sin necesidad de cuenta) — enlace automático en cada cita online' },
   { grupo: 'Integraciones', nombre: 'Zapier / automatizaciones externas', estado: 'pendiente' },
   { grupo: 'Integraciones', nombre: 'Asistente de IA', estado: 'pendiente' },
-  { grupo: 'Gestión interna', nombre: 'Gestión de actividades grupales (terapia en grupo)', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Gestión de actividades grupales (terapia en grupo)', estado: 'activa' },
   { grupo: 'Gestión interna', nombre: 'Registro de jornada laboral', estado: 'activa' },
-  { grupo: 'Gestión interna', nombre: 'Almacén y venta de productos', estado: 'pendiente' },
+  { grupo: 'Gestión interna', nombre: 'Almacén y venta de productos', estado: 'activa' },
+  { grupo: 'Facturación', nombre: 'Bonos de sesiones prepagadas', estado: 'activa' },
   { grupo: 'Gestión interna', nombre: 'Dashboard / Business Intelligence', estado: 'activa', nota: 'estadísticas básicas — citas por mes, ingresos, tratamientos más pedidos' },
   { grupo: 'Gestión interna', nombre: 'Multi-clínica / múltiples cuentas', estado: 'pendiente', nota: 'no aplica de momento, un solo centro' },
   { grupo: 'Gestión interna', nombre: 'Receta electrónica (REMPE)', estado: 'pendiente', nota: 'no aplica a logopedia' },
@@ -476,6 +489,50 @@ async function crearServicio() {
   document.getElementById('svDescripcion').value = '';
   document.getElementById('svPrecio').value = '';
   await cargarServicios();
+}
+
+async function cargarProductos() {
+  const { data } = await supabaseClient.from('productos').select('*').order('nombre');
+  const cont = document.getElementById('listaProductos');
+  cont.innerHTML = (data && data.length) ? data.map(p => `
+    <div class="lista-item">
+      <strong>${p.nombre}</strong> ${p.precio != null ? Number(p.precio).toFixed(2) + ' €' : ''} <span class="meta">· Stock: ${p.stock}</span>
+      <div class="fila-acciones" style="margin-top:6px;">
+        <select id="ventaPaciente-${p.id}" style="flex:2;"><option value="">— Paciente (opcional) —</option>${PACIENTES.map(pa => `<option value="${pa.id}">${pa.nombre}</option>`).join('')}</select>
+        <input type="number" id="ventaCantidad-${p.id}" value="1" min="1" style="width:70px;">
+        <button class="btn btn-outline" onclick="registrarVenta('${p.id}', ${p.precio || 0}, ${p.stock})">Registrar venta</button>
+      </div>
+      <span class="meta" id="estadoVenta-${p.id}"></span>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay productos en el almacén.</p>';
+}
+
+async function registrarVenta(producto_id, precio, stockActual) {
+  const cantidad = parseInt(document.getElementById(`ventaCantidad-${producto_id}`).value) || 1;
+  const paciente_id = document.getElementById(`ventaPaciente-${producto_id}`).value || null;
+  const estado = document.getElementById(`estadoVenta-${producto_id}`);
+  const { error } = await supabaseClient.from('ventas_productos').insert({
+    producto_id, paciente_id, cantidad, precio_unitario: precio, logopeda_id: null
+  });
+  if (!error) {
+    await supabaseClient.from('productos').update({ stock: Math.max(0, stockActual - cantidad) }).eq('id', producto_id);
+  }
+  estado.textContent = error ? 'Error: ' + error.message : 'Venta registrada ✓';
+  await cargarProductos();
+}
+
+async function crearProducto() {
+  const nombre = document.getElementById('prNombre').value.trim();
+  if (!nombre) return;
+  await supabaseClient.from('productos').insert({
+    nombre,
+    precio: document.getElementById('prPrecio').value ? parseFloat(document.getElementById('prPrecio').value) : null,
+    stock: document.getElementById('prStock').value ? parseInt(document.getElementById('prStock').value) : 0,
+    activo: true,
+  });
+  document.getElementById('prNombre').value = '';
+  document.getElementById('prPrecio').value = '';
+  document.getElementById('prStock').value = '';
+  await cargarProductos();
 }
 
 async function cargarGabinetes() {
@@ -785,6 +842,7 @@ async function cargarResumen() {
   await cargarCuotas();
   await cargarTratamientos();
   await cargarServicios();
+  await cargarProductos();
   await cargarGabinetes();
   await cargarCitasOnline();
   await cargarSolicitudesServicio();

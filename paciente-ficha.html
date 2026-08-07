@@ -29,6 +29,7 @@
     <button class="tab-link" data-tab="tareas">Tareas</button>
     <button class="tab-link" data-tab="notas">Notas</button>
     <button class="tab-link" data-tab="historia-clinica">Historia clínica</button>
+    <button class="tab-link" data-tab="bonos">Bonos</button>
     <button class="tab-link" data-tab="documentos">Documentos</button>
     <button class="tab-link" data-tab="datos-auxiliares">Datos auxiliares</button>
   </div>
@@ -160,6 +161,20 @@
       </div>
     </div>
     <div id="listaHistoriaClinica"><div class="cargando">Cargando…</div></div>
+  </div>
+
+  <!-- BONOS -->
+  <div class="seccion-tab" data-panel="bonos">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Nuevo bono de sesiones</h3>
+      <div class="fila-acciones">
+        <select id="boTratamiento" style="flex:2;"><option value="">— Sin tratamiento asociado —</option></select>
+        <input type="number" id="boSesiones" placeholder="Nº de sesiones" style="flex:1;">
+        <input type="number" id="boPrecio" placeholder="Precio total €" step="0.01" style="flex:1;">
+        <button class="btn btn-secundario" onclick="crearBono()">Crear</button>
+      </div>
+    </div>
+    <div id="listaBonos"><div class="cargando">Cargando…</div></div>
   </div>
 
   <!-- DOCUMENTOS -->
@@ -591,6 +606,42 @@ function descargarDocumentoGenerado() {
   URL.revokeObjectURL(url);
 }
 
+async function cargarBonos() {
+  const { data: tratamientos } = await supabaseClient.from('tratamientos').select('id,nombre').eq('activo', true);
+  document.getElementById('boTratamiento').innerHTML = '<option value="">— Sin tratamiento asociado —</option>' +
+    (tratamientos || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+
+  const { data } = await supabaseClient.from('bonos_sesiones').select('*, tratamientos(nombre)').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
+  const cont = document.getElementById('listaBonos');
+  cont.innerHTML = (data && data.length) ? data.map(b => `
+    <div class="lista-item">
+      <strong>${b.tratamientos?.nombre || 'Bono de sesiones'}</strong> ${badgeEstado(b.estado === 'activo' ? 'confirmada' : b.estado === 'agotado' ? 'realizada' : 'cancelada')}
+      <div class="meta">${b.sesiones_usadas} / ${b.sesiones_totales} sesiones usadas ${b.precio != null ? '· ' + Number(b.precio).toFixed(2) + ' €' : ''}</div>
+      ${b.estado === 'activo' ? `<button class="btn btn-outline" style="margin-top:6px;" onclick="usarSesionBono('${b.id}', ${b.sesiones_usadas}, ${b.sesiones_totales})">Registrar sesión usada</button>` : ''}
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay bonos para este paciente.</p>';
+}
+
+async function usarSesionBono(id, usadas, totales) {
+  const nuevasUsadas = usadas + 1;
+  const nuevoEstado = nuevasUsadas >= totales ? 'agotado' : 'activo';
+  await supabaseClient.from('bonos_sesiones').update({ sesiones_usadas: nuevasUsadas, estado: nuevoEstado }).eq('id', id);
+  await cargarBonos();
+}
+
+async function crearBono() {
+  const tratamiento_id = document.getElementById('boTratamiento').value || null;
+  const sesiones_totales = parseInt(document.getElementById('boSesiones').value);
+  const precio = document.getElementById('boPrecio').value ? parseFloat(document.getElementById('boPrecio').value) : null;
+  if (!sesiones_totales) return;
+  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
+  await supabaseClient.from('bonos_sesiones').insert({
+    paciente_id: pacienteId, tratamiento_id, logopeda_id: pac?.logopeda_id, sesiones_totales, precio, estado: 'activo'
+  });
+  document.getElementById('boSesiones').value = '';
+  document.getElementById('boPrecio').value = '';
+  await cargarBonos();
+}
+
 async function cargarDocumentos() {
   const { data, error } = await supabaseClient.from('documentos_paciente').select('*').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
   const cont = document.getElementById('listaDocumentos');
@@ -652,6 +703,7 @@ async function subirDocumento() {
   await cargarTareasFicha();
   await buscarNotas();
   await cargarHistoriaClinica();
+  await cargarBonos();
   await cargarDatosAuxiliares();
   await cargarPlantillasParaGenerar();
   await cargarDocumentos();

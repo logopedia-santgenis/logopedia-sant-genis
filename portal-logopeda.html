@@ -39,6 +39,9 @@
 
     <div class="sidebar-grupo-titulo">Biblioteca (exclusivo nuestro)</div>
     <button class="tab-link" data-tab="recursos"><span class="icono-mini">📚</span> Biblioteca de recursos</button>
+
+    <div class="sidebar-grupo-titulo">Otros</div>
+    <button class="tab-link" data-tab="actividades-grupales"><span class="icono-mini">🧑‍🤝‍🧑</span> Actividades grupales</button>
   </nav>
 
   <main class="app-main">
@@ -242,6 +245,22 @@
     </div>
   </div>
   <div id="listaTextos"><div class="cargando">Cargando…</div></div>
+</div>
+
+<!-- ACTIVIDADES GRUPALES -->
+<div class="panel seccion-tab" data-panel="actividades-grupales" style="max-width:none;margin:0;padding:0;">
+  <div class="seccion-titulo-fila"><h2>Actividades grupales</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Nueva actividad</h3>
+    <div class="fila-acciones">
+      <input type="text" id="agNombre" placeholder="Nombre (ej. Taller de fluidez verbal)" style="flex:2;">
+      <input type="date" id="agFecha">
+      <input type="time" id="agHora">
+      <input type="number" id="agCapacidad" placeholder="Capacidad" value="6" style="width:90px;">
+      <button class="btn btn-secundario" onclick="crearActividadGrupal()">Crear</button>
+    </div>
+  </div>
+  <div id="listaActividadesGrupales"><div class="cargando">Cargando…</div></div>
 </div>
 
   </main>
@@ -748,6 +767,53 @@ async function exportarDestinatariosCampana(segmento) {
   URL.revokeObjectURL(url);
 }
 
+async function cargarActividadesGrupales() {
+  const { data } = await supabaseClient
+    .from('actividades_grupales').select('*, actividades_grupales_pacientes(paciente_id, pacientes(nombre))')
+    .eq('logopeda_id', UID).order('fecha', { ascending: false });
+  const cont = document.getElementById('listaActividadesGrupales');
+  cont.innerHTML = (data && data.length) ? data.map(a => {
+    const inscritos = a.actividades_grupales_pacientes || [];
+    const opcionesPacientes = PACIENTES.filter(p => !inscritos.some(i => i.paciente_id === p.id)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    return `
+    <div class="lista-item">
+      <strong>${a.nombre}</strong> ${badgeEstado(a.estado === 'programada' ? 'confirmada' : a.estado === 'realizada' ? 'realizada' : 'cancelada')}
+      <div class="meta">${formatearFecha(a.fecha)} · ${a.hora} · ${inscritos.length}/${a.capacidad_maxima} inscritos</div>
+      <div class="meta">${inscritos.map(i => i.pacientes?.nombre).filter(Boolean).join(', ') || 'Sin inscritos todavía'}</div>
+      <div class="fila-acciones" style="margin-top:6px;">
+        <select id="agPaciente-${a.id}" style="flex:2;"><option value="">— Añadir paciente —</option>${opcionesPacientes}</select>
+        <button class="btn btn-outline" onclick="inscribirActividadGrupal('${a.id}')">Inscribir</button>
+        <select onchange="actualizarEstadoActividadGrupal('${a.id}', this.value)">
+          ${['programada', 'realizada', 'cancelada'].map(o => `<option value="${o}" ${o === a.estado ? 'selected' : ''}>${o}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }).join('') : '<p class="vacio-panel">Todavía no hay actividades grupales creadas.</p>';
+}
+
+async function inscribirActividadGrupal(actividadId) {
+  const pacienteId = document.getElementById(`agPaciente-${actividadId}`).value;
+  if (!pacienteId) return;
+  await supabaseClient.from('actividades_grupales_pacientes').insert({ actividad_id: actividadId, paciente_id: pacienteId });
+  await cargarActividadesGrupales();
+}
+
+async function actualizarEstadoActividadGrupal(id, estado) {
+  await supabaseClient.from('actividades_grupales').update({ estado }).eq('id', id);
+  await cargarActividadesGrupales();
+}
+
+async function crearActividadGrupal() {
+  const nombre = document.getElementById('agNombre').value.trim();
+  const fecha = document.getElementById('agFecha').value;
+  const hora = document.getElementById('agHora').value;
+  const capacidad_maxima = parseInt(document.getElementById('agCapacidad').value) || 6;
+  if (!nombre || !fecha || !hora) return;
+  await supabaseClient.from('actividades_grupales').insert({ nombre, fecha, hora, capacidad_maxima, logopeda_id: UID, estado: 'programada' });
+  document.getElementById('agNombre').value = '';
+  await cargarActividadesGrupales();
+}
+
 async function cargarTrabajosExternos() {
   const sel = document.getElementById('tePaciente');
   if (sel && sel.options.length === 0) {
@@ -928,6 +994,7 @@ async function borrarTextoPredefinido(id) {
   await cargarTareasAgregadas();
   await cargarPlantillas();
   await cargarCampanas();
+  await cargarActividadesGrupales();
   await cargarRecursos();
   await cargarTextosPredefinidos();
 })();
