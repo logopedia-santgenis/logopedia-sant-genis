@@ -17,6 +17,8 @@
   </div>
 </div>
 
+<div id="barraVistaAdmin"></div>
+
 <div class="panel">
   <h2>Logopedas</h2>
   <div class="tarjeta" style="margin-bottom:20px;">
@@ -246,6 +248,7 @@ async function cargarSolicitudesAfiliacion() {
   if (!perfil) return;
   if (perfil.rol !== 'admin') { redirigirSegunRol(perfil.rol); return; }
 
+  mostrarBarraVistaAdmin(perfil.rol, 'admin', 'barraVistaAdmin');
   document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
   await cargarLogopedas();
   await cargarPacientesAdmin();

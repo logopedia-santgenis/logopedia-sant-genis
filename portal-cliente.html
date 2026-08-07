@@ -17,6 +17,8 @@
   </div>
 </div>
 
+<div id="barraVistaAdmin"></div>
+
 <div class="panel" id="panelPacientes">
   <div class="cargando">Cargando tu información…</div>
 </div>
@@ -29,8 +31,9 @@
   if (!session) return;
   const perfil = await obtenerPerfil(session.user.id);
   if (!perfil) return;
-  if (perfil.rol !== 'cliente') { redirigirSegunRol(perfil.rol); return; }
+  if (perfil.rol !== 'cliente' && perfil.rol !== 'admin') { redirigirSegunRol(perfil.rol); return; }
 
+  mostrarBarraVistaAdmin(perfil.rol, 'cliente', 'barraVistaAdmin');
   document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
 
   const uid = session.user.id;

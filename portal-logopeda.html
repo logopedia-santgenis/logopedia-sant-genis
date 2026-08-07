@@ -17,6 +17,8 @@
   </div>
 </div>
 
+<div id="barraVistaAdmin"></div>
+
 <div class="panel">
   <h2>Mis pacientes</h2>
   <div id="listaPacientes"><div class="cargando">Cargando…</div></div>
@@ -215,6 +217,7 @@ document.getElementById('formRecurso').addEventListener('submit', async (e) => {
   if (!perfil) return;
   if (perfil.rol !== 'logopeda' && perfil.rol !== 'admin') { redirigirSegunRol(perfil.rol); return; }
 
+  mostrarBarraVistaAdmin(perfil.rol, 'logopeda', 'barraVistaAdmin');
   UID = session.user.id;
   document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
   await cargarPacientes();

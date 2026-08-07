@@ -33,6 +33,26 @@ function redirigirSegunRol(rol) {
   window.location.href = destino;
 }
 
+// Si quien ha iniciado sesión es admin, muestra una barra para previsualizar
+// los tres portales (útil para demos internas). No cambia el rol real del
+// usuario ni sus permisos: solo es un atajo de navegación.
+function mostrarBarraVistaAdmin(rolReal, vistaActual, contenedorId) {
+  if (rolReal !== 'admin') return;
+  const cont = document.getElementById(contenedorId);
+  if (!cont) return;
+  const vistas = [
+    { id: 'admin', label: 'Administración', href: 'portal-admin.html' },
+    { id: 'logopeda', label: 'Logopeda', href: 'portal-logopeda.html' },
+    { id: 'cliente', label: 'Paciente (demo)', href: 'portal-cliente.html' },
+  ];
+  cont.innerHTML = `
+    <div style="background:var(--azul-oscuro);color:#fff;padding:10px 24px;font-size:.85rem;display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+      <span>Vista de administrador — estás viendo:</span>
+      ${vistas.map(v => `<a href="${v.href}" style="color:#fff;text-decoration:${v.id === vistaActual ? 'underline' : 'none'};font-weight:${v.id === vistaActual ? '700' : '400'};opacity:${v.id === vistaActual ? '1' : '.8'};">${v.label}</a>`).join(' · ')}
+      <span style="opacity:.75;">(el portal de paciente muestra un caso de ejemplo)</span>
+    </div>`;
+}
+
 async function cerrarSesion() {
   await supabaseClient.auth.signOut();
   window.location.href = 'login.html';
