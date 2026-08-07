@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal del logopeda — Logopedia Sant Genís</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="barra-portal">
+  <div class="marca">Logopedia Sant Genís — Portal del logopeda</div>
+  <div>
+    <span id="nombreUsuario" style="margin-right:16px;"></span>
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Mis pacientes</h2>
+  <div id="listaPacientes"><div class="cargando">Cargando…</div></div>
+</div>
+
+<div class="panel">
+  <h2>Biblioteca de recursos</h2>
+
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Agregar recurso</h3>
+    <form id="formRecurso">
+      <div class="fila-acciones">
+        <input type="text" id="rTitulo" placeholder="Título" required style="flex:2;">
+        <input type="text" id="rCategoria" placeholder="Categoría / síntoma (ej. Dislexia)" required style="flex:2;">
+        <select id="rTipo">
+          <option value="pdf">PDF</option>
+          <option value="video">Video</option>
+          <option value="enlace">Enlace</option>
+          <option value="texto">Texto</option>
+          <option value="ejercicio">Ejercicio</option>
+        </select>
+      </div>
+      <div class="fila-acciones" style="margin-top:10px;">
+        <input type="text" id="rUrl" placeholder="URL del recurso (opcional)" style="flex:2;">
+        <input type="text" id="rDescripcion" placeholder="Descripción breve" style="flex:2;">
+        <button type="submit" class="btn btn-secundario">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="listaRecursos"><div class="cargando">Cargando…</div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+let UID = null;
+let PACIENTES = [];
+
+async function cargarPacientes() {
+  const { data: pacientes, error } = await supabaseClient
+    .from('pacientes').select('*').eq('logopeda_id', UID).order('nombre');
+  PACIENTES = pacientes || [];
+  const cont = document.getElementById('listaPacientes');
+  cont.innerHTML = '';
+
+  if (error || !pacientes || pacientes.length === 0) {
+    cont.innerHTML = '<p class="meta">Todavía no tenés pacientes asignados.</p>';
+    return;
+  }
+
+  for (const p of pacientes) {
+    const div = document.createElement('div');
+    div.className = 'lista-item';
+    div.innerHTML = `
+      <strong>${p.nombre}</strong> <span class="etiqueta-pill">${p.estado}</span>
+      <div class="meta">Nacimiento: ${formatearFecha(p.fecha_nacimiento)}</div>
+      <div class="fila-acciones">
+        <button class="btn btn-outline" data-accion="ficha" data-id="${p.id}">+ Nota de seguimiento</button>
+        <button class="btn btn-outline" data-accion="cita" data-id="${p.id}">+ Cita</button>
+        <button class="btn btn-outline" data-accion="ver" data-id="${p.id}">Ver historial</button>
+      </div>
+      <div class="zona-form" id="zona-${p.id}"></div>
+      <div class="zona-historial" id="historial-${p.id}"></div>
+    `;
+    cont.appendChild(div);
+  }
+
+  cont.querySelectorAll('button[data-accion]').forEach(btn => {
+    btn.addEventListener('click', () => manejarAccionPaciente(btn.dataset.accion, btn.dataset.id));
+  });
+}
+
+function manejarAccionPaciente(accion, pacienteId) {
+  const zona = document.getElementById(`zona-${pacienteId}`);
+  if (accion === 'ficha') {
+    zona.innerHTML = `
+      <div class="fila-acciones" style="margin-top:10px;">
+        <textarea id="notaTexto-${pacienteId}" placeholder="Notas de la sesión / evolución" style="flex:3;"></textarea>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;">
+          <input type="checkbox" id="notaVisible-${pacienteId}"> Visible para el paciente
+        </label>
+        <button class="btn btn-secundario" onclick="guardarFicha('${pacienteId}')">Guardar</button>
+      </div>`;
+  } else if (accion === 'cita') {
+    zona.innerHTML = `
+      <div class="fila-acciones" style="margin-top:10px;">
+        <input type="date" id="citaFecha-${pacienteId}">
+        <input type="time" id="citaHora-${pacienteId}">
+        <select id="citaModalidad-${pacienteId}">
+          <option value="presencial">Presencial</option>
+          <option value="online">Online</option>
+        </select>
+        <button class="btn btn-secundario" onclick="guardarCita('${pacienteId}')">Agendar</button>
+      </div>`;
+  } else if (accion === 'ver') {
+    verHistorial(pacienteId);
+  }
+}
+
+async function guardarFicha(pacienteId) {
+  const notas = document.getElementById(`notaTexto-${pacienteId}`).value.trim();
+  const visible = document.getElementById(`notaVisible-${pacienteId}`).checked;
+  if (!notas) return;
+  const { error } = await supabaseClient.from('fichas_seguimiento').insert({
+    paciente_id: pacienteId, logopeda_id: UID, notas, visible_para_cliente: visible
+  });
+  document.getElementById(`zona-${pacienteId}`).innerHTML = error
+    ? '<p class="meta">Error guardando la nota.</p>' : '<p class="meta">Nota guardada.</p>';
+}
+
+async function guardarCita(pacienteId) {
+  const fecha = document.getElementById(`citaFecha-${pacienteId}`).value;
+  const hora = document.getElementById(`citaHora-${pacienteId}`).value;
+  const modalidad = document.getElementById(`citaModalidad-${pacienteId}`).value;
+  if (!fecha || !hora) return;
+  const { error } = await supabaseClient.from('citas').insert({
+    paciente_id: pacienteId, logopeda_id: UID, fecha, hora, modalidad, estado: 'confirmada'
+  });
+  document.getElementById(`zona-${pacienteId}`).innerHTML = error
+    ? '<p class="meta">Error agendando la cita.</p>' : '<p class="meta">Cita agendada.</p>';
+}
+
+async function verHistorial(pacienteId) {
+  const cont = document.getElementById(`historial-${pacienteId}`);
+  cont.innerHTML = '<p class="meta">Cargando historial…</p>';
+  const { data: fichas } = await supabaseClient
+    .from('fichas_seguimiento').select('*').eq('paciente_id', pacienteId)
+    .order('fecha', { ascending: false }).limit(10);
+  if (!fichas || fichas.length === 0) {
+    cont.innerHTML = '<p class="meta">Sin notas todavía.</p>';
+    return;
+  }
+  cont.innerHTML = fichas.map(f => `
+    <div class="meta" style="margin-top:8px;border-top:1px solid var(--borde);padding-top:8px;">
+      ${formatearFecha(f.fecha)} ${f.visible_para_cliente ? '· <em>visible para el paciente</em>' : ''}
+      <p style="color:var(--texto);">${f.notas}</p>
+    </div>`).join('');
+}
+
+async function cargarRecursos() {
+  const { data: recursos, error } = await supabaseClient
+    .from('recursos').select('*').eq('logopeda_id', UID).order('categoria');
+  const cont = document.getElementById('listaRecursos');
+  cont.innerHTML = '';
+
+  if (error || !recursos || recursos.length === 0) {
+    cont.innerHTML = '<p class="meta">Todavía no cargaste recursos.</p>';
+    return;
+  }
+
+  const opcionesPacientes = PACIENTES.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+
+  for (const r of recursos) {
+    const div = document.createElement('div');
+    div.className = 'lista-item';
+    div.innerHTML = `
+      <span class="etiqueta-pill">${r.categoria}</span> <strong>${r.titulo}</strong> <span class="meta">(${r.tipo})</span>
+      ${r.descripcion ? `<p class="meta">${r.descripcion}</p>` : ''}
+      <div class="fila-acciones">
+        <select id="selPaciente-${r.id}">${opcionesPacientes || '<option>Sin pacientes</option>'}</select>
+        <button class="btn btn-outline" onclick="habilitarRecurso('${r.id}')">Habilitar para paciente</button>
+        <span class="meta" id="estadoHab-${r.id}"></span>
+      </div>`;
+    cont.appendChild(div);
+  }
+}
+
+async function habilitarRecurso(recursoId) {
+  const pacienteId = document.getElementById(`selPaciente-${recursoId}`).value;
+  const estado = document.getElementById(`estadoHab-${recursoId}`);
+  if (!pacienteId) return;
+  const { error } = await supabaseClient.from('recursos_habilitados').insert({
+    recurso_id: recursoId, paciente_id: pacienteId, logopeda_id: UID
+  });
+  estado.textContent = error ? (error.code === '23505' ? 'Ya estaba habilitado.' : 'Error.') : 'Habilitado ✓';
+}
+
+document.getElementById('formRecurso').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const titulo = document.getElementById('rTitulo').value.trim();
+  const categoria = document.getElementById('rCategoria').value.trim();
+  const tipo = document.getElementById('rTipo').value;
+  const contenido_url = document.getElementById('rUrl').value.trim();
+  const descripcion = document.getElementById('rDescripcion').value.trim();
+  if (!titulo || !categoria) return;
+  await supabaseClient.from('recursos').insert({ titulo, categoria, tipo, contenido_url, descripcion, logopeda_id: UID });
+  e.target.reset();
+  cargarRecursos();
+});
+
+(async () => {
+  const session = await exigirSesion();
+  if (!session) return;
+  const perfil = await obtenerPerfil(session.user.id);
+  if (!perfil) return;
+  if (perfil.rol !== 'logopeda' && perfil.rol !== 'admin') { redirigirSegunRol(perfil.rol); return; }
+
+  UID = session.user.id;
+  document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
+  await cargarPacientes();
+  await cargarRecursos();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi portal — Logopedia Sant Genís</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="barra-portal">
+  <div class="marca">Logopedia Sant Genís — Portal del paciente</div>
+  <div>
+    <span id="nombreUsuario" style="margin-right:16px;"></span>
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="panel" id="panelPacientes">
+  <div class="cargando">Cargando tu información…</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+(async () => {
+  const session = await exigirSesion();
+  if (!session) return;
+  const perfil = await obtenerPerfil(session.user.id);
+  if (!perfil) return;
+  if (perfil.rol !== 'cliente') { redirigirSegunRol(perfil.rol); return; }
+
+  document.getElementById('nombreUsuario').textContent = perfil.nombre || perfil.email;
+
+  const uid = session.user.id;
+  const { data: pacientes, error } = await supabaseClient
+    .from('pacientes')
+    .select('*')
+    .or(`tutor_id.eq.${uid},usuario_id.eq.${uid}`);
+
+  const cont = document.getElementById('panelPacientes');
+  cont.innerHTML = '';
+
+  if (error) {
+    cont.innerHTML = '<p>Ocurrió un error cargando tus datos. Intentá de nuevo más tarde.</p>';
+    return;
+  }
+
+  if (!pacientes || pacientes.length === 0) {
+    cont.innerHTML = '<h2>Bienvenido/a</h2><p>Todavía no hay ningún paciente vinculado a tu cuenta. Tu logopeda lo vinculará en cuanto empieces el tratamiento.</p>';
+    return;
+  }
+
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  for (const p of pacientes) {
+    const bloque = document.createElement('div');
+    bloque.innerHTML = `<h2>${p.nombre}</h2>`;
+
+    // Próxima cita
+    const { data: citas } = await supabaseClient
+      .from('citas')
+      .select('*')
+      .eq('paciente_id', p.id)
+      .gte('fecha', hoy)
+      .neq('estado', 'cancelada')
+      .order('fecha', { ascending: true })
+      .limit(1);
+
+    const proxima = citas && citas[0];
+    const cajaCita = document.createElement('div');
+    cajaCita.className = 'lista-item';
+    cajaCita.innerHTML = proxima
+      ? `<strong>Próxima cita</strong><div class="meta">${formatearFecha(proxima.fecha)} — ${proxima.hora} — ${proxima.modalidad === 'online' ? 'Online' : 'Presencial'}</div>`
+      : `<strong>Próxima cita</strong><div class="meta">Todavía no hay una cita agendada.</div>`;
+    bloque.appendChild(cajaCita);
+
+    // Recursos habilitados, agrupados por categoría
+    const { data: recursosHab } = await supabaseClient
+      .from('recursos_habilitados')
+      .select('fecha, recursos(*)')
+      .eq('paciente_id', p.id);
+
+    const tituloRecursos = document.createElement('h3');
+    tituloRecursos.textContent = 'Recursos para vos';
+    tituloRecursos.style.marginTop = '20px';
+    bloque.appendChild(tituloRecursos);
+
+    if (!recursosHab || recursosHab.length === 0) {
+      const vacio = document.createElement('p');
+      vacio.className = 'meta';
+      vacio.textContent = 'Tu logopeda todavía no habilitó recursos para vos.';
+      bloque.appendChild(vacio);
+    } else {
+      const porCategoria = {};
+      for (const rh of recursosHab) {
+        if (!rh.recursos) continue;
+        const cat = rh.recursos.categoria || 'General';
+        (porCategoria[cat] = porCategoria[cat] || []).push(rh.recursos);
+      }
+      for (const cat of Object.keys(porCategoria)) {
+        const catDiv = document.createElement('div');
+        catDiv.className = 'lista-item';
+        catDiv.innerHTML = `<span class="etiqueta-pill">${cat}</span>` +
+          porCategoria[cat].map(r => `
+            <div style="margin-top:10px;">
+              <strong>${r.titulo}</strong> <span class="meta">(${r.tipo})</span>
+              ${r.descripcion ? `<p class="meta">${r.descripcion}</p>` : ''}
+              ${r.contenido_url ? `<a href="${r.contenido_url}" target="_blank" rel="noopener">Abrir recurso »</a>` : ''}
+            </div>`).join('');
+        bloque.appendChild(catDiv);
+      }
+    }
+
+    // Seguimiento visible para el cliente
+    const { data: fichas } = await supabaseClient
+      .from('fichas_seguimiento')
+      .select('*')
+      .eq('paciente_id', p.id)
+      .eq('visible_para_cliente', true)
+      .order('fecha', { ascending: false });
+
+    const tituloSeg = document.createElement('h3');
+    tituloSeg.textContent = 'Seguimiento';
+    tituloSeg.style.marginTop = '20px';
+    bloque.appendChild(tituloSeg);
+
+    if (!fichas || fichas.length === 0) {
+      const vacio = document.createElement('p');
+      vacio.className = 'meta';
+      vacio.textContent = 'Todavía no hay notas de seguimiento compartidas.';
+      bloque.appendChild(vacio);
+    } else {
+      for (const f of fichas) {
+        const item = document.createElement('div');
+        item.className = 'lista-item';
+        item.innerHTML = `<div class="meta">${formatearFecha(f.fecha)}</div><p>${f.notas || ''}</p>`;
+        bloque.appendChild(item);
+      }
+    }
+
+    cont.appendChild(bloque);
+  }
+})();
+</script>
+
+</body>
+</html>

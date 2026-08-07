@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear cuenta — Logopedia Sant Genís</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="pagina-auth">
+  <div class="caja-auth">
+    <h1>Crear cuenta de paciente</h1>
+    <p style="font-size:.85rem;color:var(--texto-suave);text-align:center;margin-top:-10px;">Para padres/madres o pacientes adultos. Las cuentas de logopeda las crea el centro.</p>
+    <div class="mensaje-error" id="msgError"></div>
+    <div class="mensaje-ok" id="msgOk"></div>
+    <form id="formRegistro">
+      <div class="campo">
+        <label for="nombre">Nombre completo</label>
+        <input type="text" id="nombre" required>
+      </div>
+      <div class="campo">
+        <label for="telefono">Teléfono</label>
+        <input type="tel" id="telefono">
+      </div>
+      <div class="campo">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="campo">
+        <label for="password">Contraseña (mínimo 6 caracteres)</label>
+        <input type="password" id="password" minlength="6" required>
+      </div>
+      <button type="submit" class="btn btn-secundario" style="width:100%;">Crear cuenta</button>
+    </form>
+    <p class="enlace-secundario">¿Ya tenés cuenta? <a href="login.html">Iniciá sesión</a></p>
+    <p class="enlace-secundario"><a href="index.html">« Volver al sitio</a></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nombre = document.getElementById('nombre').value.trim();
+  const telefono = document.getElementById('telefono').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const msgError = document.getElementById('msgError');
+  const msgOk = document.getElementById('msgOk');
+  msgError.style.display = 'none';
+  msgOk.style.display = 'none';
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: { data: { nombre, rol: 'cliente' } }
+  });
+
+  if (error) {
+    msgError.textContent = error.message;
+    msgError.style.display = 'block';
+    return;
+  }
+
+  // Guardamos el teléfono aparte (el trigger de la base de datos crea el perfil con nombre/rol).
+  if (data.user && telefono) {
+    await supabaseClient.from('profiles').update({ telefono }).eq('id', data.user.id);
+  }
+
+  if (data.session) {
+    window.location.href = 'portal-cliente.html';
+  } else {
+    msgOk.textContent = 'Cuenta creada. Revisá tu correo para confirmar la cuenta antes de iniciar sesión.';
+    msgOk.style.display = 'block';
+    document.getElementById('formRegistro').reset();
+  }
+});
+</script>
+
+</body>
+</html>
