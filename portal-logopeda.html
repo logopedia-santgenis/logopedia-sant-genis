@@ -76,6 +76,10 @@
           <button class="btn btn-outline" onclick="cambiarTab('tareas')">Tareas »</button>
         </div>
       </div>
+      <div class="tarjeta" style="margin-top:20px;">
+        <h3 style="margin-top:0;">Google Calendar</h3>
+        <div id="bloqueGoogleCalendar"><div class="cargando">Cargando…</div></div>
+      </div>
     </div>
 
     <!-- PACIENTES -->
@@ -431,11 +435,12 @@ async function guardarCita(pacienteId) {
   const modalidad = document.getElementById(`citaModalidad-${pacienteId}`).value;
   const gabinete_id = document.getElementById(`citaGabinete-${pacienteId}`)?.value || null;
   if (!fecha || !hora) return;
-  const { error } = await supabaseClient.from('citas').insert({
+  const { data: nuevaCita, error } = await supabaseClient.from('citas').insert({
     paciente_id: pacienteId, logopeda_id: UID, fecha, hora, modalidad, gabinete_id, estado: 'confirmada'
-  });
+  }).select('id').single();
   document.getElementById(`zona-${pacienteId}`).innerHTML = error
     ? '<p class="meta">Error agendando la cita.</p>' : '<p class="meta">Cita agendada.</p>';
+  if (nuevaCita) sincronizarCitaGoogle(nuevaCita.id, 'crear');
   await cargarAgenda();
 }
 
@@ -520,11 +525,12 @@ async function confirmarCitaOnlineLogopeda(id) {
     pacienteId = nuevo.id;
   }
 
-  const { error: errCita } = await supabaseClient.from('citas').insert({
+  const { data: citaCreada, error: errCita } = await supabaseClient.from('citas').insert({
     paciente_id: pacienteId, logopeda_id: UID, fecha: solicitud.fecha, hora: solicitud.hora,
     modalidad: 'presencial', estado: 'confirmada', tratamiento_id: solicitud.tratamiento_id
-  });
+  }).select('id').single();
   if (errCita) { estado.textContent = 'Error creando la cita: ' + errCita.message; return; }
+  if (citaCreada) sincronizarCitaGoogle(citaCreada.id, 'crear');
 
   await supabaseClient.from('solicitudes_cita_online').update({ estado: 'confirmada', paciente_id: pacienteId, logopeda_id: UID }).eq('id', id);
   await cargarCitasOnlinePendientes();
@@ -622,6 +628,20 @@ async function ficharJornada(tipo) {
   const { error } = await supabaseClient.from('registro_jornada').insert({ logopeda_id: UID, tipo });
   estado.textContent = error ? 'Error: ' + error.message : `Fichaje de ${tipo} registrado ✓`;
   await cargarJornadaHoy();
+}
+
+async function cargarBloqueGoogleCalendar() {
+  const cont = document.getElementById('bloqueGoogleCalendar');
+  const conn = await estadoGoogleCalendar(UID);
+  if (conn && conn.conectado) {
+    cont.innerHTML = `
+      <p class="meta">✓ Conectado desde ${formatearFecha(conn.conectado_en)}. Tus citas se crean y actualizan automáticamente en tu Google Calendar.</p>
+      <button class="btn btn-outline" onclick="desconectarGoogleCalendar('${UID}').then(cargarBloqueGoogleCalendar)">Desconectar</button>`;
+  } else {
+    cont.innerHTML = `
+      <p class="meta">Conecta tu Google Calendar personal para que tus citas de la plataforma aparezcan también ahí automáticamente.</p>
+      <button class="btn btn-secundario" onclick="conectarGoogleCalendar()">Conectar mi Google Calendar</button>`;
+  }
 }
 
 async function cargarSalaEspera() {
@@ -1002,6 +1022,7 @@ async function borrarTextoPredefinido(id) {
 
   await cargarGabinetesOpts();
   await cargarJornadaHoy();
+  await cargarBloqueGoogleCalendar();
   await cargarPacientes();
   await cargarTrabajosExternos();
   await cargarAgenda();

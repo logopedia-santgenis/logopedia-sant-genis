@@ -468,6 +468,7 @@ async function cargarCitasFicha() {
 
 async function actualizarEstadoCitaFicha(id, estado) {
   await supabaseClient.from('citas').update({ estado }).eq('id', id);
+  sincronizarCitaGoogle(id, estado === 'cancelada' ? 'eliminar' : 'actualizar');
   await cargarCitasFicha();
 }
 
@@ -479,10 +480,11 @@ async function crearCitaFicha() {
   const estado = document.getElementById('estadoCitaFicha');
   if (!fecha || !hora) { estado.textContent = 'Falta fecha u hora.'; return; }
   const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
-  const { error } = await supabaseClient.from('citas').insert({
+  const { data: citaCreada, error } = await supabaseClient.from('citas').insert({
     paciente_id: pacienteId, logopeda_id: pac?.logopeda_id, fecha, hora, modalidad, tratamiento_id, estado: 'confirmada'
-  });
+  }).select('id').single();
   estado.textContent = error ? 'Error: ' + error.message : 'Cita agendada ✓';
+  if (citaCreada) sincronizarCitaGoogle(citaCreada.id, 'crear');
   await cargarCitasFicha();
 }
 

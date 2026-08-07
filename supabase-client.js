@@ -63,3 +63,53 @@ function formatearFecha(fechaStr) {
   const d = new Date(fechaStr);
   return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+// --- Integración Google Calendar (cada logopeda conecta su propio calendario) ---
+// GOOGLE_CLIENT_ID se rellena cuando se crea el cliente OAuth en Google Cloud Console.
+const GOOGLE_CLIENT_ID = '';
+const GOOGLE_REDIRECT_URI = 'https://fmznceilmjhysuyxpwpu.supabase.co/functions/v1/google-calendar-callback';
+
+async function estadoGoogleCalendar(logopedaId) {
+  const { data } = await supabaseClient.from('logopeda_google_calendar').select('conectado, conectado_en').eq('logopeda_id', logopedaId).maybeSingle();
+  return data;
+}
+
+async function conectarGoogleCalendar() {
+  if (!GOOGLE_CLIENT_ID) {
+    alert('La conexión con Google Calendar todavía no está activada del todo. Pídele a Pablo que termine de configurarla.');
+    return;
+  }
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return;
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: 'code',
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: 'https://www.googleapis.com/auth/calendar.events',
+    state: session.access_token,
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+}
+
+async function desconectarGoogleCalendar(logopedaId) {
+  if (!confirm('¿Desconectar tu Google Calendar? Las próximas citas dejarán de sincronizarse.')) return;
+  await supabaseClient.from('logopeda_google_calendar').delete().eq('logopeda_id', logopedaId);
+}
+
+// Sincroniza (crea/actualiza/borra) el evento de Google Calendar de una cita.
+// No bloquea la interfaz ni muestra error si el logopeda no tiene el calendario conectado.
+async function sincronizarCitaGoogle(citaId, accion) {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    await fetch(`${SUPABASE_URL}/functions/v1/google-calendar-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}`, 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ citaId, accion }),
+    });
+  } catch (e) {
+    console.warn('No se pudo sincronizar con Google Calendar:', e);
+  }
+}
