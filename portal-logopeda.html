@@ -97,7 +97,20 @@
     <!-- STUBS: pendientes de construir -->
     <div class="panel seccion-tab" data-panel="trabajos-externos" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Trabajos externos</h2></div>
-      <div class="stub-panel"><h3>Próximamente</h3><p>Derivaciones y trabajos con profesionales externos. Todavía no está construido — lo iremos añadiendo según prioridad.</p></div>
+      <div class="tarjeta" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Nueva derivación / trabajo externo</h3>
+        <div class="fila-acciones">
+          <select id="tePaciente" style="flex:2;"></select>
+          <input type="text" id="teProfesional" placeholder="Profesional externo" style="flex:2;">
+          <input type="text" id="teEspecialidad" placeholder="Especialidad" style="flex:1;">
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <input type="date" id="teFecha">
+          <textarea id="teNotas" placeholder="Notas" style="flex:2;"></textarea>
+          <button class="btn btn-secundario" onclick="crearTrabajoExterno()">Guardar</button>
+        </div>
+      </div>
+      <div id="listaTrabajosExternos"><div class="cargando">Cargando…</div></div>
     </div>
     <div class="panel seccion-tab" data-panel="firmas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Firmas pendientes</h2></div>
@@ -600,6 +613,49 @@ function usarHueco(fecha, hora) {
   alert(`Hueco ${formatearFecha(fecha)} a las ${hora} guardado. Elige el paciente y pulsa "+ Cita": la fecha y hora aparecerán ya rellenadas.`);
 }
 
+async function cargarTrabajosExternos() {
+  const sel = document.getElementById('tePaciente');
+  if (sel && sel.options.length === 0) {
+    sel.innerHTML = '<option value="">— Elegir paciente —</option>' +
+      PACIENTES.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  }
+  const { data } = await supabaseClient
+    .from('trabajos_externos').select('*, pacientes(nombre)').eq('logopeda_id', UID)
+    .order('fecha', { ascending: false });
+  const cont = document.getElementById('listaTrabajosExternos');
+  cont.innerHTML = (data && data.length) ? data.map(t => `
+    <div class="lista-item">
+      <strong>${t.pacientes?.nombre || '—'}</strong> → ${t.profesional_externo}${t.especialidad ? ` <span class="etiqueta-pill">${t.especialidad}</span>` : ''}
+      ${badgeEstado(t.estado)}
+      <div class="meta">${t.fecha ? formatearFecha(t.fecha) : '—'}</div>
+      ${t.notas ? `<p style="color:var(--texto);margin:6px 0 0;">${t.notas}</p>` : ''}
+      <select onchange="actualizarEstadoTrabajoExterno('${t.id}', this.value)" style="margin-top:6px;">
+        ${['pendiente', 'completado', 'cancelado'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay trabajos externos registrados.</p>';
+}
+
+async function actualizarEstadoTrabajoExterno(id, estado) {
+  await supabaseClient.from('trabajos_externos').update({ estado }).eq('id', id);
+  await cargarTrabajosExternos();
+}
+
+async function crearTrabajoExterno() {
+  const paciente_id = document.getElementById('tePaciente').value;
+  const profesional_externo = document.getElementById('teProfesional').value.trim();
+  const especialidad = document.getElementById('teEspecialidad').value.trim() || null;
+  const fecha = document.getElementById('teFecha').value || null;
+  const notas = document.getElementById('teNotas').value.trim() || null;
+  if (!paciente_id || !profesional_externo) return;
+  await supabaseClient.from('trabajos_externos').insert({
+    paciente_id, logopeda_id: UID, profesional_externo, especialidad, fecha, notas, estado: 'pendiente'
+  });
+  document.getElementById('teProfesional').value = '';
+  document.getElementById('teEspecialidad').value = '';
+  document.getElementById('teNotas').value = '';
+  await cargarTrabajosExternos();
+}
+
 async function cargarTareasAgregadas() {
   const filtro = document.getElementById('filtroEstadoTareas')?.value || '';
   let query = supabaseClient.from('tareas_paciente').select('*, pacientes(nombre)').eq('logopeda_id', UID);
@@ -729,6 +785,7 @@ async function borrarTextoPredefinido(id) {
 
   await cargarGabinetesOpts();
   await cargarPacientes();
+  await cargarTrabajosExternos();
   await cargarAgenda();
   await cargarSalaEspera();
   await cargarCitasOnlinePendientes();

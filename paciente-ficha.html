@@ -28,7 +28,9 @@
     <button class="tab-link" data-tab="citas">Citas</button>
     <button class="tab-link" data-tab="tareas">Tareas</button>
     <button class="tab-link" data-tab="notas">Notas</button>
+    <button class="tab-link" data-tab="historia-clinica">Historia clínica</button>
     <button class="tab-link" data-tab="documentos">Documentos</button>
+    <button class="tab-link" data-tab="datos-auxiliares">Datos auxiliares</button>
   </div>
 
   <!-- DATOS -->
@@ -144,6 +146,22 @@
     <div id="listaTareasFicha"><div class="cargando">Cargando…</div></div>
   </div>
 
+  <!-- HISTORIA CLÍNICA -->
+  <div class="seccion-tab" data-panel="historia-clinica">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Nuevo documento de historia clínica</h3>
+      <div class="fila-acciones">
+        <input type="date" id="hcFecha">
+        <input type="text" id="hcDocumento" placeholder="Documento (ej. Informe de evaluación inicial)" style="flex:2;">
+      </div>
+      <div class="fila-acciones" style="margin-top:10px;">
+        <textarea id="hcComentarios" placeholder="Comentarios" style="flex:3;"></textarea>
+        <button class="btn btn-secundario" onclick="crearHistoriaClinica()">Guardar</button>
+      </div>
+    </div>
+    <div id="listaHistoriaClinica"><div class="cargando">Cargando…</div></div>
+  </div>
+
   <!-- DOCUMENTOS -->
   <div class="seccion-tab" data-panel="documentos">
     <div class="tarjeta" style="margin-bottom:20px;">
@@ -168,6 +186,20 @@
       <p class="meta" id="estadoDocumento"></p>
     </div>
     <div id="listaDocumentos"><div class="cargando">Cargando…</div></div>
+  </div>
+
+  <!-- DATOS AUXILIARES -->
+  <div class="seccion-tab" data-panel="datos-auxiliares">
+    <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Añadir dato auxiliar</h3>
+      <p class="meta">Campos personalizados libres — para lo que no encaje en la ficha estándar.</p>
+      <div class="fila-acciones">
+        <input type="text" id="daClave" placeholder="Campo (ej. Alergias)" style="flex:1;">
+        <input type="text" id="daValor" placeholder="Valor" style="flex:2;">
+        <button class="btn btn-secundario" onclick="crearDatoAuxiliar()">Añadir</button>
+      </div>
+    </div>
+    <div id="listaDatosAuxiliares"><div class="cargando">Cargando…</div></div>
   </div>
 </div>
 
@@ -448,6 +480,59 @@ async function crearTareaFicha() {
   await cargarTareasFicha();
 }
 
+async function cargarHistoriaClinica() {
+  const { data } = await supabaseClient
+    .from('historia_clinica').select('*, logopedas(profiles(nombre))').eq('paciente_id', pacienteId)
+    .order('fecha', { ascending: false });
+  const cont = document.getElementById('listaHistoriaClinica');
+  cont.innerHTML = (data && data.length) ? data.map(h => `
+    <div class="lista-item">
+      <strong>${h.documento}</strong>
+      <div class="meta">${formatearFecha(h.fecha)} · ${h.logopedas?.profiles?.nombre || 'Profesional'}</div>
+      ${h.comentarios ? `<p style="color:var(--texto);margin:6px 0 0;">${h.comentarios}</p>` : ''}
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay documentos de historia clínica.</p>';
+}
+
+async function crearHistoriaClinica() {
+  const documento = document.getElementById('hcDocumento').value.trim();
+  const fecha = document.getElementById('hcFecha').value || new Date().toISOString().slice(0, 10);
+  const comentarios = document.getElementById('hcComentarios').value.trim() || null;
+  if (!documento) return;
+  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
+  await supabaseClient.from('historia_clinica').insert({
+    paciente_id: pacienteId, logopeda_id: pac?.logopeda_id, fecha, documento, comentarios
+  });
+  document.getElementById('hcDocumento').value = '';
+  document.getElementById('hcComentarios').value = '';
+  await cargarHistoriaClinica();
+}
+
+async function cargarDatosAuxiliares() {
+  const { data } = await supabaseClient
+    .from('datos_auxiliares_paciente').select('*').eq('paciente_id', pacienteId).order('created_at');
+  const cont = document.getElementById('listaDatosAuxiliares');
+  cont.innerHTML = (data && data.length) ? data.map(d => `
+    <div class="lista-item">
+      <strong>${d.clave}</strong>: ${d.valor || '—'}
+      <button class="btn btn-outline" style="margin-left:10px;" onclick="borrarDatoAuxiliar('${d.id}')">Eliminar</button>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay datos auxiliares.</p>';
+}
+
+async function crearDatoAuxiliar() {
+  const clave = document.getElementById('daClave').value.trim();
+  const valor = document.getElementById('daValor').value.trim();
+  if (!clave) return;
+  await supabaseClient.from('datos_auxiliares_paciente').insert({ paciente_id: pacienteId, clave, valor });
+  document.getElementById('daClave').value = '';
+  document.getElementById('daValor').value = '';
+  await cargarDatosAuxiliares();
+}
+
+async function borrarDatoAuxiliar(id) {
+  await supabaseClient.from('datos_auxiliares_paciente').delete().eq('id', id);
+  await cargarDatosAuxiliares();
+}
+
 async function cargarDocumentos() {
   const { data, error } = await supabaseClient.from('documentos_paciente').select('*').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
   const cont = document.getElementById('listaDocumentos');
@@ -508,6 +593,8 @@ async function subirDocumento() {
   await cargarCitasFicha();
   await cargarTareasFicha();
   await buscarNotas();
+  await cargarHistoriaClinica();
+  await cargarDatosAuxiliares();
   await cargarDocumentos();
 })();
 </script>
