@@ -33,6 +33,30 @@ function badgeEstado(estado) {
   return `<span class="badge ${mapa[estado] || 'badge-gris'}">${estado}</span>`;
 }
 
+let contadorTarjetas = 0;
+
+function renderRecurso(r) {
+  if (r.tipo === 'tarjeta_nombrar') {
+    const id = 'tj-' + (contadorTarjetas++);
+    return `
+      <div class="tarjeta-nombrar" style="margin-top:14px;text-align:center;border:1px solid var(--borde);border-radius:12px;padding:16px;">
+        ${r.contenido_url ? `<img src="${r.contenido_url}" alt="" style="max-width:100%;max-height:180px;border-radius:8px;margin-bottom:10px;">` : ''}
+        <div id="${id}-palabra" style="display:none;font-weight:700;font-size:1.1rem;color:var(--azul-oscuro);margin-bottom:6px;">${r.titulo}</div>
+        <div class="fila-acciones" style="justify-content:center;">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('${id}-palabra').style.display='block';this.style.display='none';">¿Cómo se dice? Mostrar palabra</button>
+          ${r.descripcion ? `<button type="button" class="btn btn-outline" onclick="document.getElementById('${id}-pista').style.display='block';this.style.display='none';">Ver pista</button>` : ''}
+        </div>
+        ${r.descripcion ? `<div id="${id}-pista" class="meta" style="display:none;margin-top:8px;">💡 ${r.descripcion}</div>` : ''}
+      </div>`;
+  }
+  return `
+    <div style="margin-top:10px;">
+      <strong>${r.titulo}</strong> <span class="meta">(${r.tipo})</span>
+      ${r.descripcion ? `<p class="meta">${r.descripcion}</p>` : ''}
+      ${r.contenido_url ? `<a href="${r.contenido_url}" target="_blank" rel="noopener">Abrir recurso »</a>` : ''}
+    </div>`;
+}
+
 function cambiarPaciente(id) {
   document.querySelectorAll('#tabsPacientes .tab-link').forEach(b => b.classList.toggle('activo', b.dataset.id === id));
   document.querySelectorAll('#panelPacientes [data-paciente]').forEach(el => el.classList.toggle('activo', el.dataset.paciente === id));
@@ -128,12 +152,7 @@ function cambiarPaciente(id) {
         const catDiv = document.createElement('div');
         catDiv.className = 'tarjeta';
         catDiv.innerHTML = `<span class="etiqueta-pill">${cat}</span>` +
-          porCategoria[cat].map(r => `
-            <div style="margin-top:10px;">
-              <strong>${r.titulo}</strong> <span class="meta">(${r.tipo})</span>
-              ${r.descripcion ? `<p class="meta">${r.descripcion}</p>` : ''}
-              ${r.contenido_url ? `<a href="${r.contenido_url}" target="_blank" rel="noopener">Abrir recurso »</a>` : ''}
-            </div>`).join('');
+          porCategoria[cat].map(r => renderRecurso(r)).join('');
         gridRecursos.appendChild(catDiv);
       }
       bloque.appendChild(gridRecursos);

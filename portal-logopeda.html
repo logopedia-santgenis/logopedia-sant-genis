@@ -54,7 +54,8 @@
       <div class="fila-acciones">
         <input type="text" id="rTitulo" placeholder="Título" required style="flex:2;">
         <input type="text" id="rCategoria" placeholder="Categoría / síntoma (ej. Dislexia)" required style="flex:2;">
-        <select id="rTipo">
+        <select id="rTipo" onchange="ajustarCamposRecurso()">
+          <option value="tarjeta_nombrar">Tarjeta de nombrar (imagen + palabra)</option>
           <option value="pdf">PDF</option>
           <option value="video">Video</option>
           <option value="enlace">Enlace</option>
@@ -63,10 +64,11 @@
         </select>
       </div>
       <div class="fila-acciones" style="margin-top:10px;">
-        <input type="text" id="rUrl" placeholder="URL del recurso (opcional)" style="flex:2;">
-        <input type="text" id="rDescripcion" placeholder="Descripción breve" style="flex:2;">
+        <input type="text" id="rUrl" placeholder="URL de la imagen" style="flex:2;">
+        <input type="text" id="rDescripcion" placeholder="Pista (ej. Es un animal que vive en el agua)" style="flex:2;">
         <button type="submit" class="btn btn-secundario">Guardar</button>
       </div>
+      <p class="meta" id="ayudaTipoRecurso" style="margin-top:6px;">En "Tarjeta de nombrar": el título es la palabra objetivo, la URL es la imagen y la pista se muestra si el paciente la necesita.</p>
     </form>
   </div>
 
@@ -78,6 +80,25 @@
 <script>
 let UID = null;
 let PACIENTES = [];
+
+function ajustarCamposRecurso() {
+  const tipo = document.getElementById('rTipo').value;
+  const rTitulo = document.getElementById('rTitulo');
+  const rUrl = document.getElementById('rUrl');
+  const rDescripcion = document.getElementById('rDescripcion');
+  const ayuda = document.getElementById('ayudaTipoRecurso');
+  if (tipo === 'tarjeta_nombrar') {
+    rTitulo.placeholder = 'Palabra objetivo (ej. Pez)';
+    rUrl.placeholder = 'URL de la imagen';
+    rDescripcion.placeholder = 'Pista (ej. Es un animal que vive en el agua)';
+    ayuda.style.display = 'block';
+  } else {
+    rTitulo.placeholder = 'Título';
+    rUrl.placeholder = 'URL del recurso (opcional)';
+    rDescripcion.placeholder = 'Descripción breve';
+    ayuda.style.display = 'none';
+  }
+}
 
 function cambiarTab(tab) {
   document.querySelectorAll('.tab-link').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
