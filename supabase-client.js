@@ -58,6 +58,21 @@ async function cerrarSesion() {
   window.location.href = 'login.html';
 }
 
+// Escapa HTML antes de insertar cualquier dato escrito por un usuario (nombre, notas,
+// mensajes, etc.) dentro de innerHTML. Sin esto, alguien podría escribir <script> en un
+// campo de texto (nombre, mensaje de contacto...) y ese código se ejecutaría en el
+// navegador de otra persona (logopeda/admin) cuando lo vea. Usar SIEMPRE con datos que
+// vengan de un formulario o de la base de datos y se inserten con innerHTML/template strings.
+function esc(valor) {
+  if (valor === null || valor === undefined) return '';
+  return String(valor)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function formatearFecha(fechaStr) {
   if (!fechaStr) return '—';
   const d = new Date(fechaStr);

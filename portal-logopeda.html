@@ -281,7 +281,7 @@ let GABINETES_OPTS = '<option value="">Sin gabinete asignado</option>';
 async function cargarGabinetesOpts() {
   const { data } = await supabaseClient.from('gabinetes').select('*').eq('activo', true).order('nombre');
   GABINETES_OPTS = '<option value="">Sin gabinete asignado</option>' +
-    (data || []).map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+    (data || []).map(g => `<option value="${g.id}">${esc(g.nombre)}</option>`).join('');
 }
 
 function ajustarCamposRecurso() {
@@ -333,7 +333,7 @@ function pintarPacientes() {
     const div = document.createElement('div');
     div.className = 'lista-item';
     div.innerHTML = `
-      <strong>${p.nombre}</strong> ${badgeEstado(p.estado)}
+      <strong>${esc(p.nombre)}</strong> ${badgeEstado(p.estado)}
       <div class="meta">Nacimiento: ${formatearFecha(p.fecha_nacimiento)}</div>
       <div class="fila-acciones">
         <button class="btn btn-outline" data-accion="ficha" data-id="${p.id}">+ Nota de seguimiento</button>
@@ -456,7 +456,7 @@ async function verHistorial(pacienteId) {
   if (tareas && tareas.length) {
     html += `<div class="meta" style="margin-top:8px;font-weight:600;">Tareas</div>` + tareas.map(t => `
       <div class="meta" style="margin-top:4px;">
-        ${t.tipo_tarea} — ${badgeEstado(t.estado)} ${t.fecha_inicio ? '· ' + formatearFecha(t.fecha_inicio) : ''}${t.fecha_fin ? ' a ' + formatearFecha(t.fecha_fin) : ''}
+        ${esc(t.tipo_tarea)} — ${badgeEstado(t.estado)} ${t.fecha_inicio ? '· ' + formatearFecha(t.fecha_inicio) : ''}${t.fecha_fin ? ' a ' + formatearFecha(t.fecha_fin) : ''}
         <select onchange="actualizarEstadoTarea('${t.id}', this.value, '${pacienteId}')" style="margin-left:6px;">
           ${['pendiente','en_curso','completada','cancelada'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
@@ -468,7 +468,7 @@ async function verHistorial(pacienteId) {
     html += `<div class="meta" style="margin-top:12px;font-weight:600;">Notas de seguimiento</div>` + fichas.map(f => `
       <div class="meta" style="margin-top:8px;border-top:1px solid var(--borde);padding-top:8px;">
         ${formatearFecha(f.fecha)} ${f.visible_para_cliente ? '· <em>visible para el paciente</em>' : ''}
-        <p style="color:var(--texto);">${f.notas}</p>
+        <p style="color:var(--texto);">${esc(f.notas)}</p>
       </div>`).join('');
   }
   cont.innerHTML = html;
@@ -493,10 +493,10 @@ async function cargarCitasOnlinePendientes() {
     <h3 style="margin-top:0;">Solicitudes de cita online pendientes de confirmar</h3>
     ${data.map(s => `
       <div class="lista-item">
-        <strong>${s.nombre}</strong> — ${s.email}${s.telefono ? ' · ' + s.telefono : ''}
-        ${s.tratamientos?.nombre ? `<span class="etiqueta-pill">${s.tratamientos.nombre}</span>` : ''}
+        <strong>${esc(s.nombre)}</strong> — ${esc(s.email)}${s.telefono ? ' · ' + esc(s.telefono) : ''}
+        ${s.tratamientos?.nombre ? `<span class="etiqueta-pill">${esc(s.tratamientos.nombre)}</span>` : ''}
         <div class="meta">${formatearFecha(s.fecha)} · ${s.hora} · ${s.es_paciente_nuevo ? 'Paciente nuevo' : 'Ya es paciente'}</div>
-        ${s.notas ? `<div class="meta">"${s.notas}"</div>` : ''}
+        ${s.notas ? `<div class="meta">"${esc(s.notas)}"</div>` : ''}
         <div class="fila-acciones" style="margin-top:8px;">
           <button class="btn btn-secundario" onclick="confirmarCitaOnlineLogopeda('${s.id}')">Confirmar y crear cita</button>
           <button class="btn btn-outline" onclick="rechazarCitaOnlineLogopeda('${s.id}')">Rechazar</button>
@@ -601,7 +601,7 @@ async function cargarAgendaSemana() {
     html += `<div class="dia-columna ${fStr === hoyStr ? 'hoy' : ''}">
       <div class="dia-cabecera">${nombresDias[i]}<span class="num-dia">${d.getDate()}/${d.getMonth() + 1}</span></div>
       ${lista.length
-        ? lista.map(c => `<div class="cita-mini"><span class="hora-mini">${c.hora}</span> — ${c.pacientes?.nombre || '—'}${c.gabinetes?.nombre ? ` <span class="meta">(${c.gabinetes.nombre})</span>` : ''}<div>${badgeEstado(c.estado)}</div>${c.modalidad === 'online' ? `<a href="${urlVideollamada(c.id)}" target="_blank" rel="noopener" style="font-size:.78rem;">📹 Unirse a videollamada</a>` : ''}</div>`).join('')
+        ? lista.map(c => `<div class="cita-mini"><span class="hora-mini">${c.hora}</span> — ${esc(c.pacientes?.nombre || '—')}${c.gabinetes?.nombre ? ` <span class="meta">(${esc(c.gabinetes.nombre)})</span>` : ''}<div>${badgeEstado(c.estado)}</div>${c.modalidad === 'online' ? `<a href="${urlVideollamada(c.id)}" target="_blank" rel="noopener" style="font-size:.78rem;">📹 Unirse a videollamada</a>` : ''}</div>`).join('')
         : '<div class="dia-sin-citas">Sin citas</div>'}
     </div>`;
   }
@@ -657,7 +657,7 @@ async function cargarSalaEspera() {
 
   document.getElementById('listaSalaEspera').innerHTML = citas.map(c => `
     <div class="lista-item">
-      <strong>${c.pacientes?.nombre || '—'}</strong> <span class="meta">${c.hora}</span>
+      <strong>${esc(c.pacientes?.nombre || '—')}</strong> <span class="meta">${c.hora}</span>
       ${c.en_sala_espera ? '<span class="badge badge-verde">En sala de espera</span>' : ''}
       <button class="btn btn-outline" style="margin-left:8px;" onclick="alternarSalaEspera('${c.id}', ${!c.en_sala_espera})">
         ${c.en_sala_espera ? 'Quitar de sala de espera' : 'Marcar llegada'}
@@ -718,7 +718,7 @@ async function cargarFirmasPendientes() {
   const cont = document.getElementById('listaFirmasPendientes');
   cont.innerHTML = (data && data.length) ? data.map(f => `
     <div class="lista-item">
-      <strong>${f.pacientes?.nombre || '—'}</strong> — ${f.titulo}
+      <strong>${esc(f.pacientes?.nombre || '—')}</strong> — ${esc(f.titulo)}
       <div class="fila-acciones" style="margin-top:6px;">
         <input type="text" readonly value="${location.origin}${location.pathname.replace('portal-logopeda.html', '')}firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
         <a class="btn btn-outline" href="paciente-ficha.html?id=${f.paciente_id}">Ver ficha »</a>
@@ -734,8 +734,8 @@ async function cargarPlantillas() {
   const cont = document.getElementById('listaPlantillas');
   cont.innerHTML = (data && data.length) ? data.map(p => `
     <div class="lista-item">
-      <strong>${p.titulo}</strong>
-      <p class="meta" style="white-space:pre-wrap;">${p.contenido}</p>
+      <strong>${esc(p.titulo)}</strong>
+      <p class="meta" style="white-space:pre-wrap;">${esc(p.contenido)}</p>
       ${p.logopeda_id === UID ? `<button class="btn btn-outline" onclick="borrarPlantilla('${p.id}')">Eliminar</button>` : ''}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay plantillas creadas.</p>';
 }
@@ -762,9 +762,9 @@ async function cargarCampanas() {
   const cont = document.getElementById('listaCampanas');
   cont.innerHTML = (data && data.length) ? data.map(c => `
     <div class="lista-item">
-      <strong>${c.titulo}</strong> ${badgeEstado(c.estado === 'enviada' ? 'realizada' : 'pendiente')}
+      <strong>${esc(c.titulo)}</strong> ${badgeEstado(c.estado === 'enviada' ? 'realizada' : 'pendiente')}
       <span class="etiqueta-pill">${c.segmento === 'todos' ? 'Todos los pacientes' : 'Solo activos'}</span>
-      <p class="meta" style="white-space:pre-wrap;">${c.mensaje}</p>
+      <p class="meta" style="white-space:pre-wrap;">${esc(c.mensaje)}</p>
       <div class="fila-acciones">
         <button class="btn btn-outline" onclick="exportarDestinatariosCampana('${c.segmento}')">Exportar destinatarios (CSV)</button>
         ${c.estado === 'borrador' ? `<button class="btn btn-outline" onclick="marcarCampanaEnviada('${c.id}')">Marcar como enviada</button>` : ''}
@@ -793,7 +793,8 @@ async function exportarDestinatariosCampana(segmento) {
   if (segmento === 'activos') query = query.eq('estado', 'activo');
   const { data } = await query;
   if (!data || !data.length) { alert('No hay pacientes con email registrado para este segmento.'); return; }
-  const filas = ['nombre,email,telefono', ...data.map(p => `"${p.nombre}","${p.email}","${p.telefono || ''}"`)];
+  const csvSafe = (v) => { const s = String(v ?? ''); return /^[=+\-@]/.test(s) ? `'${s}` : s; }; // evita inyección de fórmulas al abrir el CSV en Excel/Sheets
+  const filas = ['nombre,email,telefono', ...data.map(p => `"${csvSafe(p.nombre)}","${csvSafe(p.email)}","${csvSafe(p.telefono || '')}"`)];
   const blob = new Blob([filas.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -810,12 +811,12 @@ async function cargarActividadesGrupales() {
   const cont = document.getElementById('listaActividadesGrupales');
   cont.innerHTML = (data && data.length) ? data.map(a => {
     const inscritos = a.actividades_grupales_pacientes || [];
-    const opcionesPacientes = PACIENTES.filter(p => !inscritos.some(i => i.paciente_id === p.id)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    const opcionesPacientes = PACIENTES.filter(p => !inscritos.some(i => i.paciente_id === p.id)).map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
     return `
     <div class="lista-item">
-      <strong>${a.nombre}</strong> ${badgeEstado(a.estado === 'programada' ? 'confirmada' : a.estado === 'realizada' ? 'realizada' : 'cancelada')}
+      <strong>${esc(a.nombre)}</strong> ${badgeEstado(a.estado === 'programada' ? 'confirmada' : a.estado === 'realizada' ? 'realizada' : 'cancelada')}
       <div class="meta">${formatearFecha(a.fecha)} · ${a.hora} · ${inscritos.length}/${a.capacidad_maxima} inscritos</div>
-      <div class="meta">${inscritos.map(i => i.pacientes?.nombre).filter(Boolean).join(', ') || 'Sin inscritos todavía'}</div>
+      <div class="meta">${inscritos.map(i => esc(i.pacientes?.nombre)).filter(Boolean).join(', ') || 'Sin inscritos todavía'}</div>
       <div class="fila-acciones" style="margin-top:6px;">
         <select id="agPaciente-${a.id}" style="flex:2;"><option value="">— Añadir paciente —</option>${opcionesPacientes}</select>
         <button class="btn btn-outline" onclick="inscribirActividadGrupal('${a.id}')">Inscribir</button>
@@ -854,7 +855,7 @@ async function cargarTrabajosExternos() {
   const sel = document.getElementById('tePaciente');
   if (sel && sel.options.length === 0) {
     sel.innerHTML = '<option value="">— Elegir paciente —</option>' +
-      PACIENTES.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+      PACIENTES.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
   }
   const { data } = await supabaseClient
     .from('trabajos_externos').select('*, pacientes(nombre)').eq('logopeda_id', UID)
@@ -862,10 +863,10 @@ async function cargarTrabajosExternos() {
   const cont = document.getElementById('listaTrabajosExternos');
   cont.innerHTML = (data && data.length) ? data.map(t => `
     <div class="lista-item">
-      <strong>${t.pacientes?.nombre || '—'}</strong> → ${t.profesional_externo}${t.especialidad ? ` <span class="etiqueta-pill">${t.especialidad}</span>` : ''}
+      <strong>${esc(t.pacientes?.nombre || '—')}</strong> → ${esc(t.profesional_externo)}${t.especialidad ? ` <span class="etiqueta-pill">${esc(t.especialidad)}</span>` : ''}
       ${badgeEstado(t.estado)}
       <div class="meta">${t.fecha ? formatearFecha(t.fecha) : '—'}</div>
-      ${t.notas ? `<p style="color:var(--texto);margin:6px 0 0;">${t.notas}</p>` : ''}
+      ${t.notas ? `<p style="color:var(--texto);margin:6px 0 0;">${esc(t.notas)}</p>` : ''}
       <select onchange="actualizarEstadoTrabajoExterno('${t.id}', this.value)" style="margin-top:6px;">
         ${['pendiente', 'completado', 'cancelado'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
       </select>
@@ -902,7 +903,7 @@ async function cargarTareasAgregadas() {
   const cont = document.getElementById('listaTareasAgregadas');
   cont.innerHTML = (data && data.length) ? data.map(t => `
     <div class="lista-item">
-      <strong>${t.pacientes?.nombre || '—'}</strong> — ${t.tipo_tarea || 'Tarea'} ${badgeEstado(t.estado)}
+      <strong>${esc(t.pacientes?.nombre || '—')}</strong> — ${esc(t.tipo_tarea || 'Tarea')} ${badgeEstado(t.estado)}
       <div class="meta">${t.fecha_inicio ? formatearFecha(t.fecha_inicio) : '—'}${t.fecha_fin ? ' a ' + formatearFecha(t.fecha_fin) : ''} · Recordatorio: ${t.canal_recordatorio}</div>
       <select onchange="actualizarEstadoTareaAgregada('${t.id}', this.value)" style="margin-top:6px;">
         ${['pendiente', 'en_curso', 'completada', 'cancelada'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
@@ -927,14 +928,14 @@ async function cargarRecursos() {
     return;
   }
 
-  const opcionesPacientes = PACIENTES.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  const opcionesPacientes = PACIENTES.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
 
   for (const r of recursos) {
     const div = document.createElement('div');
     div.className = 'lista-item';
     div.innerHTML = `
-      <span class="etiqueta-pill">${r.categoria}</span> <strong>${r.titulo}</strong> <span class="meta">(${r.tipo})</span>
-      ${r.descripcion ? `<p class="meta">${r.descripcion}</p>` : ''}
+      <span class="etiqueta-pill">${esc(r.categoria)}</span> <strong>${esc(r.titulo)}</strong> <span class="meta">(${r.tipo})</span>
+      ${r.descripcion ? `<p class="meta">${esc(r.descripcion)}</p>` : ''}
       <div class="fila-acciones">
         <select id="selPaciente-${r.id}">${opcionesPacientes || '<option>Sin pacientes</option>'}</select>
         <button class="btn btn-outline" onclick="habilitarRecurso('${r.id}')">Habilitar para paciente</button>
@@ -978,8 +979,8 @@ async function cargarTextosPredefinidos() {
   const cont = document.getElementById('listaTextos');
   cont.innerHTML = TEXTOS_PREDEFINIDOS.length ? TEXTOS_PREDEFINIDOS.map((t, i) => `
     <div class="lista-item">
-      <strong>${t.titulo}</strong>
-      <p class="meta">${t.contenido}</p>
+      <strong>${esc(t.titulo)}</strong>
+      <p class="meta">${esc(t.contenido)}</p>
       <div class="fila-acciones">
         <button class="btn btn-outline" onclick="copiarTexto(${i})">Copiar</button>
         ${t.logopeda_id === UID ? `<button class="btn btn-outline" onclick="borrarTextoPredefinido('${t.id}')">Eliminar</button>` : ''}

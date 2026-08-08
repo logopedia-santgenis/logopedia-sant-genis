@@ -56,22 +56,22 @@
       <p class="meta" id="resumenReserva" style="margin-bottom:14px;"></p>
       <div class="campo">
         <label for="rNombre">Nombre completo</label>
-        <input type="text" id="rNombre" required>
+        <input type="text" id="rNombre" required maxlength="150">
       </div>
       <div class="campo">
         <label for="rEmail">Correo electrónico</label>
-        <input type="email" id="rEmail" required>
+        <input type="email" id="rEmail" required maxlength="200">
       </div>
       <div class="campo">
         <label for="rTelefono">Teléfono</label>
-        <input type="tel" id="rTelefono" required>
+        <input type="tel" id="rTelefono" required maxlength="30">
       </div>
       <div class="campo">
         <label><input type="checkbox" id="rNuevoPaciente" checked style="width:auto;display:inline-block;margin-right:6px;">Soy paciente nuevo (primera vez en el centro)</label>
       </div>
       <div class="campo">
         <label for="rNotas">¿Algo que debamos saber? (opcional)</label>
-        <textarea id="rNotas" rows="3"></textarea>
+        <textarea id="rNotas" rows="3" maxlength="2000"></textarea>
       </div>
       <div class="mensaje-error" id="msgErrorReserva"></div>
       <button type="submit" class="btn btn-secundario" style="width:100%;">Confirmar solicitud de cita</button>
@@ -109,11 +109,11 @@ async function cargarCatalogoPublico() {
 
   document.getElementById('rTratamiento').innerHTML =
     '<option value="">— Elige un tratamiento —</option>' +
-    TRATAMIENTOS.map(t => `<option value="${t.id}" data-logopeda="${t.logopeda_id || ''}">${t.nombre}${t.precio != null ? ' (' + Number(t.precio).toFixed(0) + ' €)' : ''}</option>`).join('');
+    TRATAMIENTOS.map(t => `<option value="${t.id}" data-logopeda="${t.logopeda_id || ''}">${esc(t.nombre)}${t.precio != null ? ' (' + Number(t.precio).toFixed(0) + ' €)' : ''}</option>`).join('');
 
   document.getElementById('rLogopeda').innerHTML =
     '<option value="">— Cualquier profesional disponible —</option>' +
-    LOGOPEDAS.map(l => `<option value="${l.id}">${l.nombre}${l.especialidad ? ' — ' + l.especialidad : ''}</option>`).join('');
+    LOGOPEDAS.map(l => `<option value="${l.id}">${esc(l.nombre)}${l.especialidad ? ' — ' + esc(l.especialidad) : ''}</option>`).join('');
 
   document.getElementById('rFecha').min = new Date().toISOString().slice(0, 10);
 }

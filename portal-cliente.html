@@ -41,18 +41,18 @@ function renderRecurso(r) {
     return `
       <div class="tarjeta-nombrar" style="margin-top:14px;text-align:center;border:1px solid var(--borde);border-radius:12px;padding:16px;">
         ${r.contenido_url ? `<img src="${r.contenido_url}" alt="" style="max-width:100%;max-height:180px;border-radius:8px;margin-bottom:10px;">` : ''}
-        <div id="${id}-palabra" style="display:none;font-weight:700;font-size:1.1rem;color:var(--azul-oscuro);margin-bottom:6px;">${r.titulo}</div>
+        <div id="${id}-palabra" style="display:none;font-weight:700;font-size:1.1rem;color:var(--azul-oscuro);margin-bottom:6px;">${esc(r.titulo)}</div>
         <div class="fila-acciones" style="justify-content:center;">
           <button type="button" class="btn btn-outline" onclick="document.getElementById('${id}-palabra').style.display='block';this.style.display='none';">¿Cómo se dice? Mostrar palabra</button>
           ${r.descripcion ? `<button type="button" class="btn btn-outline" onclick="document.getElementById('${id}-pista').style.display='block';this.style.display='none';">Ver pista</button>` : ''}
         </div>
-        ${r.descripcion ? `<div id="${id}-pista" class="meta" style="display:none;margin-top:8px;">💡 ${r.descripcion}</div>` : ''}
+        ${r.descripcion ? `<div id="${id}-pista" class="meta" style="display:none;margin-top:8px;">💡 ${esc(r.descripcion)}</div>` : ''}
       </div>`;
   }
   return `
     <div style="margin-top:10px;">
-      <strong>${r.titulo}</strong> <span class="meta">(${r.tipo})</span>
-      ${r.descripcion ? `<p class="meta">${r.descripcion}</p>` : ''}
+      <strong>${esc(r.titulo)}</strong> <span class="meta">(${r.tipo})</span>
+      ${r.descripcion ? `<p class="meta">${esc(r.descripcion)}</p>` : ''}
       ${r.contenido_url ? `<a href="${r.contenido_url}" target="_blank" rel="noopener">Abrir recurso »</a>` : ''}
     </div>`;
 }
@@ -94,7 +94,7 @@ function cambiarPaciente(id) {
   if (pacientes.length > 1) {
     const tabs = document.getElementById('tabsPacientes');
     tabs.style.display = 'flex';
-    tabs.innerHTML = pacientes.map((p, i) => `<button class="tab-link ${i === 0 ? 'activo' : ''}" data-id="${p.id}" onclick="cambiarPaciente('${p.id}')">${p.nombre}</button>`).join('');
+    tabs.innerHTML = pacientes.map((p, i) => `<button class="tab-link ${i === 0 ? 'activo' : ''}" data-id="${p.id}" onclick="cambiarPaciente('${p.id}')">${esc(p.nombre)}</button>`).join('');
   }
 
   const hoy = new Date().toISOString().slice(0, 10);
@@ -103,7 +103,7 @@ function cambiarPaciente(id) {
     const bloque = document.createElement('div');
     bloque.dataset.paciente = p.id;
     if (pacientes.length > 1) bloque.className = 'seccion-tab' + (i === 0 ? ' activo' : '');
-    bloque.innerHTML = `<h2>${p.nombre}</h2>`;
+    bloque.innerHTML = `<h2>${esc(p.nombre)}</h2>`;
 
     const { data: citas } = await supabaseClient
       .from('citas')
@@ -151,7 +151,7 @@ function cambiarPaciente(id) {
       for (const cat of Object.keys(porCategoria)) {
         const catDiv = document.createElement('div');
         catDiv.className = 'tarjeta';
-        catDiv.innerHTML = `<span class="etiqueta-pill">${cat}</span>` +
+        catDiv.innerHTML = `<span class="etiqueta-pill">${esc(cat)}</span>` +
           porCategoria[cat].map(r => renderRecurso(r)).join('');
         gridRecursos.appendChild(catDiv);
       }
@@ -179,7 +179,7 @@ function cambiarPaciente(id) {
       for (const f of fichas) {
         const item = document.createElement('div');
         item.className = 'lista-item';
-        item.innerHTML = `<div class="meta">${formatearFecha(f.fecha)}</div><p>${f.notas || ''}</p>`;
+        item.innerHTML = `<div class="meta">${formatearFecha(f.fecha)}</div><p>${esc(f.notas || '')}</p>`;
         bloque.appendChild(item);
       }
     }
@@ -198,7 +198,7 @@ function cambiarPaciente(id) {
       for (const b of bonos) {
         const item = document.createElement('div');
         item.className = 'lista-item';
-        item.innerHTML = `<strong>${b.tratamientos?.nombre || 'Bono'}</strong><div class="meta">${b.sesiones_totales - b.sesiones_usadas} de ${b.sesiones_totales} sesiones restantes</div>`;
+        item.innerHTML = `<strong>${esc(b.tratamientos?.nombre || 'Bono')}</strong><div class="meta">${b.sesiones_totales - b.sesiones_usadas} de ${b.sesiones_totales} sesiones restantes</div>`;
         bloque.appendChild(item);
       }
     }
@@ -224,7 +224,7 @@ function cambiarPaciente(id) {
       for (const d of documentos) {
         const item = document.createElement('div');
         item.className = 'lista-item';
-        item.innerHTML = `<strong>${d.titulo}</strong> <span class="etiqueta-pill">${d.tipo}</span><div class="meta">${formatearFecha(d.created_at)}</div><a href="#" data-ruta="${d.storage_path}">Abrir »</a>`;
+        item.innerHTML = `<strong>${esc(d.titulo)}</strong> <span class="etiqueta-pill">${d.tipo}</span><div class="meta">${formatearFecha(d.created_at)}</div><a href="#" data-ruta="${d.storage_path}">Abrir »</a>`;
         item.querySelector('a').addEventListener('click', async (e) => {
           e.preventDefault();
           const { data } = await supabaseClient.storage.from('documentos-pacientes').createSignedUrl(d.storage_path, 60);

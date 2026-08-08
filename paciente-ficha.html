@@ -271,7 +271,7 @@ function campo(label, id, valor, tipo) {
   tipo = tipo || 'text';
   return `<div class="campo" style="display:inline-block;width:calc(33% - 10px);margin-right:10px;vertical-align:top;">
     <label>${label}</label>
-    <input type="${tipo}" id="${id}" value="${valor ?? ''}">
+    <input type="${tipo}" id="${id}" value="${esc(valor ?? '')}">
   </div>`;
 }
 
@@ -316,7 +316,7 @@ async function cargarDatos() {
     ${campo('Fecha de alta médica', 'fAltaMedica', p.fecha_alta_medica, 'date')}
     <div class="campo" style="width:100%;">
       <label>Observaciones</label>
-      <textarea id="fObservaciones" rows="3">${p.observaciones ?? ''}</textarea>
+      <textarea id="fObservaciones" rows="3">${esc(p.observaciones ?? '')}</textarea>
     </div>
     <button class="btn btn-secundario" onclick="guardarDatos()">Guardar cambios</button>
     <span class="meta" id="estadoDatos" style="margin-left:10px;"></span>
@@ -392,8 +392,8 @@ function pintarNotas(notas) {
   const cont = document.getElementById('listaNotas');
   cont.innerHTML = notas.length ? notas.map(n => `
     <div class="lista-item">
-      <div class="meta">${formatearFecha(n.fecha)} · ${n.logopedas?.profiles?.nombre || 'Profesional'} ${n.visible_para_cliente ? '· <em>visible para el paciente</em>' : ''}</div>
-      <p style="color:var(--texto);margin:6px 0 0;">${n.notas}</p>
+      <div class="meta">${formatearFecha(n.fecha)} · ${esc(n.logopedas?.profiles?.nombre || 'Profesional')} ${n.visible_para_cliente ? '· <em>visible para el paciente</em>' : ''}</div>
+      <p style="color:var(--texto);margin:6px 0 0;">${esc(n.notas)}</p>
     </div>`).join('') : '<p class="vacio-panel">No hay notas con esos criterios.</p>';
 }
 
@@ -414,9 +414,9 @@ async function cargarContactos() {
   const cont = document.getElementById('listaContactos');
   cont.innerHTML = (data && data.length) ? data.map(c => `
     <div class="lista-item">
-      <strong>${c.nombre}</strong> <span class="etiqueta-pill">${c.relacion}</span>
-      <div class="meta">${c.telefono || '—'} · ${c.email || '—'} ${c.nif ? '· NIF ' + c.nif : ''}</div>
-      ${c.anotaciones ? `<div class="meta">${c.anotaciones}</div>` : ''}
+      <strong>${esc(c.nombre)}</strong> <span class="etiqueta-pill">${esc(c.relacion)}</span>
+      <div class="meta">${esc(c.telefono) || '—'} · ${esc(c.email) || '—'} ${c.nif ? '· NIF ' + esc(c.nif) : ''}</div>
+      ${c.anotaciones ? `<div class="meta">${esc(c.anotaciones)}</div>` : ''}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay tutores o contactos añadidos.</p>';
 }
 
@@ -447,7 +447,7 @@ async function cargarCitasFicha() {
   const { data: tratamientos } = await supabaseClient.from('tratamientos').select('id,nombre').eq('activo', true);
   const selTrat = document.getElementById('ciTratamiento');
   selTrat.innerHTML = '<option value="">— Sin tratamiento asociado —</option>' +
-    (tratamientos || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+    (tratamientos || []).map(t => `<option value="${t.id}">${esc(t.nombre)}</option>`).join('');
 
   const { data: citas } = await supabaseClient
     .from('citas').select('*, tratamientos(nombre)').eq('paciente_id', pacienteId)
@@ -457,7 +457,7 @@ async function cargarCitasFicha() {
   cont.innerHTML = (citas && citas.length) ? citas.map(c => `
     <div class="lista-item">
       <strong>${formatearFecha(c.fecha)}</strong> · ${c.hora} · ${c.modalidad === 'online' ? 'Online' : 'Presencial'}
-      ${c.tratamientos?.nombre ? `<span class="etiqueta-pill">${c.tratamientos.nombre}</span>` : ''}
+      ${c.tratamientos?.nombre ? `<span class="etiqueta-pill">${esc(c.tratamientos.nombre)}</span>` : ''}
       ${badgeEstado(c.estado)}
       ${c.modalidad === 'online' ? `<a href="https://meet.jit.si/LogopediaSantGenis-${c.id}" target="_blank" rel="noopener" style="margin-left:8px;">📹 Videollamada</a>` : ''}
       <select onchange="actualizarEstadoCitaFicha('${c.id}', this.value)" style="margin-left:8px;">
@@ -496,9 +496,9 @@ async function cargarTareasFicha() {
   const cont = document.getElementById('listaTareasFicha');
   cont.innerHTML = (tareas && tareas.length) ? tareas.map(t => `
     <div class="lista-item">
-      <strong>${t.tipo_tarea || 'Tarea'}</strong> ${badgeEstado(t.estado)}
+      <strong>${esc(t.tipo_tarea || 'Tarea')}</strong> ${badgeEstado(t.estado)}
       <div class="meta">${t.fecha_inicio ? formatearFecha(t.fecha_inicio) : '—'}${t.fecha_fin ? ' a ' + formatearFecha(t.fecha_fin) : ''} · Recordatorio: ${t.canal_recordatorio}</div>
-      ${t.anotaciones ? `<div class="meta">${t.anotaciones}</div>` : ''}
+      ${t.anotaciones ? `<div class="meta">${esc(t.anotaciones)}</div>` : ''}
       <select onchange="actualizarEstadoTareaFicha('${t.id}', this.value)" style="margin-top:6px;">
         ${['pendiente','en_curso','completada','cancelada'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
       </select>
@@ -533,9 +533,9 @@ async function cargarHistoriaClinica() {
   const cont = document.getElementById('listaHistoriaClinica');
   cont.innerHTML = (data && data.length) ? data.map(h => `
     <div class="lista-item">
-      <strong>${h.documento}</strong>
-      <div class="meta">${formatearFecha(h.fecha)} · ${h.logopedas?.profiles?.nombre || 'Profesional'}</div>
-      ${h.comentarios ? `<p style="color:var(--texto);margin:6px 0 0;">${h.comentarios}</p>` : ''}
+      <strong>${esc(h.documento)}</strong>
+      <div class="meta">${formatearFecha(h.fecha)} · ${esc(h.logopedas?.profiles?.nombre || 'Profesional')}</div>
+      ${h.comentarios ? `<p style="color:var(--texto);margin:6px 0 0;">${esc(h.comentarios)}</p>` : ''}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay documentos de historia clínica.</p>';
 }
 
@@ -559,7 +559,7 @@ async function cargarDatosAuxiliares() {
   const cont = document.getElementById('listaDatosAuxiliares');
   cont.innerHTML = (data && data.length) ? data.map(d => `
     <div class="lista-item">
-      <strong>${d.clave}</strong>: ${d.valor || '—'}
+      <strong>${esc(d.clave)}</strong>: ${esc(d.valor) || '—'}
       <button class="btn btn-outline" style="margin-left:10px;" onclick="borrarDatoAuxiliar('${d.id}')">Eliminar</button>
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay datos auxiliares.</p>';
 }
@@ -586,7 +586,7 @@ async function cargarPlantillasParaGenerar() {
   const { data } = await supabaseClient.from('plantillas_documentos').select('*').order('titulo');
   PLANTILLAS_DOC = data || [];
   document.getElementById('genPlantilla').innerHTML = '<option value="">— Elegir plantilla —</option>' +
-    PLANTILLAS_DOC.map(p => `<option value="${p.id}">${p.titulo}</option>`).join('');
+    PLANTILLAS_DOC.map(p => `<option value="${p.id}">${esc(p.titulo)}</option>`).join('');
 }
 
 async function generarDocumentoDesdePlantilla() {
@@ -628,13 +628,13 @@ function descargarDocumentoGenerado() {
 async function cargarBonos() {
   const { data: tratamientos } = await supabaseClient.from('tratamientos').select('id,nombre').eq('activo', true);
   document.getElementById('boTratamiento').innerHTML = '<option value="">— Sin tratamiento asociado —</option>' +
-    (tratamientos || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+    (tratamientos || []).map(t => `<option value="${t.id}">${esc(t.nombre)}</option>`).join('');
 
   const { data } = await supabaseClient.from('bonos_sesiones').select('*, tratamientos(nombre)').eq('paciente_id', pacienteId).order('created_at', { ascending: false });
   const cont = document.getElementById('listaBonos');
   cont.innerHTML = (data && data.length) ? data.map(b => `
     <div class="lista-item">
-      <strong>${b.tratamientos?.nombre || 'Bono de sesiones'}</strong> ${badgeEstado(b.estado === 'activo' ? 'confirmada' : b.estado === 'agotado' ? 'realizada' : 'cancelada')}
+      <strong>${esc(b.tratamientos?.nombre || 'Bono de sesiones')}</strong> ${badgeEstado(b.estado === 'activo' ? 'confirmada' : b.estado === 'agotado' ? 'realizada' : 'cancelada')}
       <div class="meta">${b.sesiones_usadas} / ${b.sesiones_totales} sesiones usadas ${b.precio != null ? '· ' + Number(b.precio).toFixed(2) + ' €' : ''}</div>
       ${b.estado === 'activo' ? `<button class="btn btn-outline" style="margin-top:6px;" onclick="usarSesionBono('${b.id}', ${b.sesiones_usadas}, ${b.sesiones_totales})">Registrar sesión usada</button>` : ''}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay bonos para este paciente.</p>';
@@ -666,14 +666,14 @@ async function cargarFirmas() {
   const cont = document.getElementById('listaFirmas');
   cont.innerHTML = (data && data.length) ? data.map(f => `
     <div class="lista-item">
-      <strong>${f.titulo}</strong> ${badgeEstado(f.estado === 'firmado' ? 'realizada' : 'pendiente')}
+      <strong>${esc(f.titulo)}</strong> ${badgeEstado(f.estado === 'firmado' ? 'realizada' : 'pendiente')}
       ${f.estado === 'pendiente'
         ? `<div class="meta">Sin firmar todavía.</div>
            <div class="fila-acciones" style="margin-top:6px;">
              <input type="text" readonly value="${location.origin}${location.pathname.replace('paciente-ficha.html', '')}firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
              <button class="btn btn-outline" onclick="copiarEnlaceFirma('${f.id}')">Copiar enlace</button>
            </div>`
-        : `<div class="meta">Firmado por ${f.nombre_firmante || '—'} el ${formatearFecha(f.firmado_en?.slice(0,10))} · IP ${f.ip_firmante || '—'}</div>`}
+        : `<div class="meta">Firmado por ${esc(f.nombre_firmante) || '—'} el ${formatearFecha(f.firmado_en?.slice(0,10))} · IP ${esc(f.ip_firmante) || '—'}</div>`}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay solicitudes de firma para este paciente.</p>';
 }
 
@@ -702,10 +702,10 @@ async function cargarDocumentos() {
   }
   cont.innerHTML = data.map(d => `
     <div class="lista-item">
-      <strong>${d.titulo}</strong> <span class="etiqueta-pill">${d.tipo}</span>
+      <strong>${esc(d.titulo)}</strong> <span class="etiqueta-pill">${esc(d.tipo)}</span>
       ${d.visible_para_cliente ? '<span class="badge badge-verde">Visible para el paciente</span>' : ''}
       <div class="meta">${formatearFecha(d.created_at)}</div>
-      <a href="#" onclick="abrirDocumento('${d.storage_path}');return false;">Abrir »</a>
+      <a href="#" onclick="abrirDocumento('${esc(d.storage_path)}');return false;">Abrir »</a>
     </div>`).join('');
 }
 

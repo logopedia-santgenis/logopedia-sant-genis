@@ -50,23 +50,23 @@ async function cargar() {
   const cont = document.getElementById('contenidoFirma');
   if (!firmaId) { cont.innerHTML = '<p>Enlace no válido.</p>'; return; }
 
-  const { data: f, error } = await supabaseClient.from('firmas_documento').select('*').eq('id', firmaId).single();
-  if (error || !f) { cont.innerHTML = '<p>No se encontró este documento. Pide un nuevo enlace a tu logopeda.</p>'; return; }
+  const { data: f, error } = await supabaseClient.rpc('obtener_firma_publica', { p_id: firmaId }).single();
+  if (error || !f || !f.titulo) { cont.innerHTML = '<p>No se encontró este documento. Pide un nuevo enlace a tu logopeda.</p>'; return; }
 
   if (f.estado === 'firmado') {
     cont.innerHTML = `
-      <h2>${f.titulo}</h2>
-      <p style="white-space:pre-wrap;">${f.contenido}</p>
-      <div class="mensaje-ok" style="display:block;margin-top:16px;">Firmado por <strong>${f.nombre_firmante}</strong> el ${formatearFechaHora(f.firmado_en)}.</div>`;
+      <h2>${esc(f.titulo)}</h2>
+      <p style="white-space:pre-wrap;">${esc(f.contenido)}</p>
+      <div class="mensaje-ok" style="display:block;margin-top:16px;">Firmado por <strong>${esc(f.nombre_firmante)}</strong> el ${formatearFechaHora(f.firmado_en)}.</div>`;
     return;
   }
 
   cont.innerHTML = `
-    <h2>${f.titulo}</h2>
-    <p style="white-space:pre-wrap;">${f.contenido}</p>
+    <h2>${esc(f.titulo)}</h2>
+    <p style="white-space:pre-wrap;">${esc(f.contenido)}</p>
     <div class="campo" style="margin-top:20px;">
       <label for="nombreFirmante">Nombre completo</label>
-      <input type="text" id="nombreFirmante" placeholder="Escribe tu nombre completo">
+      <input type="text" id="nombreFirmante" placeholder="Escribe tu nombre completo" maxlength="200">
     </div>
     <div class="campo">
       <label><input type="checkbox" id="aceptoFirma" style="width:auto;display:inline-block;margin-right:6px;">He leído y acepto el contenido de este documento.</label>

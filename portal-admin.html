@@ -324,20 +324,20 @@ async function cargarLogopedas() {
 
   document.getElementById('pLogopeda').innerHTML =
     '<option value="">— Asignar logopeda —</option>' +
-    LOGOPEDAS.map(l => `<option value="${l.id}">${l.profiles?.nombre || l.profiles?.email}</option>`).join('');
+    LOGOPEDAS.map(l => `<option value="${l.id}">${esc(l.profiles?.nombre || l.profiles?.email)}</option>`).join('');
 
   const cont = document.getElementById('listaLogopedas');
   cont.innerHTML = LOGOPEDAS.length
     ? LOGOPEDAS.map(l => {
         const numPac = PACIENTES.filter(p => p.logopeda_id === l.id).length;
-        return `<tr><td><strong>${l.profiles?.nombre || '—'}</strong></td><td class="meta">${l.profiles?.email || ''}</td><td>${l.especialidad ? `<span class="etiqueta-pill">${l.especialidad}</span>` : '—'}</td><td>${numPac}</td></tr>`;
+        return `<tr><td><strong>${esc(l.profiles?.nombre || '—')}</strong></td><td class="meta">${esc(l.profiles?.email || '')}</td><td>${l.especialidad ? `<span class="etiqueta-pill">${esc(l.especialidad)}</span>` : '—'}</td><td>${numPac}</td></tr>`;
       }).join('')
     : '<tr><td colspan="4" class="vacio-panel">Todavía no hay logopedas dados de alta.</td></tr>';
 
   const { data: candidatos } = await supabaseClient.from('profiles').select('*').eq('rol', 'cliente');
   document.getElementById('selPromover').innerHTML =
     '<option value="">— Elegir cuenta a promover —</option>' +
-    (candidatos || []).map(c => `<option value="${c.id}">${c.nombre || c.email} (${c.email})</option>`).join('');
+    (candidatos || []).map(c => `<option value="${c.id}">${esc(c.nombre || c.email)} (${esc(c.email)})</option>`).join('');
 
   document.getElementById('kpiLogopedas').textContent = LOGOPEDAS.length;
 }
@@ -363,9 +363,9 @@ function pintarPacientes() {
   }
   cont.innerHTML = filtrados.map(p => `
     <tr>
-      <td><strong>${p.nombre}</strong></td>
+      <td><strong>${esc(p.nombre)}</strong></td>
       <td>${formatearFecha(p.fecha_nacimiento)}</td>
-      <td>${p.logopedas?.profiles?.nombre || '<span class="meta">sin asignar</span>'}</td>
+      <td>${p.logopedas?.profiles?.nombre ? esc(p.logopedas.profiles.nombre) : '<span class="meta">sin asignar</span>'}</td>
       <td>${badgeEstado(p.estado)}</td>
       <td><a href="paciente-ficha.html?id=${p.id}">Ver ficha »</a></td>
     </tr>`).join('');
@@ -378,14 +378,14 @@ async function cargarPacientesAdmin() {
 
   document.getElementById('cPaciente').innerHTML =
     '<option value="">— Elegir paciente —</option>' +
-    PACIENTES.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    PACIENTES.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
 
   pintarPacientes();
 
   const { data: tutores } = await supabaseClient.from('profiles').select('*').eq('rol', 'cliente');
   const sel = document.getElementById('pTutor');
   sel.innerHTML = '<option value="">— Sin tutor (paciente adulto con cuenta propia) —</option>' +
-    (tutores || []).map(t => `<option value="${t.id}">${t.nombre || t.email}</option>`).join('');
+    (tutores || []).map(t => `<option value="${t.id}">${esc(t.nombre || t.email)}</option>`).join('');
 
   document.getElementById('kpiPacientes').textContent = PACIENTES.filter(p => p.estado === 'activo').length;
 
@@ -418,7 +418,7 @@ async function cargarCuotas() {
   cont.innerHTML = (cuotas && cuotas.length)
     ? cuotas.map(c => `
       <tr>
-        <td><strong>${c.pacientes?.nombre || '—'}</strong></td>
+        <td><strong>${esc(c.pacientes?.nombre || '—')}</strong></td>
         <td>${c.mes}</td>
         <td>${Number(c.monto).toFixed(2)} €</td>
         <td>${badgeEstado(c.estado)}</td>
@@ -460,12 +460,12 @@ async function cargarServicios() {
   const cont = document.getElementById('listaServicios');
   cont.innerHTML = (data && data.length) ? data.map(s => `
     <div class="lista-item">
-      <strong>${s.nombre}</strong> ${s.precio != null ? Number(s.precio).toFixed(2) + ' €' : ''}
+      <strong>${esc(s.nombre)}</strong> ${s.precio != null ? Number(s.precio).toFixed(2) + ' €' : ''}
       <select onchange="cambiarEstadoServicio('${s.id}', this.value)" style="margin-left:8px;">
         <option value="true" ${s.activo ? 'selected' : ''}>Activo</option>
         <option value="false" ${!s.activo ? 'selected' : ''}>Inactivo</option>
       </select>
-      ${s.descripcion ? `<div class="meta">${s.descripcion}</div>` : ''}
+      ${s.descripcion ? `<div class="meta">${esc(s.descripcion)}</div>` : ''}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay servicios creados.</p>';
 }
 
@@ -496,9 +496,9 @@ async function cargarProductos() {
   const cont = document.getElementById('listaProductos');
   cont.innerHTML = (data && data.length) ? data.map(p => `
     <div class="lista-item">
-      <strong>${p.nombre}</strong> ${p.precio != null ? Number(p.precio).toFixed(2) + ' €' : ''} <span class="meta">· Stock: ${p.stock}</span>
+      <strong>${esc(p.nombre)}</strong> ${p.precio != null ? Number(p.precio).toFixed(2) + ' €' : ''} <span class="meta">· Stock: ${p.stock}</span>
       <div class="fila-acciones" style="margin-top:6px;">
-        <select id="ventaPaciente-${p.id}" style="flex:2;"><option value="">— Paciente (opcional) —</option>${PACIENTES.map(pa => `<option value="${pa.id}">${pa.nombre}</option>`).join('')}</select>
+        <select id="ventaPaciente-${p.id}" style="flex:2;"><option value="">— Paciente (opcional) —</option>${PACIENTES.map(pa => `<option value="${pa.id}">${esc(pa.nombre)}</option>`).join('')}</select>
         <input type="number" id="ventaCantidad-${p.id}" value="1" min="1" style="width:70px;">
         <button class="btn btn-outline" onclick="registrarVenta('${p.id}', ${p.precio || 0}, ${p.stock})">Registrar venta</button>
       </div>
@@ -540,7 +540,7 @@ async function cargarGabinetes() {
   const cont = document.getElementById('listaGabinetes');
   cont.innerHTML = (data && data.length) ? data.map(g => `
     <div class="lista-item">
-      <strong>${g.nombre}</strong>
+      <strong>${esc(g.nombre)}</strong>
       <select onchange="cambiarEstadoGabinete('${g.id}', this.value)" style="margin-left:8px;">
         <option value="true" ${g.activo ? 'selected' : ''}>Activo</option>
         <option value="false" ${!g.activo ? 'selected' : ''}>Inactivo</option>
@@ -576,16 +576,16 @@ async function cargarCitasOnline() {
 
   cont.innerHTML = data.map(s => `
     <div class="lista-item">
-      <strong>${s.nombre}</strong> — ${s.email}${s.telefono ? ' · ' + s.telefono : ''}
-      ${s.tratamientos?.nombre ? `<span class="etiqueta-pill">${s.tratamientos.nombre}</span>` : ''}
+      <strong>${esc(s.nombre)}</strong> — ${esc(s.email)}${s.telefono ? ' · ' + esc(s.telefono) : ''}
+      ${s.tratamientos?.nombre ? `<span class="etiqueta-pill">${esc(s.tratamientos.nombre)}</span>` : ''}
       ${badgeEstado(s.estado)}
       <div class="meta">${formatearFecha(s.fecha)} · ${s.hora} · ${s.es_paciente_nuevo ? 'Paciente nuevo' : 'Ya es paciente'}</div>
-      ${s.notas ? `<div class="meta">"${s.notas}"</div>` : ''}
+      ${s.notas ? `<div class="meta">"${esc(s.notas)}"</div>` : ''}
       ${s.estado === 'nueva' ? `
         <div class="fila-acciones" style="margin-top:8px;">
           <select id="logAsignar-${s.id}">
             <option value="">— Asignar logopeda —</option>
-            ${LOGOPEDAS.map(l => `<option value="${l.id}" ${l.id === s.logopeda_id ? 'selected' : ''}>${l.profiles?.nombre || l.profiles?.email}</option>`).join('')}
+            ${LOGOPEDAS.map(l => `<option value="${l.id}" ${l.id === s.logopeda_id ? 'selected' : ''}>${esc(l.profiles?.nombre || l.profiles?.email)}</option>`).join('')}
           </select>
           <button class="btn btn-secundario" onclick="confirmarCitaOnline('${s.id}')">Confirmar y crear cita</button>
           <button class="btn btn-outline" onclick="rechazarCitaOnline('${s.id}')">Rechazar</button>
@@ -642,11 +642,11 @@ async function cargarSolicitudesServicio() {
   const cont = document.getElementById('listaSolicitudesServicio');
   cont.innerHTML = (data && data.length) ? data.map(s => `
     <div class="lista-item">
-      <strong>${s.nombre}</strong> — ${s.email}${s.telefono ? ' · ' + s.telefono : ''}
-      <span class="etiqueta-pill">${s.servicio}</span>
+      <strong>${esc(s.nombre)}</strong> — ${esc(s.email)}${s.telefono ? ' · ' + esc(s.telefono) : ''}
+      <span class="etiqueta-pill">${esc(s.servicio)}</span>
       ${selectorEstado('solicitudes_servicio', s.id, s.estado, ['nueva','contactada','agendada','descartada'], 'cargarSolicitudesServicio')}
-      <div class="meta">Disponibilidad: ${s.disponibilidad || '—'} · ${formatearFecha(s.created_at)}</div>
-      ${s.mensaje ? `<div class="meta">"${s.mensaje}"</div>` : ''}
+      <div class="meta">Disponibilidad: ${esc(s.disponibilidad || '—')} · ${formatearFecha(s.created_at)}</div>
+      ${s.mensaje ? `<div class="meta">"${esc(s.mensaje)}"</div>` : ''}
     </div>`).join('') : '<p class="meta">Todavía no hay solicitudes.</p>';
   return data || [];
 }
@@ -656,10 +656,10 @@ async function cargarMensajesContacto() {
   const cont = document.getElementById('listaMensajesContacto');
   cont.innerHTML = (data && data.length) ? data.map(m => `
     <div class="lista-item">
-      <strong>${m.nombre}</strong> — ${m.email}${m.telefono ? ' · ' + m.telefono : ''}
+      <strong>${esc(m.nombre)}</strong> — ${esc(m.email)}${m.telefono ? ' · ' + esc(m.telefono) : ''}
       ${selectorEstado('mensajes_contacto', m.id, m.estado, ['nuevo','contactado','cerrado'], 'cargarMensajesContacto')}
       <div class="meta">${formatearFecha(m.created_at)}</div>
-      <div class="meta">"${m.mensaje}"</div>
+      <div class="meta">"${esc(m.mensaje)}"</div>
     </div>`).join('') : '<p class="meta">Todavía no hay mensajes.</p>';
   return data || [];
 }
@@ -669,11 +669,11 @@ async function cargarSolicitudesAfiliacion() {
   const cont = document.getElementById('listaSolicitudesAfiliacion');
   cont.innerHTML = (data && data.length) ? data.map(a => `
     <div class="lista-item">
-      <strong>${a.nombre}</strong> — ${a.email}${a.telefono ? ' · ' + a.telefono : ''}
+      <strong>${esc(a.nombre)}</strong> — ${esc(a.email)}${a.telefono ? ' · ' + esc(a.telefono) : ''}
       ${selectorEstado('solicitudes_afiliacion', a.id, a.estado, ['nueva','contactada','aceptada','descartada'], 'cargarSolicitudesAfiliacion')}
-      <div class="meta">${a.ciudad || '—'} · Colegiado: ${a.numero_colegiado || '—'} · ${formatearFecha(a.created_at)}</div>
-      ${a.experiencia ? `<div class="meta">Experiencia: ${a.experiencia}</div>` : ''}
-      ${a.mensaje ? `<div class="meta">"${a.mensaje}"</div>` : ''}
+      <div class="meta">${esc(a.ciudad || '—')} · Colegiado: ${esc(a.numero_colegiado || '—')} · ${formatearFecha(a.created_at)}</div>
+      ${a.experiencia ? `<div class="meta">Experiencia: ${esc(a.experiencia)}</div>` : ''}
+      ${a.mensaje ? `<div class="meta">"${esc(a.mensaje)}"</div>` : ''}
     </div>`).join('') : '<p class="meta">Todavía no hay solicitudes de afiliación.</p>';
   return data || [];
 }
@@ -746,16 +746,16 @@ async function cargarTratamientos() {
   const selLog = document.getElementById('tLogopeda');
   if (LOGOPEDAS.length && selLog.options.length <= 1) {
     selLog.innerHTML = '<option value="">— General (todos) —</option>' +
-      LOGOPEDAS.map(l => `<option value="${l.id}">${l.profiles?.nombre || l.profiles?.email}</option>`).join('');
+      LOGOPEDAS.map(l => `<option value="${l.id}">${esc(l.profiles?.nombre || l.profiles?.email)}</option>`).join('');
   }
   const { data } = await supabaseClient.from('tratamientos').select('*, logopedas(profiles(nombre))').order('nombre');
   const cont = document.getElementById('listaTratamientos');
   cont.innerHTML = (data && data.length) ? data.map(t => `
     <tr>
-      <td><strong>${t.nombre}</strong>${t.disponible_cita_online ? '' : ' <span class="meta">(no online)</span>'}</td>
-      <td>${t.area ? `<span class="etiqueta-pill">${t.area}</span>` : '—'}</td>
+      <td><strong>${esc(t.nombre)}</strong>${t.disponible_cita_online ? '' : ' <span class="meta">(no online)</span>'}</td>
+      <td>${t.area ? `<span class="etiqueta-pill">${esc(t.area)}</span>` : '—'}</td>
       <td>${t.precio != null ? Number(t.precio).toFixed(2) + ' €' : '—'}${t.impuestos ? ` <span class="meta">(+${t.impuestos}% imp.)</span>` : ''}${t.descuento_pct ? ` <span class="meta">(-${t.descuento_pct}%)</span>` : ''}</td>
-      <td>${t.logopedas?.profiles?.nombre || '<span class="meta">general</span>'}</td>
+      <td>${t.logopedas?.profiles?.nombre ? esc(t.logopedas.profiles.nombre) : '<span class="meta">general</span>'}</td>
       <td>
         <select onchange="cambiarEstadoTratamiento('${t.id}', this.value)">
           <option value="true" ${t.activo ? 'selected' : ''}>Activo</option>
@@ -804,7 +804,7 @@ async function cargarResumen() {
   document.getElementById('kpiCitas').textContent = (citas || []).length;
   const contCitas = document.getElementById('resumenCitas');
   contCitas.innerHTML = (citas && citas.length)
-    ? citas.map(c => `<div class="lista-item"><strong>${c.pacientes?.nombre || '—'}</strong> <span class="meta">${formatearFecha(c.fecha)} · ${c.hora} · ${c.modalidad}</span> ${badgeEstado(c.estado)}</div>`).join('')
+    ? citas.map(c => `<div class="lista-item"><strong>${esc(c.pacientes?.nombre || '—')}</strong> <span class="meta">${formatearFecha(c.fecha)} · ${c.hora} · ${c.modalidad}</span> ${badgeEstado(c.estado)}</div>`).join('')
     : '<p class="vacio-panel">No hay citas en los próximos 7 días.</p>';
 
   const [sol, msj, afi, cit] = await Promise.all([
