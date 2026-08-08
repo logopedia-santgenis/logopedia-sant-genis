@@ -15,7 +15,7 @@
   .circulo.mantener{transition:transform .3s;}
   .instruccion{font-family:'Baloo 2',sans-serif;font-size:1.6rem;font-weight:700;color:var(--azul-oscuro);margin-top:10px;min-height:2.2rem;}
   .contador{color:var(--texto-suave);margin-bottom:14px;}
-  .controles{display:flex;gap:12px;justify-content:center;margin-top:10px;}
+  .controles{display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -38,6 +38,7 @@
     <div class="controles">
       <button class="btn btn-secundario" id="btnEmpezar" onclick="empezar()">Empezar</button>
       <button class="btn btn-outline" onclick="parar()">Detener</button>
+      <button class="btn btn-outline" id="btnSonido" onclick="alternarSonido()" aria-pressed="true">🔊 Voz activada</button>
     </div>
 
     <div style="text-align:center;margin:24px 0;">
@@ -59,6 +60,26 @@
 let activo = false;
 let ciclos = 0;
 let temporizador = null;
+let sonidoActivo = true;
+const vozDisponible = 'speechSynthesis' in window;
+
+function hablar(texto) {
+  if (!sonidoActivo || !vozDisponible) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(texto);
+  u.lang = 'es-ES';
+  u.rate = 0.85;
+  u.pitch = 1;
+  window.speechSynthesis.speak(u);
+}
+
+function alternarSonido() {
+  sonidoActivo = !sonidoActivo;
+  const btn = document.getElementById('btnSonido');
+  btn.textContent = sonidoActivo ? '🔊 Voz activada' : '🔇 Voz desactivada';
+  btn.setAttribute('aria-pressed', sonidoActivo ? 'true' : 'false');
+  if (!sonidoActivo && vozDisponible) window.speechSynthesis.cancel();
+}
 
 function ciclo() {
   if (!activo) return;
@@ -67,14 +88,17 @@ function ciclo() {
 
   circ.className = 'circulo inhalar';
   instr.textContent = 'Inhala por la nariz…';
+  hablar('Inhala por la nariz');
   temporizador = setTimeout(() => {
     if (!activo) return;
     circ.className = 'circulo mantener';
     instr.textContent = 'Mantén…';
+    hablar('Mantén');
     temporizador = setTimeout(() => {
       if (!activo) return;
       circ.className = 'circulo exhalar';
       instr.textContent = 'Exhala despacio por la boca…';
+      hablar('Exhala despacio por la boca');
       temporizador = setTimeout(() => {
         if (!activo) return;
         ciclos++;
@@ -88,14 +112,21 @@ function ciclo() {
 function empezar() {
   if (activo) return;
   activo = true;
+  hablar('Vamos a empezar. Sigue el círculo.');
   ciclo();
 }
 
 function parar() {
   activo = false;
   clearTimeout(temporizador);
+  if (vozDisponible) window.speechSynthesis.cancel();
   document.getElementById('circulo').className = 'circulo';
   document.getElementById('instruccion').textContent = 'Pulsa "Empezar" cuando estés listo/a';
+}
+
+if (!vozDisponible) {
+  const btnSonido = document.getElementById('btnSonido');
+  if (btnSonido) btnSonido.style.display = 'none';
 }
 </script>
 
