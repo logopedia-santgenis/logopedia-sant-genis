@@ -218,8 +218,8 @@
     <h3 style="margin-top:0;">Agregar recurso</h3>
     <form id="formRecurso">
       <div class="fila-acciones">
-        <input type="text" id="rTitulo" placeholder="Título" required style="flex:2;">
-        <input type="text" id="rCategoria" placeholder="Categoría / síntoma (ej. Dislexia)" required style="flex:2;">
+        <input type="text" id="rTitulo" placeholder="Título" required maxlength="200" style="flex:2;">
+        <input type="text" id="rCategoria" placeholder="Categoría / síntoma (ej. Dislexia)" required maxlength="100" style="flex:2;">
         <select id="rTipo" onchange="ajustarCamposRecurso()">
           <option value="tarjeta_nombrar">Tarjeta de nombrar (imagen + palabra)</option>
           <option value="pdf">PDF</option>
@@ -230,12 +230,82 @@
         </select>
       </div>
       <div class="fila-acciones" style="margin-top:10px;">
+        <select id="rArea">
+          <option value="">Área clínica (opcional)</option>
+          <option value="articulacion">Articulación</option>
+          <option value="lenguaje">Lenguaje</option>
+          <option value="voz">Voz</option>
+          <option value="deglucion">Deglución</option>
+          <option value="fluidez">Fluidez</option>
+          <option value="pragmatica">Pragmática</option>
+          <option value="lectoescritura">Lectoescritura</option>
+          <option value="tea_comunicacion">TEA / Comunicación</option>
+          <option value="otro">Otro</option>
+        </select>
+        <select id="rRangoEdad">
+          <option value="todas">Todas las edades</option>
+          <option value="0-3">0-3 años</option>
+          <option value="3-6">3-6 años</option>
+          <option value="6-12">6-12 años</option>
+          <option value="adultos">Adultos</option>
+        </select>
+        <select id="rIdioma">
+          <option value="castellano">Castellano</option>
+          <option value="catalan">Català</option>
+          <option value="ambos">Ambos</option>
+        </select>
+      </div>
+      <div class="fila-acciones" style="margin-top:10px;">
         <input type="text" id="rUrl" placeholder="URL de la imagen" style="flex:2;">
-        <input type="text" id="rDescripcion" placeholder="Pista (ej. Es un animal que vive en el agua)" style="flex:2;">
+        <input type="text" id="rDescripcion" placeholder="Pista (ej. Es un animal que vive en el agua)" maxlength="3000" style="flex:2;">
         <button type="submit" class="btn btn-secundario">Guardar</button>
+      </div>
+      <div class="fila-acciones" style="margin-top:10px;">
+        <input type="text" id="rObjetivo" placeholder="Objetivo terapéutico (opcional, ej. Discriminar fonemas /r/-/l/)" maxlength="300" style="flex:1;">
       </div>
       <p class="meta" id="ayudaTipoRecurso" style="margin-top:6px;">En "Tarjeta de nombrar": el título es la palabra objetivo, la URL es la imagen y la pista se muestra si el paciente la necesita.</p>
     </form>
+  </div>
+
+  <div class="tarjeta" style="margin-bottom:16px;">
+    <div class="fila-acciones">
+      <input type="text" id="fRecursoBuscar" placeholder="Buscar por título, categoría u objetivo…" oninput="filtrarRecursos()" style="flex:2;">
+      <select id="fRecursoArea" onchange="filtrarRecursos()">
+        <option value="">Todas las áreas</option>
+        <option value="articulacion">Articulación</option>
+        <option value="lenguaje">Lenguaje</option>
+        <option value="voz">Voz</option>
+        <option value="deglucion">Deglución</option>
+        <option value="fluidez">Fluidez</option>
+        <option value="pragmatica">Pragmática</option>
+        <option value="lectoescritura">Lectoescritura</option>
+        <option value="tea_comunicacion">TEA / Comunicación</option>
+        <option value="otro">Otro</option>
+      </select>
+      <select id="fRecursoEdad" onchange="filtrarRecursos()">
+        <option value="">Todas las edades</option>
+        <option value="0-3">0-3 años</option>
+        <option value="3-6">3-6 años</option>
+        <option value="6-12">6-12 años</option>
+        <option value="adultos">Adultos</option>
+        <option value="todas">Todas (general)</option>
+      </select>
+      <select id="fRecursoIdioma" onchange="filtrarRecursos()">
+        <option value="">Cualquier idioma</option>
+        <option value="castellano">Castellano</option>
+        <option value="catalan">Català</option>
+        <option value="ambos">Ambos</option>
+      </select>
+      <select id="fRecursoTipo" onchange="filtrarRecursos()">
+        <option value="">Todos los tipos</option>
+        <option value="tarjeta_nombrar">Tarjeta de nombrar</option>
+        <option value="pdf">PDF</option>
+        <option value="video">Video</option>
+        <option value="enlace">Enlace</option>
+        <option value="texto">Texto</option>
+        <option value="ejercicio">Ejercicio</option>
+      </select>
+    </div>
   </div>
 
   <div id="listaRecursos"><div class="cargando">Cargando…</div></div>
@@ -916,25 +986,68 @@ async function actualizarEstadoTareaAgregada(id, estado) {
   await cargarTareasAgregadas();
 }
 
+let RECURSOS_CACHE = [];
+const AREA_LABELS = {
+  articulacion: 'Articulación', lenguaje: 'Lenguaje', voz: 'Voz', deglucion: 'Deglución',
+  fluidez: 'Fluidez', pragmatica: 'Pragmática', lectoescritura: 'Lectoescritura',
+  tea_comunicacion: 'TEA / Comunicación', otro: 'Otro'
+};
+const EDAD_LABELS = { '0-3': '0-3 años', '3-6': '3-6 años', '6-12': '6-12 años', adultos: 'Adultos', todas: 'Todas las edades' };
+const IDIOMA_LABELS = { castellano: 'Castellano', catalan: 'Català', ambos: 'Ambos' };
+
 async function cargarRecursos() {
   const { data: recursos, error } = await supabaseClient
-    .from('recursos').select('*').eq('logopeda_id', UID).order('categoria');
-  document.getElementById('kpiRecursos').textContent = (recursos || []).length;
+    .from('recursos').select('*, logopedas(profiles(nombre))').order('created_at', { ascending: false });
+  RECURSOS_CACHE = recursos || [];
+  document.getElementById('kpiRecursos').textContent = RECURSOS_CACHE.length;
+  if (error) {
+    document.getElementById('listaRecursos').innerHTML = '<p class="vacio-panel">No se pudieron cargar los recursos.</p>';
+    return;
+  }
+  filtrarRecursos();
+}
+
+function filtrarRecursos() {
+  const texto = (document.getElementById('fRecursoBuscar').value || '').trim().toLowerCase();
+  const area = document.getElementById('fRecursoArea').value;
+  const edad = document.getElementById('fRecursoEdad').value;
+  const idioma = document.getElementById('fRecursoIdioma').value;
+  const tipo = document.getElementById('fRecursoTipo').value;
+
+  const filtrados = RECURSOS_CACHE.filter(r => {
+    if (area && r.area !== area) return false;
+    if (edad && r.rango_edad !== edad) return false;
+    if (idioma && r.idioma !== idioma) return false;
+    if (tipo && r.tipo !== tipo) return false;
+    if (texto) {
+      const campo = `${r.titulo} ${r.categoria} ${r.objetivo || ''} ${r.descripcion || ''}`.toLowerCase();
+      if (!campo.includes(texto)) return false;
+    }
+    return true;
+  });
+
+  pintarRecursos(filtrados);
+}
+
+function pintarRecursos(recursos) {
   const cont = document.getElementById('listaRecursos');
   cont.innerHTML = '';
 
-  if (error || !recursos || recursos.length === 0) {
-    cont.innerHTML = '<p class="vacio-panel">Todavía no cargaste recursos.</p>';
+  if (!recursos || recursos.length === 0) {
+    cont.innerHTML = '<p class="vacio-panel">No hay recursos con esos filtros.</p>';
     return;
   }
 
   const opcionesPacientes = PACIENTES.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
 
   for (const r of recursos) {
+    const autor = r.logopedas?.profiles?.nombre;
     const div = document.createElement('div');
     div.className = 'lista-item';
     div.innerHTML = `
       <span class="etiqueta-pill">${esc(r.categoria)}</span> <strong>${esc(r.titulo)}</strong> <span class="meta">(${r.tipo})</span>
+      <div class="meta">${r.area ? (AREA_LABELS[r.area] || r.area) + ' · ' : ''}${EDAD_LABELS[r.rango_edad] || r.rango_edad} · ${IDIOMA_LABELS[r.idioma] || r.idioma}${autor ? ' · Subido por ' + esc(autor) : ''}</div>
+      ${r.objetivo ? `<p class="meta">🎯 ${esc(r.objetivo)}</p>` : ''}
       ${r.descripcion ? `<p class="meta">${esc(r.descripcion)}</p>` : ''}
       <div class="fila-acciones">
         <select id="selPaciente-${r.id}">${opcionesPacientes || '<option>Sin pacientes</option>'}</select>
@@ -962,8 +1075,14 @@ document.getElementById('formRecurso').addEventListener('submit', async (e) => {
   const tipo = document.getElementById('rTipo').value;
   const contenido_url = document.getElementById('rUrl').value.trim();
   const descripcion = document.getElementById('rDescripcion').value.trim();
+  const area = document.getElementById('rArea').value || null;
+  const rango_edad = document.getElementById('rRangoEdad').value;
+  const idioma = document.getElementById('rIdioma').value;
+  const objetivo = document.getElementById('rObjetivo').value.trim() || null;
   if (!titulo || !categoria) return;
-  await supabaseClient.from('recursos').insert({ titulo, categoria, tipo, contenido_url, descripcion, logopeda_id: UID });
+  await supabaseClient.from('recursos').insert({
+    titulo, categoria, tipo, contenido_url, descripcion, area, rango_edad, idioma, objetivo, logopeda_id: UID
+  });
   e.target.reset();
   cargarRecursos();
 });
