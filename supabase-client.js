@@ -66,7 +66,7 @@ function formatearFecha(fechaStr) {
 
 // --- Integración Google Calendar (cada logopeda conecta su propio calendario) ---
 // GOOGLE_CLIENT_ID se rellena cuando se crea el cliente OAuth en Google Cloud Console.
-const GOOGLE_CLIENT_ID = '';
+const GOOGLE_CLIENT_ID = '926995120162-vt0shk2368ob2an2pacq19hoom9tcdvc.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://fmznceilmjhysuyxpwpu.supabase.co/functions/v1/google-calendar-callback';
 
 async function estadoGoogleCalendar(logopedaId) {
