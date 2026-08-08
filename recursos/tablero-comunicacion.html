@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de comunicación — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .juego-wrap{max-width:720px;margin:0 auto;}
+  .tablero{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0;}
+  .celda{background:var(--tarjeta);border:3px solid var(--borde);border-radius:16px;padding:18px 6px;text-align:center;cursor:pointer;transition:.12s;}
+  .celda:hover{border-color:var(--azul);transform:translateY(-2px);}
+  .celda:active{transform:scale(.96);}
+  .celda .emoji{font-size:2.4rem;display:block;margin-bottom:6px;}
+  .celda .etiqueta{font-weight:700;font-size:.82rem;color:var(--azul-oscuro);}
+  @media (max-width:520px){.tablero{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="juego-wrap">
+    <h1 style="text-align:center;">🗣️ Tablero de comunicación</h1>
+    <p class="subtitulo" style="text-align:center;">Toca un icono para escucharlo en voz alta. Herramienta de comunicación funcional aumentativa.</p>
+
+    <div class="tablero" id="tablero"></div>
+
+    <div style="text-align:center;margin:20px 0;">
+      <a class="btn btn-outline" href="tablero-comunicacion.pdf" target="_blank" rel="noopener">📄 Descargar versión imprimible (PDF)</a>
+    </div>
+
+    <div class="tarjeta">
+      <h3 style="margin-top:0;">Cómo usarlo</h3>
+      <p class="meta">Válido tanto en pantalla como impreso: útil para pacientes con dificultades de comunicación funcional (TEA, apraxia severa, etc.). En pantalla, cada icono se lee en voz alta al tocarlo. La versión PDF se puede recortar y montar en un tablero físico o carpeta de comunicación.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script>
+const ITEMS = [
+  { emoji: "💧", etiqueta: "AGUA" },
+  { emoji: "🍽️", etiqueta: "COMIDA" },
+  { emoji: "🚻", etiqueta: "BAÑO" },
+  { emoji: "➕", etiqueta: "MÁS" },
+  { emoji: "🏁", etiqueta: "SE ACABÓ" },
+  { emoji: "✅", etiqueta: "SÍ" },
+  { emoji: "❌", etiqueta: "NO" },
+  { emoji: "✋", etiqueta: "AYUDA" },
+  { emoji: "⭐", etiqueta: "JUGAR" },
+  { emoji: "😣", etiqueta: "DOLOR" },
+  { emoji: "🌙", etiqueta: "DESCANSAR" },
+  { emoji: "❤️", etiqueta: "QUIERO" },
+];
+
+function hablar(texto) {
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(texto);
+  u.lang = 'es-ES';
+  u.rate = 0.9;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+document.getElementById('tablero').innerHTML = ITEMS.map(it =>
+  `<div class="celda" onclick="hablar('${it.etiqueta.toLowerCase()}')">
+    <span class="emoji">${it.emoji}</span><span class="etiqueta">${it.etiqueta}</span>
+  </div>`).join('');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pares mínimos — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .juego-wrap{max-width:640px;margin:0 auto;}
+  .opciones{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0;}
+  .opcion-palabra{background:var(--tarjeta);border:3px solid var(--borde);border-radius:var(--radio);padding:28px 14px;font-family:'Baloo 2',sans-serif;font-size:1.6rem;font-weight:700;color:var(--azul-oscuro);cursor:pointer;text-align:center;transition:.15s;}
+  .opcion-palabra:hover{border-color:var(--azul);}
+  .opcion-palabra.correcta{border-color:var(--verde-whatsapp);background:#EAFBF1;}
+  .opcion-palabra.incorrecta{border-color:#D64545;background:#FBEAEA;}
+  .btn-sonido{display:inline-flex;align-items:center;gap:8px;font-size:1.1rem;padding:14px 30px;}
+  .marcador{display:flex;justify-content:center;gap:28px;margin:18px 0;font-family:'Baloo 2',sans-serif;font-weight:700;color:var(--azul-oscuro);}
+  .feedback{text-align:center;min-height:28px;font-weight:600;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="juego-wrap">
+    <h1 style="text-align:center;">🎧 Pares mínimos</h1>
+    <p class="subtitulo" style="text-align:center;">Escucha la palabra y toca la que has oído. Ejercicio de discriminación auditiva para trabajar la articulación.</p>
+
+    <div class="marcador">
+      <span>✅ Aciertos: <span id="aciertos">0</span></span>
+      <span>🔁 Ronda: <span id="ronda">1</span></span>
+    </div>
+
+    <div style="text-align:center;">
+      <button class="btn btn-secundario btn-sonido" onclick="reproducir()">🔊 Escuchar palabra</button>
+    </div>
+
+    <div class="opciones" id="opciones"></div>
+    <p class="feedback" id="feedback"></p>
+
+    <div style="text-align:center;margin-top:10px;">
+      <button class="btn btn-outline" onclick="nuevaRonda()">Siguiente palabra »</button>
+    </div>
+
+    <div class="tarjeta" style="margin-top:28px;">
+      <h3 style="margin-top:0;">Cómo usarlo</h3>
+      <p class="meta">Pulsa "Escuchar palabra" (se puede repetir tantas veces como haga falta) y que el paciente toque la palabra que cree haber oído. Si acierta a la primera varias rondas seguidas, sube la dificultad reduciendo el número de repeticiones permitidas antes de responder.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script>
+const PARES = [
+  ["pera", "perra"], ["coro", "corro"], ["cara", "cala"], ["rosa", "losa"],
+  ["pato", "gato"], ["casa", "gasa"], ["boca", "foca"], ["copa", "sopa"],
+  ["cero", "cerro"], ["moro", "morro"], ["pala", "para"], ["queso", "beso"],
+];
+
+let parActual = null;
+let palabraObjetivo = null;
+let aciertos = 0;
+let ronda = 1;
+let respondido = false;
+
+function elegirPar() {
+  parActual = PARES[Math.floor(Math.random() * PARES.length)];
+  palabraObjetivo = parActual[Math.floor(Math.random() * 2)];
+  respondido = false;
+  const orden = Math.random() < 0.5 ? [parActual[0], parActual[1]] : [parActual[1], parActual[0]];
+  const cont = document.getElementById('opciones');
+  cont.innerHTML = orden.map(p => `<div class="opcion-palabra" onclick="responder(this,'${p}')">${p}</div>`).join('');
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('ronda').textContent = ronda;
+}
+
+function reproducir() {
+  if (!palabraObjetivo) return;
+  if (!('speechSynthesis' in window)) {
+    document.getElementById('feedback').textContent = 'Tu navegador no soporta lectura en voz alta — di la palabra tú en voz alta: "' + palabraObjetivo + '"';
+    return;
+  }
+  const u = new SpeechSynthesisUtterance(palabraObjetivo);
+  u.lang = 'es-ES';
+  u.rate = 0.85;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function responder(el, palabra) {
+  if (respondido) return;
+  respondido = true;
+  const acierto = palabra === palabraObjetivo;
+  el.classList.add(acierto ? 'correcta' : 'incorrecta');
+  document.querySelectorAll('.opcion-palabra').forEach(o => {
+    if (o.textContent.trim() === palabraObjetivo && !acierto) o.classList.add('correcta');
+  });
+  document.getElementById('feedback').textContent = acierto ? '¡Muy bien! Esa era la palabra 🎉' : `Era "${palabraObjetivo}" — ¡a por la siguiente!`;
+  document.getElementById('feedback').style.color = acierto ? 'var(--verde-whatsapp)' : '#D64545';
+  if (acierto) { aciertos++; document.getElementById('aciertos').textContent = aciertos; }
+}
+
+function nuevaRonda() {
+  ronda++;
+  elegirPar();
+}
+
+elegirPar();
+</script>
+
+</body>
+</html>

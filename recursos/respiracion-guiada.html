@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Respiración guiada — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .juego-wrap{max-width:560px;margin:0 auto;text-align:center;}
+  .escenario{display:flex;align-items:center;justify-content:center;height:280px;position:relative;}
+  .circulo{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #6E8CB5, var(--azul-oscuro));box-shadow:var(--sombra);transition:transform 4s ease-in-out;}
+  .circulo.inhalar{transform:scale(1.7);transition:transform 4s ease-in-out;}
+  .circulo.exhalar{transform:scale(1);transition:transform 4s ease-in-out;}
+  .circulo.mantener{transition:transform .3s;}
+  .instruccion{font-family:'Baloo 2',sans-serif;font-size:1.6rem;font-weight:700;color:var(--azul-oscuro);margin-top:10px;min-height:2.2rem;}
+  .contador{color:var(--texto-suave);margin-bottom:14px;}
+  .controles{display:flex;gap:12px;justify-content:center;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="juego-wrap">
+    <h1>🫁 Respiración guiada</h1>
+    <p class="subtitulo">Sigue el círculo: crece al inhalar, se queda quieto al mantener, se encoge al exhalar. Base de la respiración costo-diafragmática para el trabajo de voz.</p>
+
+    <div class="escenario"><div class="circulo" id="circulo"></div></div>
+    <div class="instruccion" id="instruccion">Pulsa "Empezar" cuando estés listo/a</div>
+    <div class="contador" id="ciclos">Ciclos completados: 0</div>
+
+    <div class="controles">
+      <button class="btn btn-secundario" id="btnEmpezar" onclick="empezar()">Empezar</button>
+      <button class="btn btn-outline" onclick="parar()">Detener</button>
+    </div>
+
+    <div style="text-align:center;margin:24px 0;">
+      <a class="btn btn-outline" href="higiene-vocal.pdf" target="_blank" rel="noopener">📄 Descargar guía de higiene vocal (PDF)</a>
+    </div>
+
+    <div class="tarjeta" style="text-align:left;">
+      <h3 style="margin-top:0;">Cómo usarlo</h3>
+      <p class="meta">3–5 minutos antes de trabajar la voz o cuando el paciente esté nervioso/agitado. Inhalar por la nariz, exhalar despacio por la boca. Combina bien con el ejercicio de soplo con pajita de la guía de higiene vocal.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script>
+let activo = false;
+let ciclos = 0;
+let temporizador = null;
+
+function ciclo() {
+  if (!activo) return;
+  const circ = document.getElementById('circulo');
+  const instr = document.getElementById('instruccion');
+
+  circ.className = 'circulo inhalar';
+  instr.textContent = 'Inhala por la nariz…';
+  temporizador = setTimeout(() => {
+    if (!activo) return;
+    circ.className = 'circulo mantener';
+    instr.textContent = 'Mantén…';
+    temporizador = setTimeout(() => {
+      if (!activo) return;
+      circ.className = 'circulo exhalar';
+      instr.textContent = 'Exhala despacio por la boca…';
+      temporizador = setTimeout(() => {
+        if (!activo) return;
+        ciclos++;
+        document.getElementById('ciclos').textContent = 'Ciclos completados: ' + ciclos;
+        ciclo();
+      }, 4000);
+    }, 2000);
+  }, 4000);
+}
+
+function empezar() {
+  if (activo) return;
+  activo = true;
+  ciclo();
+}
+
+function parar() {
+  activo = false;
+  clearTimeout(temporizador);
+  document.getElementById('circulo').className = 'circulo';
+  document.getElementById('instruccion').textContent = 'Pulsa "Empezar" cuando estés listo/a';
+}
+</script>
+
+</body>
+</html>

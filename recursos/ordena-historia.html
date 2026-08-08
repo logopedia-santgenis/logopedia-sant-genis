@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ordena la historia — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .juego-wrap{max-width:640px;margin:0 auto;}
+  .selector-historia{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;}
+  .selector-historia button{padding:8px 16px;border-radius:999px;border:2px solid var(--borde);background:var(--tarjeta);font-weight:600;cursor:pointer;font-size:.85rem;}
+  .selector-historia button.activo{background:var(--azul-oscuro);color:#fff;border-color:var(--azul-oscuro);}
+  .viñetas{display:flex;flex-direction:column;gap:10px;margin:20px 0;}
+  .viñeta{display:flex;align-items:center;gap:14px;background:var(--tarjeta);border:2px solid var(--borde);border-radius:12px;padding:12px 16px;cursor:grab;user-select:none;}
+  .viñeta.arrastrando{opacity:.4;}
+  .viñeta .num{width:30px;height:30px;border-radius:50%;background:var(--azul-oscuro);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;}
+  .viñeta .emoji{font-size:1.8rem;}
+  .viñeta .texto{font-weight:600;color:var(--texto);}
+  .viñeta.correcta{border-color:var(--verde-whatsapp);background:#EAFBF1;}
+  .viñeta.incorrecta{border-color:#D64545;background:#FBEAEA;}
+  .feedback{text-align:center;min-height:28px;font-weight:600;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="juego-wrap">
+    <h1 style="text-align:center;">📖 Ordena la historia</h1>
+    <p class="subtitulo" style="text-align:center;">Arrastra las viñetas para ponerlas en el orden correcto. Trabaja secuenciación temporal y narrativa.</p>
+
+    <div class="selector-historia" id="selectorHistoria"></div>
+
+    <div class="viñetas" id="viñetas"></div>
+
+    <div style="text-align:center;">
+      <button class="btn btn-secundario" onclick="comprobar()">Comprobar orden</button>
+      <button class="btn btn-outline" onclick="cargarHistoria(historiaActualIndice)">Reiniciar</button>
+    </div>
+    <p class="feedback" id="feedback"></p>
+
+    <div class="tarjeta" style="margin-top:24px;">
+      <h3 style="margin-top:0;">Cómo usarlo</h3>
+      <p class="meta">Tras ordenar correctamente, pide al paciente que cuente la historia en voz alta usando conectores temporales ("primero", "después", "luego", "al final"). En móvil o tablet: mantén pulsado y arrastra.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script>
+const HISTORIAS = [
+  {
+    nombre: "La semilla",
+    pasos: [
+      "🌱 Plantamos una semilla en la tierra",
+      "💧 La regamos todos los días",
+      "🌿 Le sale un tallo pequeño",
+      "🌻 Se convierte en una flor grande",
+    ],
+  },
+  {
+    nombre: "El desayuno",
+    pasos: [
+      "⏰ Suena el despertador por la mañana",
+      "🥣 Preparamos los cereales con leche",
+      "🍽️ Nos sentamos a desayunar",
+      "🎒 Cogemos la mochila y salimos",
+    ],
+  },
+  {
+    nombre: "El pastel",
+    pasos: [
+      "🥚 Mezclamos los huevos, la harina y el azúcar",
+      "🔥 Metemos la masa en el horno",
+      "🎂 Sacamos el pastel ya hecho",
+      "🕯️ Lo decoramos con velas",
+    ],
+  },
+];
+
+let historiaActualIndice = 0;
+let ordenCorrecto = [];
+
+function renderSelector() {
+  document.getElementById('selectorHistoria').innerHTML = HISTORIAS.map((h, i) =>
+    `<button class="${i === historiaActualIndice ? 'activo' : ''}" onclick="cargarHistoria(${i})">${h.nombre}</button>`).join('');
+}
+
+function cargarHistoria(indice) {
+  historiaActualIndice = indice;
+  renderSelector();
+  const pasos = HISTORIAS[indice].pasos;
+  ordenCorrecto = pasos.map((_, i) => i);
+  const mezclado = pasos.map((texto, i) => ({ texto, i })).sort(() => Math.random() - 0.5);
+  const cont = document.getElementById('viñetas');
+  cont.innerHTML = mezclado.map(item => {
+    const partes = item.texto.split(' ');
+    const emoji = partes[0];
+    const texto = partes.slice(1).join(' ');
+    return `<div class="viñeta" draggable="true" data-indice="${item.i}">
+      <span class="num"></span><span class="emoji">${emoji}</span><span class="texto">${texto}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('feedback').textContent = '';
+  activarDragDrop();
+  renumerar();
+}
+
+function activarDragDrop() {
+  const cont = document.getElementById('viñetas');
+  let arrastrando = null;
+  cont.querySelectorAll('.viñeta').forEach(v => {
+    v.addEventListener('dragstart', () => { arrastrando = v; v.classList.add('arrastrando'); });
+    v.addEventListener('dragend', () => { v.classList.remove('arrastrando'); renumerar(); });
+    v.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const despues = [...cont.querySelectorAll('.viñeta:not(.arrastrando)')].find(el => {
+        const box = el.getBoundingClientRect();
+        return e.clientY < box.top + box.height / 2;
+      });
+      if (!arrastrando) return;
+      if (despues) cont.insertBefore(arrastrando, despues);
+      else cont.appendChild(arrastrando);
+    });
+  });
+}
+
+function renumerar() {
+  document.querySelectorAll('#viñetas .viñeta').forEach((v, i) => {
+    v.querySelector('.num').textContent = i + 1;
+    v.classList.remove('correcta', 'incorrecta');
+  });
+}
+
+function comprobar() {
+  const actuales = [...document.querySelectorAll('#viñetas .viñeta')].map(v => parseInt(v.dataset.indice, 10));
+  let todoBien = true;
+  document.querySelectorAll('#viñetas .viñeta').forEach((v, i) => {
+    const bien = actuales[i] === ordenCorrecto[i];
+    v.classList.add(bien ? 'correcta' : 'incorrecta');
+    if (!bien) todoBien = false;
+  });
+  document.getElementById('feedback').textContent = todoBien ? '¡Perfecto, ese es el orden correcto! 🎉' : 'Todavía no — mira las viñetas en rojo y reordénalas.';
+  document.getElementById('feedback').style.color = todoBien ? 'var(--verde-whatsapp)' : '#D64545';
+}
+
+renderSelector();
+cargarHistoria(0);
+</script>
+
+</body>
+</html>

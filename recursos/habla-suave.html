@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habla suave — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .juego-wrap{max-width:560px;margin:0 auto;text-align:center;}
+  .pulso-zona{display:flex;align-items:center;justify-content:center;height:160px;}
+  .pulso{width:70px;height:70px;border-radius:50%;background:var(--mostaza);box-shadow:var(--sombra);}
+  .pulso.activo{animation:latido 1s ease-in-out;}
+  @keyframes latido{0%{transform:scale(1);}30%{transform:scale(1.5);}100%{transform:scale(1);}}
+  .velocidades{display:flex;gap:10px;justify-content:center;margin:14px 0;flex-wrap:wrap;}
+  .velocidades button{padding:8px 16px;border-radius:999px;border:2px solid var(--borde);background:var(--tarjeta);font-weight:600;cursor:pointer;}
+  .velocidades button.activo{background:var(--azul-oscuro);color:#fff;border-color:var(--azul-oscuro);}
+  .frase-practica{font-family:'Baloo 2',sans-serif;font-size:1.4rem;font-weight:700;color:var(--azul-oscuro);margin:16px 0;min-height:2rem;}
+  .controles{display:flex;gap:12px;justify-content:center;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="juego-wrap">
+    <h1>🐢 Habla suave</h1>
+    <p class="subtitulo">Herramienta de ritmo para practicar salidas suaves de voz y contactos ligeros — técnicas de fluidez.</p>
+
+    <div class="pulso-zona"><div class="pulso" id="pulso"></div></div>
+
+    <div class="velocidades">
+      <button class="activo" onclick="cambiarVelocidad(90, this)">Muy lento</button>
+      <button onclick="cambiarVelocidad(70, this)">Lento</button>
+      <button onclick="cambiarVelocidad(55, this)">Normal</button>
+    </div>
+
+    <div class="frase-practica" id="frase">acompaña cada golpe con el inicio de una palabra, suave y sin prisa</div>
+
+    <div class="controles">
+      <button class="btn btn-secundario" id="btnGo" onclick="alternar()">Empezar</button>
+      <button class="btn btn-outline" onclick="otraFrase()">Cambiar frase</button>
+    </div>
+
+    <div style="text-align:center;margin:24px 0;">
+      <a class="btn btn-outline" href="guia-fluidez.pdf" target="_blank" rel="noopener">📄 Descargar guía de fluidez para familias (PDF)</a>
+    </div>
+
+    <div class="tarjeta" style="text-align:left;">
+      <h3 style="margin-top:0;">Cómo usarlo</h3>
+      <p class="meta">Con cada pulso, el paciente empieza una sílaba o palabra con salida de voz suave (sin golpe de aire ni tensión). Empieza siempre en "Muy lento" y solo sube de velocidad cuando la salida suave sea estable.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script>
+const FRASES = [
+  "acompaña cada golpe con el inicio de una palabra, suave y sin prisa",
+  "hola... me... llamo... (tu nombre)",
+  "el... sol... sale... cada... mañana",
+  "quiero... un... vaso... de... agua",
+  "hoy... he... jugado... en... el... parque",
+];
+
+let bpm = 90;
+let activo = false;
+let intervalo = null;
+
+function cambiarVelocidad(valor, el) {
+  bpm = valor;
+  document.querySelectorAll('.velocidades button').forEach(b => b.classList.remove('activo'));
+  el.classList.add('activo');
+  if (activo) { parar(); iniciar(); }
+}
+
+function pulsar() {
+  const p = document.getElementById('pulso');
+  p.classList.remove('activo');
+  void p.offsetWidth;
+  p.classList.add('activo');
+}
+
+function iniciar() {
+  activo = true;
+  document.getElementById('btnGo').textContent = 'Detener';
+  const ms = 60000 / bpm;
+  pulsar();
+  intervalo = setInterval(pulsar, ms);
+}
+
+function parar() {
+  activo = false;
+  document.getElementById('btnGo').textContent = 'Empezar';
+  clearInterval(intervalo);
+}
+
+function alternar() {
+  if (activo) parar(); else iniciar();
+}
+
+function otraFrase() {
+  document.getElementById('frase').textContent = FRASES[Math.floor(Math.random() * FRASES.length)];
+}
+</script>
+
+</body>
+</html>

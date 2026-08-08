@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nombrar por categorías — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .juego-wrap{max-width:600px;margin:0 auto;text-align:center;}
+  .tabs-cat{display:flex;gap:8px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
+  .tabs-cat button{padding:9px 16px;border-radius:999px;border:2px solid var(--borde);background:var(--tarjeta);font-weight:600;cursor:pointer;}
+  .tabs-cat button.activo{background:var(--azul-oscuro);color:#fff;border-color:var(--azul-oscuro);}
+  .tarjeta-nombrar{border:3px solid var(--borde);border-radius:20px;padding:32px 20px;background:var(--tarjeta);}
+  .emoji-grande{font-size:5rem;display:block;margin-bottom:14px;}
+  .palabra-oculta{font-family:'Baloo 2',sans-serif;font-size:1.8rem;font-weight:800;color:var(--azul-oscuro);min-height:2.4rem;visibility:hidden;}
+  .palabra-oculta.visible{visibility:visible;}
+  .progreso{color:var(--texto-suave);margin:14px 0;}
+  .controles{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="juego-wrap">
+    <h1>🗂️ Nombrar por categorías</h1>
+    <p class="subtitulo">El paciente dice en voz alta qué es antes de tocar "Mostrar palabra". Trabaja acceso léxico y denominación por campos semánticos.</p>
+
+    <div class="tabs-cat" id="tabsCat"></div>
+
+    <div class="tarjeta-nombrar">
+      <span class="emoji-grande" id="emojiActual"></span>
+      <div class="palabra-oculta" id="palabraActual"></div>
+    </div>
+
+    <div class="progreso" id="progreso"></div>
+
+    <div class="controles">
+      <button class="btn btn-secundario" onclick="mostrarPalabra()">Mostrar palabra</button>
+      <button class="btn btn-outline" onclick="siguienteTarjeta()">Siguiente »</button>
+    </div>
+
+    <div class="tarjeta" style="text-align:left;margin-top:24px;">
+      <h3 style="margin-top:0;">Cómo usarlo</h3>
+      <p class="meta">Pide al paciente que nombre la imagen antes de revelar la palabra. Si no le sale, puedes dar una pista por categoría ("es un animal", "se come") antes de mostrarla. Cambia de categoría para variar el campo semántico trabajado.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script>
+const CATEGORIAS = {
+  "Animales": [["🐶","perro"],["🐱","gato"],["🐘","elefante"],["🐟","pez"],["🐦","pájaro"],["🐮","vaca"]],
+  "Comida": [["🍎","manzana"],["🍌","plátano"],["🍞","pan"],["🥛","leche"],["🧀","queso"],["🥕","zanahoria"]],
+  "Ropa": [["👕","camiseta"],["👖","pantalón"],["🧦","calcetines"],["🧥","abrigo"],["👟","zapatillas"],["🧢","gorra"]],
+  "Casa": [["🛏️","cama"],["🪑","silla"],["🚪","puerta"],["🪟","ventana"],["🛁","bañera"],["🔑","llave"]],
+};
+
+let catActual = "Animales";
+let indiceActual = 0;
+let orden = [];
+
+function renderTabs() {
+  document.getElementById('tabsCat').innerHTML = Object.keys(CATEGORIAS).map(c =>
+    `<button class="${c === catActual ? 'activo' : ''}" onclick="cambiarCategoria('${c}')">${c}</button>`).join('');
+}
+
+function cambiarCategoria(cat) {
+  catActual = cat;
+  orden = CATEGORIAS[cat].map((_, i) => i).sort(() => Math.random() - 0.5);
+  indiceActual = 0;
+  renderTabs();
+  mostrarTarjeta();
+}
+
+function mostrarTarjeta() {
+  const [emoji, palabra] = CATEGORIAS[catActual][orden[indiceActual]];
+  document.getElementById('emojiActual').textContent = emoji;
+  const p = document.getElementById('palabraActual');
+  p.textContent = palabra;
+  p.classList.remove('visible');
+  document.getElementById('progreso').textContent = `Tarjeta ${indiceActual + 1} de ${orden.length}`;
+}
+
+function mostrarPalabra() {
+  document.getElementById('palabraActual').classList.add('visible');
+}
+
+function siguienteTarjeta() {
+  indiceActual = (indiceActual + 1) % orden.length;
+  if (indiceActual === 0) orden.sort(() => Math.random() - 0.5);
+  mostrarTarjeta();
+}
+
+renderTabs();
+cambiarCategoria("Animales");
+</script>
+
+</body>
+</html>

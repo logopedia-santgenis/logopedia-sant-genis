@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sílabas y rimas — Logopedia Sant Genís</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .juego-wrap{max-width:640px;margin:0 auto;}
+  .tabs-juego{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
+  .tabs-juego button{padding:10px 20px;border-radius:999px;border:2px solid var(--borde);background:var(--tarjeta);font-weight:600;cursor:pointer;}
+  .tabs-juego button.activo{background:var(--azul-oscuro);color:#fff;border-color:var(--azul-oscuro);}
+  .palabra-grande{text-align:center;font-family:'Baloo 2',sans-serif;font-size:2.4rem;font-weight:800;color:var(--azul-oscuro);margin:20px 0 6px;}
+  .silabeo{text-align:center;color:var(--mostaza);font-size:1.6rem;font-weight:700;min-height:2.2rem;}
+  .btns-silabas{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px 0;}
+  .btn-num{width:52px;height:52px;border-radius:50%;border:2px solid var(--borde);background:var(--tarjeta);font-weight:700;font-size:1.1rem;cursor:pointer;}
+  .btn-num.correcto{background:#EAFBF1;border-color:var(--verde-whatsapp);}
+  .btn-num.incorrecto{background:#FBEAEA;border-color:#D64545;}
+  .opciones{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:22px 0;}
+  .opcion-palabra{background:var(--tarjeta);border:3px solid var(--borde);border-radius:var(--radio);padding:20px 8px;font-family:'Baloo 2',sans-serif;font-size:1.25rem;font-weight:700;color:var(--azul-oscuro);cursor:pointer;text-align:center;}
+  .opcion-palabra:hover{border-color:var(--azul);}
+  .opcion-palabra.correcta{border-color:var(--verde-whatsapp);background:#EAFBF1;}
+  .opcion-palabra.incorrecta{border-color:#D64545;background:#FBEAEA;}
+  .feedback{text-align:center;min-height:28px;font-weight:600;margin-top:8px;}
+  .oculto{display:none;}
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="juego-wrap">
+    <h1 style="text-align:center;">🧩 Conciencia fonológica</h1>
+    <p class="subtitulo" style="text-align:center;">Sílabas y rimas — la base para aprender a leer y escribir bien.</p>
+
+    <div class="tabs-juego">
+      <button class="activo" id="tabSilabas" onclick="mostrarModo('silabas')">Contar sílabas</button>
+      <button id="tabRimas" onclick="mostrarModo('rimas')">Buscar la rima</button>
+    </div>
+
+    <div id="modoSilabas">
+      <div class="tarjeta">
+        <p class="meta" style="text-align:center;">Marca las palmadas de la palabra y elige cuántas sílabas tiene.</p>
+        <div class="palabra-grande" id="palabraSilaba"></div>
+        <div class="silabeo" id="silabeoVisual"></div>
+        <div class="btns-silabas" id="btnsSilabas"></div>
+        <p class="feedback" id="feedbackSilabas"></p>
+        <div style="text-align:center;"><button class="btn btn-outline" onclick="nuevaSilaba()">Otra palabra »</button></div>
+      </div>
+    </div>
+
+    <div id="modoRimas" class="oculto">
+      <div class="tarjeta">
+        <p class="meta" style="text-align:center;">¿Cuál de estas tres palabras rima con la palabra grande?</p>
+        <div class="palabra-grande" id="palabraRima"></div>
+        <div class="opciones" id="opcionesRima"></div>
+        <p class="feedback" id="feedbackRimas"></p>
+        <div style="text-align:center;"><button class="btn btn-outline" onclick="nuevaRima()">Otra palabra »</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="sitio">
+  <p>© 2026 Logopedia Sant Genís</p>
+</footer>
+
+<script>
+const PALABRAS_SILABAS = [
+  ["sol", ["sol"]], ["pan", ["pan"]], ["ga-to", ["ga", "to"]], ["me-sa", ["me", "sa"]],
+  ["flor", ["flor"]], ["pe-lo-ta", ["pe", "lo", "ta"]], ["ma-ri-po-sa", ["ma", "ri", "po", "sa"]],
+  ["ca-sa", ["ca", "sa"]], ["co-che", ["co", "che"]], ["pa-ta-ta", ["pa", "ta", "ta"]],
+  ["te-le-vi-sor", ["te", "le", "vi", "sor"]], ["li-bro", ["li", "bro"]],
+];
+
+function mostrarModo(modo) {
+  document.getElementById('tabSilabas').classList.toggle('activo', modo === 'silabas');
+  document.getElementById('tabRimas').classList.toggle('activo', modo === 'rimas');
+  document.getElementById('modoSilabas').classList.toggle('oculto', modo !== 'silabas');
+  document.getElementById('modoRimas').classList.toggle('oculto', modo !== 'rimas');
+}
+
+let silabasActual = null;
+let respondidoSilaba = false;
+
+function nuevaSilaba() {
+  const item = PALABRAS_SILABAS[Math.floor(Math.random() * PALABRAS_SILABAS.length)];
+  silabasActual = item;
+  respondidoSilaba = false;
+  document.getElementById('palabraSilaba').textContent = item[0].replace(/-/g, '');
+  document.getElementById('silabeoVisual').textContent = '';
+  document.getElementById('feedbackSilabas').textContent = '';
+  const botones = [1, 2, 3, 4];
+  document.getElementById('btnsSilabas').innerHTML = botones.map(n =>
+    `<button class="btn-num" onclick="responderSilaba(this,${n})">${n}</button>`).join('');
+}
+
+function responderSilaba(el, n) {
+  if (respondidoSilaba) return;
+  respondidoSilaba = true;
+  const correcto = silabasActual[1].length;
+  const acierto = n === correcto;
+  el.classList.add(acierto ? 'correcto' : 'incorrecto');
+  document.getElementById('silabeoVisual').textContent = silabasActual[1].join(' - ');
+  document.getElementById('feedbackSilabas').textContent = acierto ? '¡Correcto! 🎉' : `Tiene ${correcto} sílabas: ${silabasActual[1].join('-')}`;
+  document.getElementById('feedbackSilabas').style.color = acierto ? 'var(--verde-whatsapp)' : '#D64545';
+}
+
+const GRUPOS_RIMA = [
+  { base: "gato", rima: "pato", otras: ["mesa", "flor"] },
+  { base: "casa", rima: "masa", otras: ["libro", "sol"] },
+  { base: "pelota", rima: "bota", otras: ["coche", "pan"] },
+  { base: "flor", rima: "color", otras: ["gato", "silla"] },
+  { base: "ratón", rima: "jabón", otras: ["mesa", "coche"] },
+  { base: "luna", rima: "cuna", otras: ["pared", "sol"] },
+  { base: "pan", rima: "van", otras: ["flor", "casa"] },
+  { base: "sol", rima: "caracol", otras: ["mesa", "pato"] },
+];
+
+let rimaActual = null;
+let respondidoRima = false;
+
+function nuevaRima() {
+  const g = GRUPOS_RIMA[Math.floor(Math.random() * GRUPOS_RIMA.length)];
+  rimaActual = g;
+  respondidoRima = false;
+  document.getElementById('palabraRima').textContent = g.base;
+  document.getElementById('feedbackRimas').textContent = '';
+  const opciones = [g.rima, ...g.otras].sort(() => Math.random() - 0.5);
+  document.getElementById('opcionesRima').innerHTML = opciones.map(p =>
+    `<div class="opcion-palabra" onclick="responderRima(this,'${p}')">${p}</div>`).join('');
+}
+
+function responderRima(el, palabra) {
+  if (respondidoRima) return;
+  respondidoRima = true;
+  const acierto = palabra === rimaActual.rima;
+  el.classList.add(acierto ? 'correcta' : 'incorrecta');
+  document.querySelectorAll('.opcion-palabra').forEach(o => {
+    if (o.textContent.trim() === rimaActual.rima) o.classList.add('correcta');
+  });
+  document.getElementById('feedbackRimas').textContent = acierto ? '¡Riman! 🎉' : `"${rimaActual.rima}" es la que rima con "${rimaActual.base}"`;
+  document.getElementById('feedbackRimas').style.color = acierto ? 'var(--verde-whatsapp)' : '#D64545';
+}
+
+nuevaSilaba();
+nuevaRima();
+</script>
+
+</body>
+</html>
