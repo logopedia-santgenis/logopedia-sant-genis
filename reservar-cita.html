@@ -13,7 +13,7 @@
 <header class="sitio">
   <div class="nav-barra">
     <a href="index.html" class="logo"><img src="img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
-    <nav class="menu">
+    <nav class="menu" id="navMenu">
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="quienes-somos.html">¿Quiénes somos?</a></li>
@@ -21,10 +21,16 @@
         <li><a href="blog.html">Blog</a></li>
         <li><a href="contacto.html">Contacto</a></li>
       </ul>
+      <div class="nav-botones">
+        <a class="btn btn-secundario" href="login.html">Acceso plataforma</a>
+      </div>
     </nav>
-    <a class="btn btn-secundario" href="login.html">Acceso plataforma</a>
+    <button class="nav-hamburguesa" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
+<div class="nav-fondo" id="navFondo"></div>
 
 <section class="hero hero-imagen" style="padding:56px 24px;background-image:url('img/comunicacion.jpg');">
   <h1>Reserva tu cita online</h1>
@@ -189,5 +195,6 @@ document.getElementById('formReserva').addEventListener('submit', async (e) => {
 cargarCatalogoPublico();
 </script>
 
+<script src="nav.js" defer></script>
 </body>
 </html>

@@ -1049,6 +1049,7 @@ function pintarRecursos(recursos) {
       <div class="meta">${r.area ? (AREA_LABELS[r.area] || r.area) + ' · ' : ''}${EDAD_LABELS[r.rango_edad] || r.rango_edad} · ${IDIOMA_LABELS[r.idioma] || r.idioma}${autor ? ' · Subido por ' + esc(autor) : ''}</div>
       ${r.objetivo ? `<p class="meta">🎯 ${esc(r.objetivo)}</p>` : ''}
       ${r.descripcion ? `<p class="meta">${esc(r.descripcion)}</p>` : ''}
+      <div class="recurso-acciones">${botonRecurso(r)}</div>
       <div class="fila-acciones">
         <select id="selPaciente-${r.id}">${opcionesPacientes || '<option>Sin pacientes</option>'}</select>
         <button class="btn btn-outline" onclick="habilitarRecurso('${r.id}')">Habilitar para paciente</button>
@@ -1056,6 +1057,21 @@ function pintarRecursos(recursos) {
       </div>`;
     cont.appendChild(div);
   }
+}
+
+function botonRecurso(r) {
+  if (!r.contenido_url) return '';
+  const url = esc(r.contenido_url);
+  if (r.tipo === 'pdf') {
+    return `<a class="btn btn-secundario" href="${url}" target="_blank" rel="noopener" download>📄 Descargar PDF</a>`;
+  }
+  if (r.tipo === 'video') {
+    return `<a class="btn btn-secundario" href="${url}" target="_blank" rel="noopener">🎬 Ver vídeo</a>`;
+  }
+  if (r.tipo === 'ejercicio' || r.tipo === 'tarjeta_nombrar' || r.tipo === 'enlace') {
+    return `<a class="btn btn-secundario" href="${url}" target="_blank" rel="noopener">▶️ Probar recurso</a>`;
+  }
+  return `<a class="btn btn-outline" href="${url}" target="_blank" rel="noopener">Ver recurso</a>`;
 }
 
 async function habilitarRecurso(recursoId) {

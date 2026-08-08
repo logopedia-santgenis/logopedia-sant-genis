@@ -13,7 +13,7 @@
 <header class="sitio">
   <div class="nav-barra">
     <a href="index.html" class="logo"><img src="img/logo.svg" alt="Logopedia Sant Genís" class="logo-img"></a>
-    <nav class="menu">
+    <nav class="menu" id="navMenu">
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="quienes-somos.html">¿Quiénes somos?</a></li>
@@ -21,11 +21,17 @@
         <li><a href="blog.html">Blog</a></li>
         <li><a href="contacto.html">Contacto</a></li>
       </ul>
+      <div class="nav-botones">
+        <a class="btn btn-outline" href="reservar-cita.html">Reservar cita</a>
+        <a class="btn btn-secundario" href="login.html">Acceso plataforma</a>
+      </div>
     </nav>
-    <a class="btn btn-outline" href="reservar-cita.html" style="margin-right:8px;">Reservar cita</a>
-    <a class="btn btn-secundario" href="login.html">Acceso plataforma</a>
+    <button class="nav-hamburguesa" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
+<div class="nav-fondo" id="navFondo"></div>
 
 <section class="hero hero-imagen" style="background-image:url('img/hero-home.jpg');">
   <h1>Mejorando tu comunicación, transformando tu vida.</h1>
@@ -64,6 +70,12 @@
     <div class="tarjeta">
       <p>Una intervención oportuna reduce el impacto a largo plazo en el rendimiento académico, las relaciones sociales y la calidad de vida — y puede evitar complicaciones secundarias como baja autoestima o ansiedad.</p>
     </div>
+  </div>
+  <div class="video-seccion">
+    <div class="video-envoltorio">
+      <iframe src="https://www.youtube-nocookie.com/embed/SsZjf5A10dM" title="Signos de alerta en el desarrollo del lenguaje" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+    </div>
+    <p class="video-credito">Vídeo: Fundación Salud Infantil — "Signos de alerta en el desarrollo del lenguaje"</p>
   </div>
 </section>
 
@@ -111,5 +123,6 @@
   <p>© 2026 Logopedia Sant Genís · <a href="terminos-condiciones.html">Términos y condiciones</a> · <a href="politica-privacidad.html">Privacidad</a> · <a href="login.html">Acceso a la plataforma</a></p>
 </footer>
 
+<script src="nav.js" defer></script>
 </body>
 </html>
