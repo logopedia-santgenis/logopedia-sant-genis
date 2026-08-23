@@ -26,7 +26,7 @@
     <div class="sidebar-grupo-titulo">Agenda</div>
     <button class="tab-link" data-tab="agenda"><span class="icono-mini">📅</span> Calendario</button>
     <button class="tab-link" data-tab="peticiones"><span class="icono-mini">📨</span> Peticiones de cita<span class="badge-contador" id="badgePeticiones" style="display:none;"></span></button>
-    <button class="tab-link" data-tab="tareas"><span class="icono-mini">✅</span> Tareas</button>
+    <button class="tab-link" data-tab="tareas"><span class="icono-mini">📝</span> Deberes de pacientes</button>
     <button class="tab-link" data-tab="trabajos-externos"><span class="icono-mini">🔗</span> Trabajos externos</button>
     <button class="tab-link" data-tab="pacientes"><span class="icono-mini">👥</span> Pacientes / Contactos</button>
 
@@ -73,7 +73,7 @@
           <button class="btn btn-outline" onclick="cambiarTab('agenda')">Ver calendario »</button>
           <button class="btn btn-outline" onclick="cambiarTab('peticiones')">Peticiones de cita »</button>
           <button class="btn btn-outline" onclick="cambiarTab('pacientes')">Mis pacientes »</button>
-          <button class="btn btn-outline" onclick="cambiarTab('tareas')">Tareas »</button>
+          <button class="btn btn-outline" onclick="cambiarTab('tareas')">Deberes »</button>
         </div>
       </div>
       <div class="tarjeta" id="tarjetaPeticionesInicio" style="display:none;margin-bottom:20px;border:1px solid var(--mostaza);">
@@ -105,7 +105,8 @@
 
     <!-- TAREAS (agregadas) -->
     <div class="panel seccion-tab" data-panel="tareas" style="max-width:none;margin:0;padding:0;">
-      <div class="seccion-titulo-fila"><h2>Tareas de todos mis pacientes</h2></div>
+      <div class="seccion-titulo-fila"><h2>Deberes de pacientes</h2></div>
+      <p class="meta" style="margin:-8px 0 14px;">Ejercicios y deberes para casa asignados desde la ficha de cada paciente. Esto no es lo mismo que el estado de la sesión — eso se marca directamente en el calendario.</p>
       <div class="fila-acciones" style="margin-bottom:14px;">
         <label class="meta">Filtrar:</label>
         <select id="filtroEstadoTareas" onchange="cargarTareasAgregadas()">
@@ -429,7 +430,7 @@ function pintarPacientes() {
       <div class="fila-acciones">
         <button class="btn btn-outline" data-accion="ficha" data-id="${p.id}">+ Nota de seguimiento</button>
         <button class="btn btn-outline" data-accion="cita" data-id="${p.id}">+ Cita</button>
-        <button class="btn btn-outline" data-accion="tarea" data-id="${p.id}">+ Tarea</button>
+        <button class="btn btn-outline" data-accion="tarea" data-id="${p.id}">+ Deberes</button>
         <button class="btn btn-outline" data-accion="ver" data-id="${p.id}">Ver historial</button>
         <a class="btn btn-outline" href="paciente-ficha.html?id=${p.id}">Ficha completa »</a>
       </div>
@@ -481,7 +482,7 @@ function manejarAccionPaciente(accion, pacienteId) {
   } else if (accion === 'tarea') {
     zona.innerHTML = `
       <div class="fila-acciones" style="margin-top:10px;">
-        <input type="text" id="tareaTipo-${pacienteId}" placeholder="Tipo de tarea (ej. Ejercicios en casa)" style="flex:2;">
+        <input type="text" id="tareaTipo-${pacienteId}" placeholder="Tipo de deberes (ej. Ejercicios en casa)" style="flex:2;">
         <input type="date" id="tareaInicio-${pacienteId}">
         <input type="date" id="tareaFin-${pacienteId}">
         <select id="tareaRecordatorio-${pacienteId}">
@@ -489,7 +490,7 @@ function manejarAccionPaciente(accion, pacienteId) {
           <option value="email">Recordatorio por email</option>
           <option value="whatsapp">Recordatorio por WhatsApp</option>
         </select>
-        <button class="btn btn-secundario" onclick="guardarTarea('${pacienteId}')">Crear tarea</button>
+        <button class="btn btn-secundario" onclick="guardarTarea('${pacienteId}')">Asignar deberes</button>
       </div>`;
   } else if (accion === 'ver') {
     verHistorial(pacienteId);
@@ -506,7 +507,7 @@ async function guardarTarea(pacienteId) {
     paciente_id: pacienteId, logopeda_id: UID, tipo_tarea, fecha_inicio, fecha_fin, canal_recordatorio, estado: 'pendiente'
   });
   document.getElementById(`zona-${pacienteId}`).innerHTML = error
-    ? '<p class="meta">Error creando la tarea.</p>' : '<p class="meta">Tarea creada ✓</p>';
+    ? '<p class="meta">Error asignando los deberes.</p>' : '<p class="meta">Deberes asignados ✓</p>';
 }
 
 async function guardarFicha(pacienteId) {
@@ -545,7 +546,7 @@ async function verHistorial(pacienteId) {
 
   let html = '';
   if (tareas && tareas.length) {
-    html += `<div class="meta" style="margin-top:8px;font-weight:600;">Tareas</div>` + tareas.map(t => `
+    html += `<div class="meta" style="margin-top:8px;font-weight:600;">Deberes</div>` + tareas.map(t => `
       <div class="meta" style="margin-top:4px;">
         ${esc(t.tipo_tarea)} — ${badgeEstado(t.estado)} ${t.fecha_inicio ? '· ' + formatearFecha(t.fecha_inicio) : ''}${t.fecha_fin ? ' a ' + formatearFecha(t.fecha_fin) : ''}
         <select onchange="actualizarEstadoTarea('${t.id}', this.value, '${pacienteId}')" style="margin-left:6px;">
@@ -1329,7 +1330,7 @@ async function cargarTareasAgregadas() {
       <select onchange="actualizarEstadoTareaAgregada('${t.id}', this.value)" style="margin-top:6px;">
         ${['pendiente', 'en_curso', 'completada', 'cancelada'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
       </select>
-    </div>`).join('') : '<p class="vacio-panel">No hay tareas con ese filtro.</p>';
+    </div>`).join('') : '<p class="vacio-panel">No hay deberes con ese filtro.</p>';
 }
 
 async function actualizarEstadoTareaAgregada(id, estado) {
