@@ -188,6 +188,16 @@
       <p class="meta" id="estadoUsoPlantilla"></p>
     </div>
     <div class="tarjeta" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;">Información diagnóstica para la familia</h3>
+      <p class="meta">Elige una ficha de la biblioteca (Información diagnóstica) para verla/imprimirla en PDF y compartirla con la familia, o para dejar registro en los documentos de este paciente.</p>
+      <div class="fila-acciones">
+        <select id="dxFicha" style="flex:2;"><option value="">— Elegir ficha —</option></select>
+        <button class="btn btn-outline" onclick="verImprimirInfoDiagnostica()">Ver / Imprimir</button>
+        <button class="btn btn-outline" onclick="guardarInfoDiagnosticaEnDocumentos()">Guardar en Documentos</button>
+      </div>
+      <p class="meta" id="estadoInfoDiagnostica"></p>
+    </div>
+    <div class="tarjeta" style="margin-bottom:20px;">
       <h3 style="margin-top:0;">Subir documento</h3>
       <div class="fila-acciones">
         <input type="text" id="dTitulo" placeholder="Título del documento" style="flex:2;">
@@ -661,6 +671,63 @@ async function adjuntarPlantillaArchivo(plantilla) {
   await cargarDocumentos();
 }
 
+let INFO_DIAGNOSTICA_FICHA = [];
+
+async function cargarInfoDiagnosticaParaFicha() {
+  const { data } = await supabaseClient.from('informacion_diagnostica').select('*').order('titulo');
+  INFO_DIAGNOSTICA_FICHA = data || [];
+  document.getElementById('dxFicha').innerHTML = '<option value="">— Elegir ficha —</option>' +
+    INFO_DIAGNOSTICA_FICHA.map(f => `<option value="${f.id}">${esc(f.titulo)}</option>`).join('');
+}
+
+async function verImprimirInfoDiagnostica() {
+  const id = document.getElementById('dxFicha').value;
+  const ficha = INFO_DIAGNOSTICA_FICHA.find(f => f.id === id);
+  if (!ficha) { document.getElementById('estadoInfoDiagnostica').textContent = 'Elige una ficha primero.'; return; }
+  const { data: pac } = await supabaseClient.from('pacientes').select('nombre').eq('id', pacienteId).single();
+
+  const ventana = window.open('', '_blank');
+  if (!ventana) { alert('El navegador bloqueó la ventana emergente. Permite ventanas emergentes para ver/imprimir.'); return; }
+  ventana.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${esc(ficha.titulo)} — ${esc(pac?.nombre || '')}</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; color:#1a1a1a; padding: 32px; max-width: 720px; margin:0 auto; white-space: pre-wrap; }
+      h1 { font-size: 1.3rem; margin-bottom: 4px; }
+      .meta-cabecera { color:#555; font-size:.9rem; margin-bottom: 24px; white-space: normal; }
+      @media print { body { padding: 0; } }
+    </style>
+  </head><body>
+    <h1>${esc(ficha.titulo)}</h1>
+    <div class="meta-cabecera">Para: ${esc(pac?.nombre || 'Paciente')} · Logopedia Sant Genís — ${new Date().toLocaleDateString('es-ES')}</div>
+    ${esc(ficha.contenido)}
+  </body></html>`);
+  ventana.document.close();
+  ventana.focus();
+  setTimeout(() => ventana.print(), 400);
+}
+
+async function guardarInfoDiagnosticaEnDocumentos() {
+  const estado = document.getElementById('estadoInfoDiagnostica');
+  const id = document.getElementById('dxFicha').value;
+  const ficha = INFO_DIAGNOSTICA_FICHA.find(f => f.id === id);
+  if (!ficha) { estado.textContent = 'Elige una ficha primero.'; return; }
+  estado.textContent = 'Guardando…';
+
+  const blob = new Blob([ficha.contenido], { type: 'text/plain;charset=utf-8;' });
+  const rutaDestino = `${pacienteId}/${Date.now()}-info-diagnostica-${ficha.titulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}.txt`;
+
+  const { error: errSubida } = await supabaseClient.storage.from('documentos-pacientes').upload(rutaDestino, blob);
+  if (errSubida) { estado.textContent = 'Error guardando el archivo: ' + errSubida.message; return; }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const { error: errInsert } = await supabaseClient.from('documentos_paciente').insert({
+    paciente_id: pacienteId, titulo: `Información: ${ficha.titulo}`, tipo: 'informe', storage_path: rutaDestino, subido_por: user.id, visible_para_cliente: true
+  });
+  if (errInsert) { estado.textContent = 'Error guardando el registro: ' + errInsert.message; return; }
+
+  estado.textContent = 'Guardado en Documentos ✓';
+  await cargarDocumentos();
+}
+
 function descargarDocumentoGenerado() {
   if (!contenidoGenerado) return;
   const blob = new Blob([contenidoGenerado], { type: 'text/plain;charset=utf-8;' });
@@ -805,6 +872,7 @@ async function subirDocumento() {
   await cargarBonos();
   await cargarDatosAuxiliares();
   await cargarPlantillasParaGenerar();
+  await cargarInfoDiagnosticaParaFicha();
   await cargarFirmas();
   await cargarDocumentos();
 })();

@@ -38,6 +38,7 @@
     <div class="sidebar-grupo-titulo">Documentación</div>
     <button class="tab-link" data-tab="firmas"><span class="icono-mini">✍️</span> Firmas pendientes</button>
     <button class="tab-link" data-tab="plantillas-doc"><span class="icono-mini">📄</span> Plantillas</button>
+    <button class="tab-link" data-tab="info-diagnostica"><span class="icono-mini">🧠</span> Información diagnóstica</button>
 
     <div class="sidebar-grupo-titulo">Marketing</div>
     <button class="tab-link" data-tab="campanas"><span class="icono-mini">📣</span> Campañas</button>
@@ -212,6 +213,25 @@
       </div>
       <div id="listaPlantillas"><div class="cargando">Cargando…</div></div>
       <p class="meta" style="margin-top:16px;">Para usar una plantilla con un paciente concreto (generar texto o adjuntar el archivo), entra en la ficha completa de un paciente → pestaña Documentos.</p>
+    </div>
+    <div class="panel seccion-tab" data-panel="info-diagnostica" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Información diagnóstica</h2></div>
+      <p class="meta" style="margin-bottom:16px;">Fichas explicativas por diagnóstico para compartir con las familias al finalizar una entrevista o evaluación. Hay fichas por defecto para toda la clínica (puedes duplicarlas y adaptarlas a tu manera) y puedes crear las tuyas propias.</p>
+      <div class="tarjeta" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Nueva ficha</h3>
+        <div class="fila-acciones">
+          <input type="text" id="idTitulo" placeholder="Título (ej. Dislexia)" style="flex:2;">
+        </div>
+        <textarea id="idContenido" rows="6" placeholder="Contenido de la ficha…" style="width:100%;margin-top:10px;"></textarea>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <button class="btn btn-secundario" onclick="crearInfoDiagnostica()">Guardar</button>
+        </div>
+        <p class="meta" id="idEstado"></p>
+      </div>
+      <div class="fila-acciones" style="margin-bottom:14px;">
+        <input type="text" id="idBuscar" placeholder="Buscar por título…" style="flex:1;" oninput="filtrarInfoDiagnostica()">
+      </div>
+      <div id="listaInfoDiagnostica"><div class="cargando">Cargando…</div></div>
     </div>
     <div class="panel seccion-tab" data-panel="campanas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Campañas de marketing</h2></div>
@@ -1340,6 +1360,87 @@ async function borrarPlantilla(id) {
   await cargarPlantillas();
 }
 
+let INFO_DIAGNOSTICA = [];
+
+async function cargarInfoDiagnostica() {
+  const { data } = await supabaseClient
+    .from('informacion_diagnostica').select('*')
+    .or(`logopeda_id.eq.${UID},logopeda_id.is.null`)
+    .order('titulo');
+  INFO_DIAGNOSTICA = data || [];
+  pintarInfoDiagnostica(INFO_DIAGNOSTICA);
+}
+
+function filtrarInfoDiagnostica() {
+  const q = document.getElementById('idBuscar').value.trim().toLowerCase();
+  const filtradas = q ? INFO_DIAGNOSTICA.filter(f => f.titulo.toLowerCase().includes(q)) : INFO_DIAGNOSTICA;
+  pintarInfoDiagnostica(filtradas);
+}
+
+function pintarInfoDiagnostica(lista) {
+  const cont = document.getElementById('listaInfoDiagnostica');
+  cont.innerHTML = (lista && lista.length) ? lista.map(f => {
+    const esPropia = f.logopeda_id === UID;
+    return `
+    <div class="lista-item" id="fichaDx-${f.id}">
+      <strong>${esc(f.titulo)}</strong> ${f.predeterminada ? '<span class="etiqueta-pill">Predeterminada</span>' : ''} ${esPropia ? '<span class="etiqueta-pill">Mía</span>' : ''}
+      <p class="meta" id="textoDx-${f.id}" style="white-space:pre-wrap;">${esc(f.contenido)}</p>
+      <textarea id="editDx-${f.id}" style="display:none;width:100%;" rows="8">${esc(f.contenido)}</textarea>
+      <div class="fila-acciones" style="margin-top:6px;">
+        ${esPropia
+          ? `<button class="btn btn-outline" onclick="editarInfoDiagnostica('${f.id}')" id="btnEditar-${f.id}">Editar</button>
+             <button class="btn btn-outline" id="btnGuardar-${f.id}" style="display:none;" onclick="guardarInfoDiagnostica('${f.id}')">Guardar</button>
+             <button class="btn btn-outline" onclick="borrarInfoDiagnostica('${f.id}')">Eliminar</button>`
+          : `<button class="btn btn-outline" onclick="duplicarInfoDiagnostica('${f.id}')">Duplicar para personalizar</button>`}
+      </div>
+    </div>`;
+  }).join('') : '<p class="vacio-panel">No hay fichas que coincidan.</p>';
+}
+
+async function crearInfoDiagnostica() {
+  const estado = document.getElementById('idEstado');
+  estado.textContent = '';
+  const titulo = document.getElementById('idTitulo').value.trim();
+  const contenido = document.getElementById('idContenido').value.trim();
+  if (!titulo || !contenido) { estado.textContent = 'Falta título o contenido.'; return; }
+  const { error } = await supabaseClient.from('informacion_diagnostica').insert({ titulo, contenido, logopeda_id: UID });
+  if (error) { estado.textContent = 'Error: ' + error.message; return; }
+  document.getElementById('idTitulo').value = '';
+  document.getElementById('idContenido').value = '';
+  await cargarInfoDiagnostica();
+}
+
+function editarInfoDiagnostica(id) {
+  document.getElementById(`textoDx-${id}`).style.display = 'none';
+  document.getElementById(`editDx-${id}`).style.display = 'block';
+  document.getElementById(`btnEditar-${id}`).style.display = 'none';
+  document.getElementById(`btnGuardar-${id}`).style.display = 'inline-block';
+}
+
+async function guardarInfoDiagnostica(id) {
+  const contenido = document.getElementById(`editDx-${id}`).value.trim();
+  if (!contenido) return;
+  const { error } = await supabaseClient.from('informacion_diagnostica').update({ contenido }).eq('id', id);
+  if (error) { alert('Error guardando: ' + error.message); return; }
+  await cargarInfoDiagnostica();
+}
+
+async function duplicarInfoDiagnostica(id) {
+  const original = INFO_DIAGNOSTICA.find(f => f.id === id);
+  if (!original) return;
+  const { error } = await supabaseClient.from('informacion_diagnostica').insert({
+    titulo: original.titulo, contenido: original.contenido, logopeda_id: UID
+  });
+  if (error) { alert('Error duplicando: ' + error.message); return; }
+  await cargarInfoDiagnostica();
+}
+
+async function borrarInfoDiagnostica(id) {
+  if (!confirm('¿Eliminar esta ficha?')) return;
+  await supabaseClient.from('informacion_diagnostica').delete().eq('id', id);
+  await cargarInfoDiagnostica();
+}
+
 async function cargarCampanas() {
   const { data } = await supabaseClient
     .from('campanas_marketing').select('*').eq('logopeda_id', UID)
@@ -1751,6 +1852,7 @@ async function borrarTextoPredefinido(id) {
   await cargarTareasAgregadas();
   await cargarFirmasPendientes();
   await cargarPlantillas();
+  await cargarInfoDiagnostica();
   await cargarCampanas();
   await cargarActividadesGrupales();
   await cargarRecursos();
