@@ -46,6 +46,55 @@ async function obtenerIp() {
   }
 }
 
+let ctxFirma = null;
+let dibujando = false;
+let trazoRealizado = false;
+let ultimoPunto = null;
+
+function coordenadasCanvas(canvas, evt) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+}
+
+function iniciarCanvasFirma() {
+  const canvas = document.getElementById('canvasFirma');
+  if (!canvas) return;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * ratio;
+  canvas.height = canvas.clientHeight * ratio;
+  ctxFirma = canvas.getContext('2d');
+  ctxFirma.scale(ratio, ratio);
+  ctxFirma.lineWidth = 2.2;
+  ctxFirma.lineCap = 'round';
+  ctxFirma.lineJoin = 'round';
+  ctxFirma.strokeStyle = '#12233f';
+
+  canvas.addEventListener('pointerdown', (e) => {
+    dibujando = true;
+    trazoRealizado = true;
+    ultimoPunto = coordenadasCanvas(canvas, e);
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!dibujando) return;
+    const p = coordenadasCanvas(canvas, e);
+    ctxFirma.beginPath();
+    ctxFirma.moveTo(ultimoPunto.x, ultimoPunto.y);
+    ctxFirma.lineTo(p.x, p.y);
+    ctxFirma.stroke();
+    ultimoPunto = p;
+    e.preventDefault();
+  }, { passive: false });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => canvas.addEventListener(ev, () => { dibujando = false; }));
+}
+
+function borrarFirmaCanvas() {
+  const canvas = document.getElementById('canvasFirma');
+  if (!canvas || !ctxFirma) return;
+  ctxFirma.clearRect(0, 0, canvas.width, canvas.height);
+  trazoRealizado = false;
+}
+
 async function cargar() {
   const cont = document.getElementById('contenidoFirma');
   if (!firmaId) { cont.innerHTML = '<p>Enlace no válido.</p>'; return; }
@@ -57,7 +106,8 @@ async function cargar() {
     cont.innerHTML = `
       <h2>${esc(f.titulo)}</h2>
       <p style="white-space:pre-wrap;">${esc(f.contenido)}</p>
-      <div class="mensaje-ok" style="display:block;margin-top:16px;">Firmado por <strong>${esc(f.nombre_firmante)}</strong> el ${formatearFechaHora(f.firmado_en)}.</div>`;
+      <div class="mensaje-ok" style="display:block;margin-top:16px;">Firmado por <strong>${esc(f.nombre_firmante)}</strong> el ${formatearFechaHora(f.firmado_en)}.</div>
+      ${f.firma_imagen ? `<div style="margin-top:12px;"><img src="${f.firma_imagen}" alt="Firma" style="max-width:280px;border:1px solid var(--borde);border-radius:8px;background:#fff;"></div>` : ''}`;
     return;
   }
 
@@ -69,10 +119,16 @@ async function cargar() {
       <input type="text" id="nombreFirmante" placeholder="Escribe tu nombre completo" maxlength="200">
     </div>
     <div class="campo">
+      <label>Dibuja tu firma</label>
+      <canvas id="canvasFirma" style="width:100%;height:160px;border:1px solid var(--borde);border-radius:8px;background:#fff;touch-action:none;cursor:crosshair;"></canvas>
+      <button type="button" class="btn btn-outline" style="margin-top:8px;" onclick="borrarFirmaCanvas()">Borrar y repetir</button>
+    </div>
+    <div class="campo">
       <label><input type="checkbox" id="aceptoFirma" style="width:auto;display:inline-block;margin-right:6px;">He leído y acepto el contenido de este documento.</label>
     </div>
     <div class="mensaje-error" id="errorFirma"></div>
     <button class="btn btn-secundario" style="width:100%;" onclick="firmarAhora()">Firmar documento</button>`;
+  iniciarCanvasFirma();
 }
 
 async function firmarAhora() {
@@ -85,9 +141,16 @@ async function firmarAhora() {
     error.style.display = 'block';
     return;
   }
+  if (!trazoRealizado) {
+    error.textContent = 'Dibuja tu firma en el recuadro antes de continuar.';
+    error.style.display = 'block';
+    return;
+  }
+  const canvas = document.getElementById('canvasFirma');
+  const firmaImagen = canvas.toDataURL('image/png');
   const ip = await obtenerIp();
   const { data: ok, error: errRpc } = await supabaseClient.rpc('firmar_documento', {
-    p_firma_id: firmaId, p_nombre_firmante: nombre, p_ip: ip, p_user_agent: navigator.userAgent
+    p_firma_id: firmaId, p_nombre_firmante: nombre, p_ip: ip, p_user_agent: navigator.userAgent, p_firma_imagen: firmaImagen
   });
   if (errRpc || !ok) {
     error.textContent = 'No se pudo firmar el documento. Puede que ya esté firmado o el enlace haya caducado.';

@@ -213,7 +213,7 @@
 
   <!-- FIRMAS -->
   <div class="seccion-tab" data-panel="firmas">
-    <p class="meta" style="margin-bottom:16px;">Firma simple: el firmante confirma con su nombre + fecha/hora + IP registrados. No es firma electrónica cualificada — vale para consentimientos informativos, no para todo tipo de contrato.</p>
+    <p class="meta" style="margin-bottom:16px;">Firma manuscrita digitalizada: el firmante dibuja su firma en pantalla y confirma con su nombre + fecha/hora + IP registrados. No es firma electrónica cualificada (certificado digital) — vale para consentimientos informativos, no necesariamente para todo tipo de contrato.</p>
     <div class="tarjeta" style="margin-bottom:20px;">
       <h3 style="margin-top:0;">Solicitar firma</h3>
       <div class="fila-acciones">
@@ -720,7 +720,8 @@ async function cargarFirmas() {
              <input type="text" readonly value="${location.origin}${location.pathname.replace('paciente-ficha.html', '')}firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
              <button class="btn btn-outline" onclick="copiarEnlaceFirma('${f.id}')">Copiar enlace</button>
            </div>`
-        : `<div class="meta">Firmado por ${esc(f.nombre_firmante) || '—'} el ${formatearFecha(f.firmado_en?.slice(0,10))} · IP ${esc(f.ip_firmante) || '—'}</div>`}
+        : `<div class="meta">Firmado por ${esc(f.nombre_firmante) || '—'} el ${formatearFecha(f.firmado_en?.slice(0,10))} · IP ${esc(f.ip_firmante) || '—'}</div>
+           ${f.firma_imagen ? `<img src="${f.firma_imagen}" alt="Firma" style="max-width:220px;margin-top:6px;border:1px solid var(--borde);border-radius:8px;background:#fff;display:block;">` : ''}`}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay solicitudes de firma para este paciente.</p>';
 }
 
