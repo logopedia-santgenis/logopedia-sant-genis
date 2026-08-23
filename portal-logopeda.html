@@ -772,8 +772,8 @@ function bloqueCitaHtml(c) {
   const alto = Math.max(20, (dur / CAL_SLOT_MIN) * CAL_ALTURA_SLOT - 2);
   const finStr = minutosAHora(inicioMin + dur);
   const color = COLOR_ESTADO_CAL[c.estado] || 'gris';
-  return `<div class="cita-bloque cita-bloque-${color}" style="top:${top}px;height:${alto}px;" onclick="event.stopPropagation();abrirMenuCita(event,'${c.id}')" title="${esc(c.pacientes?.nombre || '')} — ${c.hora} a ${finStr}">
-    <span class="cb-hora">${c.hora}–${finStr}</span>
+  return `<div class="cita-bloque cita-bloque-${color}" style="top:${top}px;height:${alto}px;" onclick="event.stopPropagation();abrirMenuCita(event,'${c.id}')" title="${esc(c.pacientes?.nombre || '')} — ${c.hora.slice(0,5)} a ${finStr}">
+    <span class="cb-hora">${c.hora.slice(0,5)}–${finStr}</span>
     <span class="cb-paciente">${esc(c.pacientes?.nombre || '—')}</span>
     ${alto > 38 ? `<span class="cb-meta">${esc(c.tratamientos?.nombre || (c.modalidad === 'online' ? 'Online' : 'Sesión'))}</span>` : ''}
   </div>`;
@@ -787,7 +787,7 @@ function htmlMes(dias, porDia) {
     const fueraDeMes = d.getMonth() !== mesActual;
     return `<div class="mes-celda ${fueraDeMes ? 'fuera-mes' : ''} ${esHoyDate(d) ? 'hoy' : ''}" onclick="irADia('${fStr}')">
       <span class="mes-num-dia">${d.getDate()}</span>
-      ${lista.slice(0, 3).map(c => `<div class="mes-mini-cita mes-mini-${COLOR_ESTADO_CAL[c.estado] || 'gris'}">${c.hora} ${esc((c.pacientes?.nombre || '—').split(' ')[0])}</div>`).join('')}
+      ${lista.slice(0, 3).map(c => `<div class="mes-mini-cita mes-mini-${COLOR_ESTADO_CAL[c.estado] || 'gris'}">${c.hora.slice(0,5)} ${esc((c.pacientes?.nombre || '—').split(' ')[0])}</div>`).join('')}
       ${lista.length > 3 ? `<div class="mes-mas">+${lista.length - 3} más</div>` : ''}
     </div>`;
   }).join('');
@@ -844,7 +844,7 @@ function abrirMenuCita(event, citaId) {
   if (!c) return;
   const panel = document.getElementById('panelFlotanteCal');
   panel.innerHTML = `
-    <div class="panel-cal-titulo">${esc(c.pacientes?.nombre || 'Paciente')}<span class="meta" style="display:block;font-weight:400;">${formatearFecha(c.fecha)} · ${c.hora} (${c.duracion_minutos || 40} min) · ${badgeEstado(c.estado === 'no_asistio' ? 'cancelada' : c.estado)}</span></div>
+    <div class="panel-cal-titulo">${esc(c.pacientes?.nombre || 'Paciente')}<span class="meta" style="display:block;font-weight:400;">${formatearFecha(c.fecha)} · ${c.hora.slice(0,5)} (${c.duracion_minutos || 40} min) · ${badgeEstado(c.estado === 'no_asistio' ? 'cancelada' : c.estado)}</span></div>
     <button class="menu-cal-item" onclick="verFichaCita('${c.paciente_id}')">📋 Ver ficha</button>
     <button class="menu-cal-item" onclick="editarCitaDesdeMenu('${c.id}')">✏️ Editar cita</button>
     <button class="menu-cal-item" onclick="marcarEstadoCita('${c.id}','realizada')">✅ Marcar realizada</button>
@@ -864,7 +864,7 @@ function editarCitaDesdeMenu(citaId) {
   const c = CITAS_CACHE[citaId];
   if (!c) return;
   cerrarPanelCal();
-  abrirModalCita({ fecha: c.fecha, hora: c.hora, citaExistente: c });
+  abrirModalCita({ fecha: c.fecha, hora: c.hora.slice(0, 5), citaExistente: c });
 }
 
 async function marcarEstadoCita(citaId, estado) {
