@@ -121,7 +121,7 @@ async function cargarCatalogoPublico() {
     '<option value="">— Cualquier profesional disponible —</option>' +
     LOGOPEDAS.map(l => `<option value="${l.id}">${esc(l.nombre)}${l.especialidad ? ' — ' + esc(l.especialidad) : ''}</option>`).join('');
 
-  document.getElementById('rFecha').min = new Date().toISOString().slice(0, 10);
+  document.getElementById('rFecha').min = fechaLocalISO(new Date());
 }
 
 document.getElementById('rTratamiento').addEventListener('change', (e) => {

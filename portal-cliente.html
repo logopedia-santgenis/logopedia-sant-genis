@@ -97,7 +97,7 @@ function cambiarPaciente(id) {
     tabs.innerHTML = pacientes.map((p, i) => `<button class="tab-link ${i === 0 ? 'activo' : ''}" data-id="${p.id}" onclick="cambiarPaciente('${p.id}')">${esc(p.nombre)}</button>`).join('');
   }
 
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = fechaLocalISO(new Date());
 
   for (const [i, p] of pacientes.entries()) {
     const bloque = document.createElement('div');

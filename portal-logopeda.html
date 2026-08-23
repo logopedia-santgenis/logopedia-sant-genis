@@ -648,7 +648,7 @@ async function cargarTratamientosOpts() {
   TRATAMIENTOS = data || [];
 }
 
-function fmtISO(d) { return d.toISOString().slice(0, 10); }
+function fmtISO(d) { return fechaLocalISO(d); }
 
 function lunesDeSemana(d) {
   const dia = d.getDay();
@@ -686,8 +686,8 @@ function cambiarVistaCal(v) {
 }
 
 async function cargarAgenda() {
-  const hoy = new Date().toISOString().slice(0, 10);
-  const en7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const hoy = fechaLocalISO(new Date());
+  const en7 = fechaLocalISO(new Date(Date.now() + 7 * 86400000));
   const { data: citas } = await supabaseClient
     .from('citas').select('id')
     .eq('logopeda_id', UID).gte('fecha', hoy).lte('fecha', en7).neq('estado', 'cancelada');
@@ -1015,7 +1015,7 @@ function usarHueco(fecha, hora) {
 
 
 async function cargarJornadaHoy() {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = fechaLocalISO(new Date());
   const { data } = await supabaseClient
     .from('registro_jornada').select('*').eq('logopeda_id', UID)
     .gte('fecha_hora', hoy + 'T00:00:00').order('fecha_hora', { ascending: true });
@@ -1047,7 +1047,7 @@ async function cargarBloqueGoogleCalendar() {
 }
 
 async function cargarSalaEspera() {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = fechaLocalISO(new Date());
   const { data: citas } = await supabaseClient
     .from('citas').select('*, pacientes(nombre)')
     .eq('logopeda_id', UID).eq('fecha', hoy).neq('estado', 'cancelada')

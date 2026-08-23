@@ -541,7 +541,7 @@ async function cargarHistoriaClinica() {
 
 async function crearHistoriaClinica() {
   const documento = document.getElementById('hcDocumento').value.trim();
-  const fecha = document.getElementById('hcFecha').value || new Date().toISOString().slice(0, 10);
+  const fecha = document.getElementById('hcFecha').value || fechaLocalISO(new Date());
   const comentarios = document.getElementById('hcComentarios').value.trim() || null;
   if (!documento) return;
   const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
@@ -602,7 +602,7 @@ async function generarDocumentoDesdePlantilla() {
     '{{paciente_fecha_nacimiento}}': formatearFecha(p?.fecha_nacimiento),
     '{{tutor_nombre}}': contactos?.[0]?.nombre || '',
     '{{logopeda_nombre}}': p?.logopedas?.profiles?.nombre || '',
-    '{{fecha_hoy}}': formatearFecha(new Date().toISOString().slice(0, 10)),
+    '{{fecha_hoy}}': formatearFecha(fechaLocalISO(new Date())),
   };
   let contenido = plantilla.contenido;
   Object.keys(variables).forEach(v => { contenido = contenido.split(v).join(variables[v]); });

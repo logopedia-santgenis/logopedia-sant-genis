@@ -699,7 +699,7 @@ async function cargarEstadisticas() {
     const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
     meses.push({ label: d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }), inicio: d, fin: new Date(d.getFullYear(), d.getMonth() + 1, 0) });
   }
-  const fmt = d => d.toISOString().slice(0, 10);
+  const fmt = d => fechaLocalISO(d);
 
   // Citas por mes
   const { data: todasCitas } = await supabaseClient.from('citas').select('fecha, estado, tratamiento_id');
@@ -808,8 +808,8 @@ async function crearTratamiento() {
 }
 
 async function cargarResumen() {
-  const hoy = new Date().toISOString().slice(0, 10);
-  const en7dias = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const hoy = fechaLocalISO(new Date());
+  const en7dias = fechaLocalISO(new Date(Date.now() + 7 * 86400000));
 
   const { data: citas } = await supabaseClient
     .from('citas').select('*, pacientes(nombre)')

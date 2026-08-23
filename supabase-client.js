@@ -79,6 +79,17 @@ function formatearFecha(fechaStr) {
   return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+// Fecha de un objeto Date en formato YYYY-MM-DD usando la hora LOCAL del navegador,
+// no UTC. IMPORTANTE: nunca usar d.toISOString().slice(0,10) para esto — toISOString()
+// convierte a UTC primero, y como España va por delante de UTC (+1/+2h), una medianoche
+// local se convierte al día anterior en UTC y el resultado queda desfasado un día.
+function fechaLocalISO(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // --- Integración Google Calendar (cada logopeda conecta su propio calendario) ---
 // GOOGLE_CLIENT_ID se rellena cuando se crea el cliente OAuth en Google Cloud Console.
 const GOOGLE_CLIENT_ID = '926995120162-vt0shk2368ob2an2pacq19hoom9tcdvc.apps.googleusercontent.com';
