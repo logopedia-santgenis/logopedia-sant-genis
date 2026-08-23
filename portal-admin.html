@@ -401,16 +401,15 @@ async function crearPaciente() {
   const tutor_id = document.getElementById('pTutor').value || null;
   const logopeda_id = document.getElementById('pLogopeda').value || null;
   const estado = document.getElementById('estadoPaciente');
-  if (!nombre) return;
-  if (!tutor_id) {
-    estado.textContent = 'Si el paciente es adulto con cuenta propia, vincúlalo luego editando usuario_id en Supabase (o indícame el email y lo hago).';
-  }
-  const { error } = await supabaseClient.from('pacientes').insert({
+  if (!nombre) { estado.textContent = 'Falta el nombre.'; return; }
+  if (!tutor_id && !logopeda_id) { estado.textContent = 'Elige al menos un tutor o un logopeda asignado.'; return; }
+
+  const { data, error } = await supabaseClient.from('pacientes').insert({
     nombre, fecha_nacimiento, tutor_id, logopeda_id, estado: 'activo'
-  });
-  estado.textContent = error ? 'Error creando el paciente: ' + error.message : 'Paciente creado ✓';
-  document.getElementById('pNombre').value = '';
-  await cargarPacientesAdmin();
+  }).select('id').single();
+
+  if (error) { estado.textContent = 'Error creando el paciente: ' + error.message; return; }
+  window.location.href = `paciente-ficha.html?id=${data.id}`;
 }
 
 async function cargarCuotas() {

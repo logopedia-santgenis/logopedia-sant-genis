@@ -93,6 +93,20 @@
     <!-- PACIENTES -->
     <div class="panel seccion-tab" data-panel="pacientes" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Mis pacientes</h2></div>
+      <div class="tarjeta" style="margin-bottom:16px;">
+        <h3 style="margin-top:0;">Nuevo paciente</h3>
+        <p class="meta">Alta rápida — después de crearlo se abre su ficha completa para rellenar el resto de datos (dirección, documento, entrevista inicial…).</p>
+        <div class="fila-acciones">
+          <input type="text" id="npNombre" placeholder="Nombre completo" style="flex:2;">
+          <input type="date" id="npNacimiento" title="Fecha de nacimiento">
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <input type="tel" id="npTelefono" placeholder="Teléfono" style="flex:1;">
+          <input type="email" id="npEmail" placeholder="Email" style="flex:1;">
+          <button class="btn btn-secundario" onclick="crearPacienteRapido()">Crear paciente</button>
+        </div>
+        <p class="meta" id="estadoNuevoPaciente"></p>
+      </div>
       <input type="text" class="buscador-portal" id="buscarPacientes" placeholder="Buscar paciente por nombre…" oninput="pintarPacientes()">
       <div id="listaPacientes"><div class="cargando">Cargando…</div></div>
     </div>
@@ -476,6 +490,23 @@ async function cargarPacientes() {
   PACIENTES = pacientes || [];
   document.getElementById('kpiPacientes').textContent = PACIENTES.length;
   pintarPacientes();
+}
+
+async function crearPacienteRapido() {
+  const estado = document.getElementById('estadoNuevoPaciente');
+  const nombre = document.getElementById('npNombre').value.trim();
+  const fecha_nacimiento = document.getElementById('npNacimiento').value || null;
+  const telefono = document.getElementById('npTelefono').value.trim() || null;
+  const email = document.getElementById('npEmail').value.trim() || null;
+  if (!nombre) { estado.textContent = 'Falta el nombre.'; return; }
+
+  estado.textContent = 'Creando…';
+  const { data, error } = await supabaseClient.from('pacientes').insert({
+    nombre, fecha_nacimiento, telefono, email, logopeda_id: UID, estado: 'activo'
+  }).select('id').single();
+
+  if (error) { estado.textContent = 'Error creando el paciente: ' + error.message; return; }
+  window.location.href = `paciente-ficha.html?id=${data.id}`;
 }
 
 function manejarAccionPaciente(accion, pacienteId) {
