@@ -10,7 +10,10 @@
 <body>
 
 <div class="barra-portal">
-  <div class="marca"><img src="img/icono.svg" alt=""> Logopedia Sant Genís — Portal del logopeda</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="btn-menu-movil" id="btnMenuMovil" onclick="alternarMenuMovil()" aria-label="Abrir menú">☰</button>
+    <div class="marca"><img src="img/icono.svg" alt=""> Logopedia Sant Genís — Portal del logopeda</div>
+  </div>
   <div>
     <span id="nombreUsuario" style="margin-right:16px;"></span>
     <button onclick="cerrarSesion()">Cerrar sesión</button>
@@ -18,6 +21,8 @@
 </div>
 
 <div id="barraVistaAdmin"></div>
+
+<div class="fondo-menu-movil" id="fondoMenuMovil" onclick="cerrarMenuMovil()"></div>
 
 <div class="app-shell">
   <nav class="app-sidebar">
@@ -449,8 +454,18 @@ function cambiarTab(tab) {
   document.querySelectorAll('.tab-link').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
   document.querySelectorAll('.seccion-tab').forEach(p => p.classList.toggle('activo', p.dataset.panel === tab));
   localStorage.setItem('logopedaTabActiva', tab);
+  cerrarMenuMovil();
 }
 document.querySelectorAll('.tab-link').forEach(b => b.addEventListener('click', () => cambiarTab(b.dataset.tab)));
+
+function alternarMenuMovil() {
+  document.querySelector('.app-sidebar').classList.toggle('abierto');
+  document.getElementById('fondoMenuMovil').classList.toggle('visible');
+}
+function cerrarMenuMovil() {
+  document.querySelector('.app-sidebar')?.classList.remove('abierto');
+  document.getElementById('fondoMenuMovil')?.classList.remove('visible');
+}
 
 function badgeEstado(estado) {
   const mapa = {

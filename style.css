@@ -789,12 +789,57 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 
 .stub-panel h3 { color: var(--azul-oscuro); margin-top: 0; }
 
+.btn-menu-movil {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.fondo-menu-movil {
+  display: none;
+}
+
 @media (max-width: 860px) {
+  .barra-portal { flex-wrap: wrap; gap: 8px 12px; padding: 12px 14px; }
+  .barra-portal .marca { font-size: .82rem; }
   .app-shell { flex-direction: column; }
-  .app-sidebar { width: 100%; min-height: auto; display: flex; flex-wrap: wrap; padding: 10px; }
-  .app-sidebar .sidebar-grupo-titulo { width: 100%; padding: 8px 10px 2px; }
-  .app-sidebar button.tab-link { width: auto; border-left: none; border-radius: 999px; }
-  .app-sidebar button.tab-link.activo { border-left: none; }
+  .btn-menu-movil { display: inline-flex; align-items: center; justify-content: center; }
+
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    max-width: 82vw;
+    overflow-y: auto;
+    z-index: 210;
+    display: block;
+    padding: 18px 0 40px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    box-shadow: 4px 0 18px rgba(0,0,0,.3);
+  }
+  .app-sidebar.abierto { transform: translateX(0); }
+
+  .app-sidebar .sidebar-grupo-titulo { width: 100%; padding: 18px 22px 6px; }
+  .app-sidebar button.tab-link { width: 100%; border-radius: 0; text-align: left; }
+  .app-sidebar button.tab-link.activo { border-left-color: var(--mostaza); }
+
+  .fondo-menu-movil.visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.45);
+    z-index: 200;
+  }
 }
 
 
