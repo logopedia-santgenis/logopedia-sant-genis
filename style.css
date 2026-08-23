@@ -905,6 +905,16 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 .grid-dia-cabecera.hoy { color: var(--mostaza); }
 .grid-dia-cabecera.hoy .num-dia { color: var(--azul); }
 
+.grid-dia-cabecera.festivo { color: #b3261e; }
+.etiqueta-festivo {
+  display: block;
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: #b3261e;
+}
+
 .calendario-semana {
   background: var(--tarjeta);
   border: 1px solid var(--borde);
@@ -996,6 +1006,7 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 .mes-celda:hover { background: var(--fondo); }
 .mes-celda.fuera-mes { opacity: .4; }
 .mes-celda.hoy { background: rgba(61,90,128,.07); }
+.mes-celda.festivo { background: rgba(179,38,30,.06); }
 .mes-num-dia { font-weight: 700; color: var(--azul-oscuro); font-size: .85rem; }
 
 .mes-mini-cita {

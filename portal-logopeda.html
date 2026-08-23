@@ -84,6 +84,18 @@
         </div>
       </div>
 
+      <div class="tarjeta" id="tarjetaDiasNoLaborables" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Mis días no laborables</h3>
+        <p class="meta">Añade tus vacaciones o días que no trabajas — no se ofrecerán en la reserva de cita online ni en la búsqueda de huecos esos días.</p>
+        <div class="fila-acciones">
+          <input type="date" id="dnlFecha">
+          <input type="text" id="dnlMotivo" placeholder="Motivo (opcional)" style="flex:2;">
+          <button class="btn btn-secundario" onclick="crearMiDiaNoLaborable()">Añadir</button>
+        </div>
+        <p class="meta" id="estadoMiDiaNoLaborable"></p>
+        <div id="listaMisDiasNoLaborables" style="margin-top:10px;"></div>
+      </div>
+
       <div class="tarjeta" style="margin-top:20px;">
         <h3 style="margin-top:0;">Google Calendar</h3>
         <div id="bloqueGoogleCalendar"><div class="cargando">Cargando…</div></div>
@@ -721,6 +733,12 @@ fechaAncla.setHours(0, 0, 0, 0);
 let vistaCal = 'semana';
 let CITAS_CACHE = {};
 let TRATAMIENTOS = [];
+let DIAS_NO_LABORABLES = [];
+
+function esFestivo(d) {
+  const fStr = fmtISO(d);
+  return DIAS_NO_LABORABLES.find(x => x.fecha === fStr) || null;
+}
 
 const COLOR_ESTADO_CAL = { pendiente: 'ambar', confirmada: 'azul', realizada: 'verde', cancelada: 'rojo', no_asistio: 'gris' };
 const NOMBRES_DIAS_CORTOS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -819,6 +837,12 @@ async function renderizarCalendario() {
   const porDia = {};
   (citas || []).forEach(c => { CITAS_CACHE[c.id] = c; (porDia[c.fecha] = porDia[c.fecha] || []).push(c); });
 
+  const { data: festivos } = await supabaseClient
+    .from('dias_no_laborables').select('fecha, motivo, logopeda_id')
+    .or(`logopeda_id.is.null,logopeda_id.eq.${UID}`)
+    .gte('fecha', fmtISO(desde)).lte('fecha', fmtISO(hasta));
+  DIAS_NO_LABORABLES = festivos || [];
+
   cont.innerHTML = vistaCal === 'mes' ? htmlMes(dias, porDia) : htmlGrid(dias, porDia);
 }
 
@@ -828,7 +852,7 @@ function htmlGrid(dias, porDia) {
 
   const cabecera = `<div class="grid-cal-cabecera" style="grid-template-columns:54px repeat(${dias.length},1fr);">
     <div></div>
-    ${dias.map(d => `<div class="grid-dia-cabecera ${esHoyDate(d) ? 'hoy' : ''}">${NOMBRES_DIAS_CORTOS[(d.getDay() + 6) % 7]}<span class="num-dia">${d.getDate()}/${d.getMonth() + 1}</span></div>`).join('')}
+    ${dias.map(d => { const f = esFestivo(d); return `<div class="grid-dia-cabecera ${esHoyDate(d) ? 'hoy' : ''} ${f ? 'festivo' : ''}" ${f ? `title="${esc(f.motivo || 'Día no laborable')}"` : ''}>${NOMBRES_DIAS_CORTOS[(d.getDay() + 6) % 7]}<span class="num-dia">${d.getDate()}/${d.getMonth() + 1}</span>${f ? '<span class="etiqueta-festivo">Festivo</span>' : ''}</div>`; }).join('')}
   </div>`;
 
   const gutter = `<div class="grid-gutter" style="height:${CAL_ALTURA_TOTAL}px;">
@@ -867,8 +891,9 @@ function htmlMes(dias, porDia) {
     const fStr = fmtISO(d);
     const lista = (porDia[fStr] || []).slice().sort((a, b) => a.hora.localeCompare(b.hora));
     const fueraDeMes = d.getMonth() !== mesActual;
-    return `<div class="mes-celda ${fueraDeMes ? 'fuera-mes' : ''} ${esHoyDate(d) ? 'hoy' : ''}" onclick="irADia('${fStr}')">
-      <span class="mes-num-dia">${d.getDate()}</span>
+    const f = esFestivo(d);
+    return `<div class="mes-celda ${fueraDeMes ? 'fuera-mes' : ''} ${esHoyDate(d) ? 'hoy' : ''} ${f ? 'festivo' : ''}" onclick="irADia('${fStr}')" ${f ? `title="${esc(f.motivo || 'Día no laborable')}"` : ''}>
+      <span class="mes-num-dia">${d.getDate()}</span>${f ? '<span class="etiqueta-festivo">Festivo</span>' : ''}
       ${lista.slice(0, 3).map(c => `<div class="mes-mini-cita mes-mini-${COLOR_ESTADO_CAL[c.estado] || 'gris'}">${c.hora.slice(0,5)} ${esc((c.pacientes?.nombre || '—').split(' ')[0])}</div>`).join('')}
       ${lista.length > 3 ? `<div class="mes-mas">+${lista.length - 3} más</div>` : ''}
     </div>`;
@@ -1112,6 +1137,38 @@ async function ficharJornada(tipo) {
   const { error } = await supabaseClient.from('registro_jornada').insert({ logopeda_id: UID, tipo });
   estado.textContent = error ? 'Error: ' + error.message : `Fichaje de ${tipo} registrado ✓`;
   await cargarJornadaHoy();
+}
+
+async function cargarMisDiasNoLaborables() {
+  const { data } = await supabaseClient
+    .from('dias_no_laborables').select('*, profiles(nombre)')
+    .or(`logopeda_id.eq.${UID},logopeda_id.is.null`)
+    .gte('fecha', fechaLocalISO(new Date()))
+    .order('fecha', { ascending: true });
+  const cont = document.getElementById('listaMisDiasNoLaborables');
+  cont.innerHTML = (data && data.length) ? data.map(d => `
+    <div class="lista-item">
+      <strong>${formatearFecha(d.fecha)}</strong> ${d.logopeda_id ? '' : '<span class="etiqueta-pill">Toda la clínica</span>'}
+      ${d.motivo ? `<span class="meta">${esc(d.motivo)}</span>` : ''}
+      ${d.logopeda_id === UID ? `<button class="btn btn-outline" style="margin-left:8px;" onclick="borrarMiDiaNoLaborable('${d.id}')">Quitar</button>` : ''}
+    </div>`).join('') : '<p class="meta">No tienes días no laborables próximos.</p>';
+}
+
+async function crearMiDiaNoLaborable() {
+  const estado = document.getElementById('estadoMiDiaNoLaborable');
+  const fecha = document.getElementById('dnlFecha').value;
+  const motivo = document.getElementById('dnlMotivo').value.trim() || null;
+  if (!fecha) { estado.textContent = 'Elige una fecha.'; return; }
+  const { error } = await supabaseClient.from('dias_no_laborables').insert({ fecha, motivo, logopeda_id: UID });
+  estado.textContent = error ? 'Error: ' + error.message : 'Añadido ✓';
+  document.getElementById('dnlFecha').value = '';
+  document.getElementById('dnlMotivo').value = '';
+  await cargarMisDiasNoLaborables();
+}
+
+async function borrarMiDiaNoLaborable(id) {
+  await supabaseClient.from('dias_no_laborables').delete().eq('id', id).eq('logopeda_id', UID);
+  await cargarMisDiasNoLaborables();
 }
 
 async function cargarBloqueGoogleCalendar() {
@@ -1670,6 +1727,7 @@ async function borrarTextoPredefinido(id) {
   await cargarGabinetesOpts();
   await cargarJornadaHoy();
   await cargarBloqueGoogleCalendar();
+  await cargarMisDiasNoLaborables();
   await cargarPacientes();
   await cargarTrabajosExternos();
   await cargarAgenda();

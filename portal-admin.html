@@ -33,6 +33,7 @@
   <button class="tab-link" data-tab="logopedas">Logopedas</button>
   <button class="tab-link" data-tab="cuotas">Cuotas</button>
   <button class="tab-link" data-tab="tratamientos">Tratamientos</button>
+  <button class="tab-link" data-tab="configuracion">Configuración</button>
   <button class="tab-link" data-tab="solicitudes">Solicitudes y mensajes</button>
   <button class="tab-link" data-tab="estadisticas">Estadísticas</button>
   <button class="tab-link" data-tab="funcionalidades">Funcionalidades</button>
@@ -182,6 +183,30 @@
     <p class="meta" id="estadoGabinete"></p>
   </div>
   <div id="listaGabinetes"><div class="cargando">Cargando…</div></div>
+</div>
+
+<!-- CONFIGURACIÓN -->
+<div class="panel seccion-tab" data-panel="configuracion">
+  <div class="seccion-titulo-fila"><h2>Horario de atención</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <p class="meta">Este horario limita qué huecos se ofrecen en la reserva de cita online pública y sirve de referencia para el calendario. Los días desactivados no ofrecen ningún hueco.</p>
+    <div id="listaHorarioAtencion"><div class="cargando">Cargando…</div></div>
+    <button class="btn btn-secundario" style="margin-top:10px;" onclick="guardarHorarioAtencion()">Guardar horario</button>
+    <p class="meta" id="estadoHorario"></p>
+  </div>
+
+  <div class="seccion-titulo-fila"><h2>Festivos y vacaciones</h2></div>
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Añadir día no laborable</h3>
+    <div class="fila-acciones">
+      <input type="date" id="fnlFecha">
+      <input type="text" id="fnlMotivo" placeholder="Motivo (ej. Festivo local, Vacaciones)" style="flex:2;">
+      <select id="fnlLogopeda" style="flex:1;"><option value="">— Toda la clínica —</option></select>
+      <button class="btn btn-secundario" onclick="crearDiaNoLaborable()">Añadir</button>
+    </div>
+    <p class="meta" id="estadoDiaNoLaborable"></p>
+  </div>
+  <div id="listaDiasNoLaborables"><div class="cargando">Cargando…</div></div>
 </div>
 
 <!-- SOLICITUDES -->
@@ -554,6 +579,72 @@ async function cambiarEstadoGabinete(id, valor) {
   await cargarGabinetes();
 }
 
+
+const NOMBRES_DIA_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+async function cargarHorarioAtencion() {
+  const { data } = await supabaseClient.from('horario_atencion').select('*').order('dia_semana');
+  const cont = document.getElementById('listaHorarioAtencion');
+  const dias = data && data.length ? data : [];
+  cont.innerHTML = dias.map(d => `
+    <div class="fila-acciones" style="margin-top:6px;align-items:center;">
+      <label style="display:flex;align-items:center;gap:6px;width:110px;">
+        <input type="checkbox" id="haActivo-${d.dia_semana}" ${d.activo ? 'checked' : ''}> ${NOMBRES_DIA_SEMANA[d.dia_semana]}
+      </label>
+      <input type="time" id="haInicio-${d.dia_semana}" value="${(d.hora_inicio || '09:00').slice(0,5)}">
+      <span class="meta">a</span>
+      <input type="time" id="haFin-${d.dia_semana}" value="${(d.hora_fin || '20:00').slice(0,5)}">
+    </div>`).join('');
+}
+
+async function guardarHorarioAtencion() {
+  const estado = document.getElementById('estadoHorario');
+  estado.textContent = 'Guardando…';
+  const filas = [0, 1, 2, 3, 4, 5, 6].map(d => ({
+    dia_semana: d,
+    activo: document.getElementById(`haActivo-${d}`).checked,
+    hora_inicio: document.getElementById(`haInicio-${d}`).value || '09:00',
+    hora_fin: document.getElementById(`haFin-${d}`).value || '20:00',
+  }));
+  const { error } = await supabaseClient.from('horario_atencion').upsert(filas, { onConflict: 'dia_semana' });
+  estado.textContent = error ? 'Error guardando: ' + error.message : 'Horario guardado ✓';
+}
+
+async function cargarDiasNoLaborables() {
+  const sel = document.getElementById('fnlLogopeda');
+  if (sel && sel.options.length <= 1 && LOGOPEDAS.length) {
+    sel.innerHTML = '<option value="">— Toda la clínica —</option>' +
+      LOGOPEDAS.map(l => `<option value="${l.id}">${esc(l.profiles?.nombre || l.profiles?.email)}</option>`).join('');
+  }
+  const { data } = await supabaseClient
+    .from('dias_no_laborables').select('*, profiles(nombre)').order('fecha', { ascending: false });
+  const cont = document.getElementById('listaDiasNoLaborables');
+  cont.innerHTML = (data && data.length) ? data.map(d => `
+    <div class="lista-item">
+      <strong>${formatearFecha(d.fecha)}</strong> ${d.logopeda_id ? `<span class="etiqueta-pill">${esc(d.profiles?.nombre || 'Un profesional')}</span>` : '<span class="etiqueta-pill">Toda la clínica</span>'}
+      ${d.motivo ? `<div class="meta">${esc(d.motivo)}</div>` : ''}
+      <button class="btn btn-outline" style="margin-top:6px;" onclick="borrarDiaNoLaborable('${d.id}')">Eliminar</button>
+    </div>`).join('') : '<p class="vacio-panel">No hay festivos ni vacaciones registradas.</p>';
+}
+
+async function crearDiaNoLaborable() {
+  const estado = document.getElementById('estadoDiaNoLaborable');
+  const fecha = document.getElementById('fnlFecha').value;
+  const motivo = document.getElementById('fnlMotivo').value.trim() || null;
+  const logopeda_id = document.getElementById('fnlLogopeda').value || null;
+  if (!fecha) { estado.textContent = 'Elige una fecha.'; return; }
+  const { error } = await supabaseClient.from('dias_no_laborables').insert({ fecha, motivo, logopeda_id });
+  estado.textContent = error ? 'Error: ' + error.message : 'Añadido ✓';
+  document.getElementById('fnlFecha').value = '';
+  document.getElementById('fnlMotivo').value = '';
+  await cargarDiasNoLaborables();
+}
+
+async function borrarDiaNoLaborable(id) {
+  await supabaseClient.from('dias_no_laborables').delete().eq('id', id);
+  await cargarDiasNoLaborables();
+}
+
 async function crearGabinete() {
   const nombre = document.getElementById('gNombre').value.trim();
   const estado = document.getElementById('estadoGabinete');
@@ -857,6 +948,8 @@ async function cargarResumen() {
   await cargarServicios();
   await cargarProductos();
   await cargarGabinetes();
+  await cargarHorarioAtencion();
+  await cargarDiasNoLaborables();
   await cargarCitasOnline();
   await cargarSolicitudesServicio();
   await cargarMensajesContacto();
