@@ -757,6 +757,19 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 
 .app-sidebar button.tab-link .icono-mini { font-size: 1rem; width: 18px; text-align: center; }
 
+.badge-contador {
+  margin-left: auto;
+  background: var(--mostaza);
+  color: #3a2600;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+}
+
 .app-main {
   flex: 1;
   min-width: 0;

@@ -25,7 +25,7 @@
 
     <div class="sidebar-grupo-titulo">Agenda</div>
     <button class="tab-link" data-tab="agenda"><span class="icono-mini">📅</span> Calendario</button>
-    <button class="tab-link" data-tab="peticiones"><span class="icono-mini">📨</span> Peticiones de cita</button>
+    <button class="tab-link" data-tab="peticiones"><span class="icono-mini">📨</span> Peticiones de cita<span class="badge-contador" id="badgePeticiones" style="display:none;"></span></button>
     <button class="tab-link" data-tab="tareas"><span class="icono-mini">✅</span> Tareas</button>
     <button class="tab-link" data-tab="trabajos-externos"><span class="icono-mini">🔗</span> Trabajos externos</button>
     <button class="tab-link" data-tab="pacientes"><span class="icono-mini">👥</span> Pacientes / Contactos</button>
@@ -76,6 +76,14 @@
           <button class="btn btn-outline" onclick="cambiarTab('tareas')">Tareas »</button>
         </div>
       </div>
+      <div class="tarjeta" id="tarjetaPeticionesInicio" style="display:none;margin-bottom:20px;border:1px solid var(--mostaza);">
+        <h3 style="margin-top:0;">📨 Peticiones de cita pendientes</h3>
+        <div id="listaPeticionesInicio"></div>
+        <div class="fila-acciones" style="margin-top:8px;">
+          <button class="btn btn-outline" onclick="cambiarTab('peticiones')">Ver todas »</button>
+        </div>
+      </div>
+
       <div class="tarjeta" style="margin-top:20px;">
         <h3 style="margin-top:0;">Google Calendar</h3>
         <div id="bloqueGoogleCalendar"><div class="cargando">Cargando…</div></div>
@@ -570,11 +578,21 @@ async function cargarCitasOnlinePendientes() {
     .order('fecha', { ascending: true });
 
   const cont = document.getElementById('bloqueCitasOnline');
-  if (!data || !data.length) { cont.innerHTML = ''; return; }
+  const badge = document.getElementById('badgePeticiones');
+  const tarjetaInicio = document.getElementById('tarjetaPeticionesInicio');
+  const listaInicio = document.getElementById('listaPeticionesInicio');
 
-  cont.innerHTML = `<div class="tarjeta" style="margin-bottom:20px;border:1px solid var(--mostaza);">
-    <h3 style="margin-top:0;">Solicitudes de cita online pendientes de confirmar</h3>
-    ${data.map(s => `
+  if (!data || !data.length) {
+    cont.innerHTML = '';
+    badge.style.display = 'none';
+    tarjetaInicio.style.display = 'none';
+    return;
+  }
+
+  badge.textContent = data.length;
+  badge.style.display = 'inline-block';
+
+  const itemHtml = (s) => `
       <div class="lista-item">
         <strong>${esc(s.nombre)}</strong> — ${esc(s.email)}${s.telefono ? ' · ' + esc(s.telefono) : ''}
         ${s.tratamientos?.nombre ? `<span class="etiqueta-pill">${esc(s.tratamientos.nombre)}</span>` : ''}
@@ -585,8 +603,15 @@ async function cargarCitasOnlinePendientes() {
           <button class="btn btn-outline" onclick="rechazarCitaOnlineLogopeda('${s.id}')">Rechazar</button>
         </div>
         <span class="meta" id="estadoCitaOnline-${s.id}"></span>
-      </div>`).join('')}
+      </div>`;
+
+  cont.innerHTML = `<div class="tarjeta" style="margin-bottom:20px;border:1px solid var(--mostaza);">
+    <h3 style="margin-top:0;">Solicitudes de cita online pendientes de confirmar</h3>
+    ${data.map(itemHtml).join('')}
   </div>`;
+
+  tarjetaInicio.style.display = 'block';
+  listaInicio.innerHTML = data.slice(0, 5).map(s => itemHtml(s).replace(`estadoCitaOnline-${s.id}`, `estadoCitaOnlineInicio-${s.id}`)).join('');
 }
 
 async function confirmarCitaOnlineLogopeda(id) {
