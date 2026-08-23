@@ -329,7 +329,7 @@ section h2 {
 }
 
 .articulo-tarjeta .etiqueta {
-  color: var(--verde-whatsapp);
+  color: var(--azul);
   font-weight: 700;
   font-size: .85rem;
   text-transform: uppercase;
@@ -818,6 +818,7 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
   .barra-portal { flex-wrap: wrap; gap: 8px 12px; padding: 12px 14px; }
   .barra-portal .marca { font-size: .82rem; }
   .app-shell { flex-direction: column; }
+  .app-main { width: 100%; }
   .btn-menu-movil { display: inline-flex; align-items: center; justify-content: center; }
 
   .app-sidebar {
