@@ -159,17 +159,28 @@
       <div class="seccion-titulo-fila"><h2>Plantillas de documentos</h2></div>
       <div class="tarjeta" style="margin-bottom:20px;">
         <h3 style="margin-top:0;">Nueva plantilla</h3>
-        <p class="meta">Variables disponibles: <code>{{paciente_nombre}}</code> <code>{{paciente_fecha_nacimiento}}</code> <code>{{tutor_nombre}}</code> <code>{{logopeda_nombre}}</code> <code>{{fecha_hoy}}</code></p>
         <div class="fila-acciones">
-          <input type="text" id="plTitulo" placeholder="Título (ej. Informe de evaluación)" style="flex:2;">
+          <label style="display:flex;align-items:center;gap:6px;"><input type="radio" name="plTipo" value="texto" checked onchange="alternarTipoPlantilla()"> Texto (con variables)</label>
+          <label style="display:flex;align-items:center;gap:6px;"><input type="radio" name="plTipo" value="archivo" onchange="alternarTipoPlantilla()"> Archivo (PDF, Word…)</label>
         </div>
         <div class="fila-acciones" style="margin-top:10px;">
-          <textarea id="plContenido" rows="6" placeholder="Contenido de la plantilla, usa las variables de arriba…" style="flex:3;"></textarea>
+          <input type="text" id="plTitulo" placeholder="Título (ej. Consentimiento informado)" style="flex:2;">
+        </div>
+        <div id="plBloqueTexto" style="margin-top:10px;">
+          <p class="meta">Variables disponibles: <code>{{paciente_nombre}}</code> <code>{{paciente_fecha_nacimiento}}</code> <code>{{tutor_nombre}}</code> <code>{{logopeda_nombre}}</code> <code>{{fecha_hoy}}</code></p>
+          <textarea id="plContenido" rows="6" placeholder="Contenido de la plantilla, usa las variables de arriba…" style="width:100%;"></textarea>
+        </div>
+        <div id="plBloqueArchivo" style="display:none;margin-top:10px;">
+          <p class="meta">Sube el PDF/Word una sola vez — luego lo podrás adjuntar a cualquier paciente desde su ficha → Documentos, sin volver a subirlo.</p>
+          <input type="file" id="plArchivo">
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
           <button class="btn btn-secundario" onclick="crearPlantilla()">Guardar</button>
         </div>
+        <p class="meta" id="plEstado"></p>
       </div>
       <div id="listaPlantillas"><div class="cargando">Cargando…</div></div>
-      <p class="meta" style="margin-top:16px;">Para generar un documento a partir de una plantilla, entra en la ficha completa de un paciente → pestaña Documentos.</p>
+      <p class="meta" style="margin-top:16px;">Para usar una plantilla con un paciente concreto (generar texto o adjuntar el archivo), entra en la ficha completa de un paciente → pestaña Documentos.</p>
     </div>
     <div class="panel seccion-tab" data-panel="campanas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Campañas de marketing</h2></div>
@@ -1162,6 +1173,12 @@ async function cargarFirmasPendientes() {
     </div>`).join('') : '<p class="vacio-panel">No hay firmas pendientes.</p>';
 }
 
+function alternarTipoPlantilla() {
+  const esArchivo = document.querySelector('input[name="plTipo"]:checked').value === 'archivo';
+  document.getElementById('plBloqueTexto').style.display = esArchivo ? 'none' : 'block';
+  document.getElementById('plBloqueArchivo').style.display = esArchivo ? 'block' : 'none';
+}
+
 async function cargarPlantillas() {
   const { data } = await supabaseClient
     .from('plantillas_documentos').select('*')
@@ -1170,19 +1187,48 @@ async function cargarPlantillas() {
   const cont = document.getElementById('listaPlantillas');
   cont.innerHTML = (data && data.length) ? data.map(p => `
     <div class="lista-item">
-      <strong>${esc(p.titulo)}</strong>
-      <p class="meta" style="white-space:pre-wrap;">${esc(p.contenido)}</p>
+      <strong>${esc(p.titulo)}</strong> ${p.tipo === 'archivo' ? '<span class="etiqueta-pill">Archivo</span>' : '<span class="etiqueta-pill">Texto</span>'}
+      ${p.tipo === 'archivo'
+        ? `<div class="meta"><button class="btn btn-outline" onclick="descargarPlantillaArchivo('${p.storage_path}', '${esc(p.titulo)}')">Descargar »</button></div>`
+        : `<p class="meta" style="white-space:pre-wrap;">${esc(p.contenido)}</p>`}
       ${p.logopeda_id === UID ? `<button class="btn btn-outline" onclick="borrarPlantilla('${p.id}')">Eliminar</button>` : ''}
     </div>`).join('') : '<p class="vacio-panel">Todavía no hay plantillas creadas.</p>';
 }
 
+async function descargarPlantillaArchivo(storagePath, titulo) {
+  const { data, error } = await supabaseClient.storage.from('plantillas-archivo').createSignedUrl(storagePath, 60);
+  if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener');
+  else alert('No se pudo abrir el archivo: ' + (error?.message || ''));
+}
+
 async function crearPlantilla() {
+  const estado = document.getElementById('plEstado');
+  estado.textContent = '';
   const titulo = document.getElementById('plTitulo').value.trim();
-  const contenido = document.getElementById('plContenido').value.trim();
-  if (!titulo || !contenido) return;
-  await supabaseClient.from('plantillas_documentos').insert({ titulo, contenido, logopeda_id: UID });
+  const esArchivo = document.querySelector('input[name="plTipo"]:checked').value === 'archivo';
+  if (!titulo) { estado.textContent = 'Falta el título.'; return; }
+
+  if (esArchivo) {
+    const archivo = document.getElementById('plArchivo').files[0];
+    if (!archivo) { estado.textContent = 'Elige un archivo.'; return; }
+    estado.textContent = 'Subiendo…';
+    const rutaArchivo = `${UID}/${Date.now()}-${archivo.name}`;
+    const { error: errSubida } = await supabaseClient.storage.from('plantillas-archivo').upload(rutaArchivo, archivo);
+    if (errSubida) { estado.textContent = 'Error subiendo el archivo: ' + errSubida.message; return; }
+    const { error: errInsert } = await supabaseClient.from('plantillas_documentos').insert({
+      titulo, tipo: 'archivo', storage_path: rutaArchivo, logopeda_id: UID
+    });
+    if (errInsert) { estado.textContent = 'Error guardando la plantilla: ' + errInsert.message; return; }
+    document.getElementById('plArchivo').value = '';
+  } else {
+    const contenido = document.getElementById('plContenido').value.trim();
+    if (!contenido) { estado.textContent = 'Falta el contenido.'; return; }
+    const { error: errInsert } = await supabaseClient.from('plantillas_documentos').insert({ titulo, contenido, tipo: 'texto', logopeda_id: UID });
+    if (errInsert) { estado.textContent = 'Error guardando la plantilla: ' + errInsert.message; return; }
+    document.getElementById('plContenido').value = '';
+  }
   document.getElementById('plTitulo').value = '';
-  document.getElementById('plContenido').value = '';
+  estado.textContent = '';
   await cargarPlantillas();
 }
 

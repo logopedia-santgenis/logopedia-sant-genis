@@ -175,15 +175,17 @@
   <!-- DOCUMENTOS -->
   <div class="seccion-tab" data-panel="documentos">
     <div class="tarjeta" style="margin-bottom:20px;">
-      <h3 style="margin-top:0;">Generar documento desde plantilla</h3>
+      <h3 style="margin-top:0;">Usar plantilla</h3>
+      <p class="meta">Plantillas de texto: se generan con los datos de este paciente. Plantillas de archivo (PDF/Word): se adjuntan directamente a los Documentos de este paciente, sin volver a subirlas.</p>
       <div class="fila-acciones">
         <select id="genPlantilla" style="flex:2;"><option value="">— Elegir plantilla —</option></select>
-        <button class="btn btn-outline" onclick="generarDocumentoDesdePlantilla()">Generar</button>
+        <button class="btn btn-outline" onclick="usarPlantillaDocumento()">Usar</button>
       </div>
       <textarea id="resultadoGenerado" rows="6" style="display:none;margin-top:10px;width:100%;" readonly></textarea>
       <div class="fila-acciones" id="accionesGenerado" style="display:none;margin-top:10px;">
         <button class="btn btn-outline" onclick="descargarDocumentoGenerado()">Descargar .txt</button>
       </div>
+      <p class="meta" id="estadoUsoPlantilla"></p>
     </div>
     <div class="tarjeta" style="margin-bottom:20px;">
       <h3 style="margin-top:0;">Subir documento</h3>
@@ -596,14 +598,21 @@ async function cargarPlantillasParaGenerar() {
   const { data } = await supabaseClient.from('plantillas_documentos').select('*').order('titulo');
   PLANTILLAS_DOC = data || [];
   document.getElementById('genPlantilla').innerHTML = '<option value="">— Elegir plantilla —</option>' +
-    PLANTILLAS_DOC.map(p => `<option value="${p.id}">${esc(p.titulo)}</option>`).join('');
+    PLANTILLAS_DOC.map(p => `<option value="${p.id}">${esc(p.titulo)} ${p.tipo === 'archivo' ? '(archivo)' : '(texto)'}</option>`).join('');
 }
 
-async function generarDocumentoDesdePlantilla() {
+async function usarPlantillaDocumento() {
   const id = document.getElementById('genPlantilla').value;
   const plantilla = PLANTILLAS_DOC.find(p => p.id === id);
   if (!plantilla) return;
+  if (plantilla.tipo === 'archivo') {
+    await adjuntarPlantillaArchivo(plantilla);
+  } else {
+    await generarDocumentoDesdePlantilla(plantilla);
+  }
+}
 
+async function generarDocumentoDesdePlantilla(plantilla) {
   const { data: p } = await supabaseClient.from('pacientes').select('*, logopedas(profiles(nombre))').eq('id', pacienteId).single();
   const { data: contactos } = await supabaseClient.from('contactos_paciente').select('nombre').eq('paciente_id', pacienteId).limit(1);
 
@@ -622,6 +631,34 @@ async function generarDocumentoDesdePlantilla() {
   area.value = contenido;
   area.style.display = 'block';
   document.getElementById('accionesGenerado').style.display = 'flex';
+  document.getElementById('estadoUsoPlantilla').textContent = '';
+}
+
+async function adjuntarPlantillaArchivo(plantilla) {
+  const estado = document.getElementById('estadoUsoPlantilla');
+  estado.textContent = 'Adjuntando…';
+  document.getElementById('resultadoGenerado').style.display = 'none';
+  document.getElementById('accionesGenerado').style.display = 'none';
+
+  const { data: firmada, error: errFirma } = await supabaseClient.storage.from('plantillas-archivo').createSignedUrl(plantilla.storage_path, 60);
+  if (errFirma || !firmada?.signedUrl) { estado.textContent = 'Error leyendo la plantilla: ' + (errFirma?.message || ''); return; }
+
+  const respuesta = await fetch(firmada.signedUrl);
+  const blob = await respuesta.blob();
+  const nombreArchivo = plantilla.storage_path.split('/').pop();
+  const rutaDestino = `${pacienteId}/${Date.now()}-${nombreArchivo}`;
+
+  const { error: errSubida } = await supabaseClient.storage.from('documentos-pacientes').upload(rutaDestino, blob);
+  if (errSubida) { estado.textContent = 'Error copiando el archivo: ' + errSubida.message; return; }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const { error: errInsert } = await supabaseClient.from('documentos_paciente').insert({
+    paciente_id: pacienteId, titulo: plantilla.titulo, tipo: 'consentimiento', storage_path: rutaDestino, subido_por: user.id, visible_para_cliente: false
+  });
+  if (errInsert) { estado.textContent = 'Error guardando el registro: ' + errInsert.message; return; }
+
+  estado.textContent = 'Adjuntado a Documentos ✓';
+  await cargarDocumentos();
 }
 
 function descargarDocumentoGenerado() {
