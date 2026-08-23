@@ -130,6 +130,7 @@
     </div>
     <div class="fila-acciones" style="margin-top:10px;">
       <input type="number" id="tPrecio" placeholder="Precio €" step="0.01" style="flex:1;">
+      <input type="number" id="tDuracion" placeholder="Duración (min)" step="5" min="5" max="480" value="40" style="flex:1;">
       <input type="number" id="tImpuestos" placeholder="Impuestos %" step="0.01" style="flex:1;">
       <input type="number" id="tDescuento" placeholder="Descuento %" step="0.01" style="flex:1;">
       <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;">
@@ -137,11 +138,12 @@
       </label>
       <button class="btn btn-secundario" onclick="crearTratamiento()">Crear</button>
     </div>
+    <p class="meta" style="margin-top:6px;">La duración fija cuánto espacio ocupa este tipo de cita en el calendario del logopeda (ej. entrevista 60 min, sesión 40 min).</p>
     <p class="meta" id="estadoTratamiento"></p>
   </div>
   <div class="tabla-envoltorio">
     <table class="tabla-datos">
-      <thead><tr><th>Nombre</th><th>Área</th><th>Precio</th><th>Logopeda</th><th>Estado</th></tr></thead>
+      <thead><tr><th>Nombre</th><th>Área</th><th>Duración</th><th>Precio</th><th>Logopeda</th><th>Estado</th></tr></thead>
       <tbody id="listaTratamientos"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
     </table>
   </div>
@@ -754,6 +756,10 @@ async function cargarTratamientos() {
     <tr>
       <td><strong>${esc(t.nombre)}</strong>${t.disponible_cita_online ? '' : ' <span class="meta">(no online)</span>'}</td>
       <td>${t.area ? `<span class="etiqueta-pill">${esc(t.area)}</span>` : '—'}</td>
+      <td>
+        <input type="number" value="${t.duracion_minutos ?? 40}" min="5" max="480" step="5" style="width:78px;"
+          onchange="cambiarDuracionTratamiento('${t.id}', this.value)"> min
+      </td>
       <td>${t.precio != null ? Number(t.precio).toFixed(2) + ' €' : '—'}${t.impuestos ? ` <span class="meta">(+${t.impuestos}% imp.)</span>` : ''}${t.descuento_pct ? ` <span class="meta">(-${t.descuento_pct}%)</span>` : ''}</td>
       <td>${t.logopedas?.profiles?.nombre ? esc(t.logopedas.profiles.nombre) : '<span class="meta">general</span>'}</td>
       <td>
@@ -762,12 +768,18 @@ async function cargarTratamientos() {
           <option value="false" ${!t.activo ? 'selected' : ''}>Inactivo</option>
         </select>
       </td>
-    </tr>`).join('') : '<tr><td colspan="5" class="vacio-panel">Todavía no hay tratamientos en el catálogo.</td></tr>';
+    </tr>`).join('') : '<tr><td colspan="6" class="vacio-panel">Todavía no hay tratamientos en el catálogo.</td></tr>';
 }
 
 async function cambiarEstadoTratamiento(id, valor) {
   await supabaseClient.from('tratamientos').update({ activo: valor === 'true' }).eq('id', id);
   await cargarTratamientos();
+}
+
+async function cambiarDuracionTratamiento(id, valor) {
+  const minutos = parseInt(valor);
+  if (!minutos || minutos < 5 || minutos > 480) { await cargarTratamientos(); return; }
+  await supabaseClient.from('tratamientos').update({ duracion_minutos: minutos }).eq('id', id);
 }
 
 async function crearTratamiento() {
@@ -779,6 +791,7 @@ async function crearTratamiento() {
     area: document.getElementById('tArea').value.trim() || null,
     logopeda_id: document.getElementById('tLogopeda').value || null,
     precio: document.getElementById('tPrecio').value ? parseFloat(document.getElementById('tPrecio').value) : null,
+    duracion_minutos: document.getElementById('tDuracion').value ? parseInt(document.getElementById('tDuracion').value) : 40,
     impuestos: document.getElementById('tImpuestos').value ? parseFloat(document.getElementById('tImpuestos').value) : 0,
     descuento_pct: document.getElementById('tDescuento').value ? parseFloat(document.getElementById('tDescuento').value) : 0,
     disponible_cita_online: document.getElementById('tOnline').checked,
@@ -788,6 +801,7 @@ async function crearTratamiento() {
   document.getElementById('tNombre').value = '';
   document.getElementById('tArea').value = '';
   document.getElementById('tPrecio').value = '';
+  document.getElementById('tDuracion').value = '40';
   document.getElementById('tImpuestos').value = '';
   document.getElementById('tDescuento').value = '';
   await cargarTratamientos();
