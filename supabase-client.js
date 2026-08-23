@@ -1,4 +1,4 @@
-// Logopedia Sant Genís — conexión a Supabase
+// ConsultaViva — conexión a Supabase
 // La anon key es pública por diseño (así funciona Supabase): la seguridad real
 // la dan las políticas de Row Level Security configuradas en la base de datos.
 const SUPABASE_URL = 'https://fmznceilmjhysuyxpwpu.supabase.co';

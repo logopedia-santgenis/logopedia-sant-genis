@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ficha del paciente — Logopedia Sant Genís</title>
+<title>Ficha del paciente — ConsultaViva</title>
 <link rel="icon" type="image/svg+xml" href="img/icono.svg">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="barra-portal">
-  <div class="marca"><img src="img/icono.svg" alt=""> Logopedia Sant Genís</div>
+  <div class="marca"><img src="img/icono-oscuro.svg" alt=""> ConsultaViva</div>
   <div>
     <span id="nombreUsuario" style="margin-right:16px;"></span>
     <button onclick="cerrarSesion()">Cerrar sesión</button>
@@ -567,7 +568,7 @@ async function exportarHistoriaClinicaPDF() {
     </style>
   </head><body>
     <h1>Historia clínica</h1>
-    <div class="meta-cabecera">${esc(pac?.nombre || 'Paciente')}${pac?.fecha_nacimiento ? ' · Nacimiento: ' + formatearFecha(pac.fecha_nacimiento) : ''}<br>Logopedia Sant Genís — generado el ${new Date().toLocaleDateString('es-ES')}</div>
+    <div class="meta-cabecera">${esc(pac?.nombre || 'Paciente')}${pac?.fecha_nacimiento ? ' · Nacimiento: ' + formatearFecha(pac.fecha_nacimiento) : ''}<br>ConsultaViva — generado el ${new Date().toLocaleDateString('es-ES')}</div>
     ${filas}
   </body></html>`);
   ventana.document.close();
@@ -697,7 +698,7 @@ async function verImprimirInfoDiagnostica() {
     </style>
   </head><body>
     <h1>${esc(ficha.titulo)}</h1>
-    <div class="meta-cabecera">Para: ${esc(pac?.nombre || 'Paciente')} · Logopedia Sant Genís — ${new Date().toLocaleDateString('es-ES')}</div>
+    <div class="meta-cabecera">Para: ${esc(pac?.nombre || 'Paciente')} · ConsultaViva — ${new Date().toLocaleDateString('es-ES')}</div>
     ${esc(ficha.contenido)}
   </body></html>`);
   ventana.document.close();

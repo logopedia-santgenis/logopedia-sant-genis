@@ -1,35 +1,43 @@
-/* Logopedia Sant Genís — hoja de estilos compartida
-   Identidad v3: índigo + mostaza, tipografía Baloo 2 / Work Sans */
+/* ConsultaViva — hoja de estilos compartida
+   Identidad v4: teal + coral, tipografia Plus Jakarta Sans / Inter */
 
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --azul: #3D5A80;
-  --azul-oscuro: #28405F;
-  --mostaza: #F2B134;
+  --azul: #1B6E75;
+  --azul-oscuro: #123F44;
+  --mostaza: #F2895B;
   --verde-whatsapp: #25d366;
-  --fondo: #FFF8EC;
+  --fondo: #FBF6EE;
   --tarjeta: #ffffff;
-  --texto: #2E2A24;
-  --texto-suave: #776F63;
-  --borde: #EFE6D6;
+  --texto: #1A2E2E;
+  --texto-suave: #5C7574;
+  --borde: #E4DECF;
   --radio: 18px;
-  --sombra: 0 8px 26px rgba(40, 64, 95, 0.12);
+  --sombra: 0 8px 26px rgba(18, 63, 68, 0.14);
+  --foco: #F2895B;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: 'Work Sans', "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--fondo);
   color: var(--texto);
   line-height: 1.6;
 }
 
 h1, h2, h3 {
-  font-family: 'Baloo 2', 'Segoe UI', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
   font-weight: 700;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 a { color: var(--azul); text-decoration: none; }
@@ -146,7 +154,7 @@ nav.menu a {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(40,64,95,.35);
+  background: rgba(18,63,68,.4);
   z-index: 25;
 }
 
@@ -167,7 +175,7 @@ nav.menu a {
     align-items: stretch;
     gap: 0;
     padding: 84px 28px 28px;
-    box-shadow: -10px 0 30px rgba(40,64,95,.18);
+    box-shadow: -10px 0 30px rgba(18,63,68,.18);
     z-index: 30;
     overflow-y: auto;
   }
@@ -498,7 +506,7 @@ footer.sitio a { color: #fff; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(61,90,128,.90) 0%, rgba(40,64,95,.94) 100%);
+  background: linear-gradient(135deg, rgba(27,110,117,.90) 0%, rgba(18,63,68,.94) 100%);
 }
 
 .hero-imagen > * { position: relative; z-index: 1; }
@@ -647,7 +655,7 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 }
 
 .badge-ambar { background: #fff3d6; color: #8a5b00; }
-.badge-azul { background: #dde5f0; color: #3D5A80; }
+.badge-azul { background: #DCEBEA; color: #1B6E75; }
 .badge-verde { background: #dcf3e2; color: #146c3a; }
 .badge-rojo { background: #fdeceb; color: #b3261e; }
 .badge-gris { background: var(--fondo); color: var(--texto-suave); border: 1px solid var(--borde); }
@@ -1009,7 +1017,7 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
   flex-direction: column;
   line-height: 1.25;
   border-left: 4px solid;
-  box-shadow: 0 1px 4px rgba(40,64,95,.15);
+  box-shadow: 0 1px 4px rgba(18,63,68,.15);
 }
 
 .cita-bloque .cb-hora { font-size: .68rem; font-weight: 700; }
@@ -1017,7 +1025,7 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 .cita-bloque .cb-meta { font-size: .68rem; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .cita-bloque-ambar { background: #fff3d6; border-left-color: #d99b00; color: #6b4700; }
-.cita-bloque-azul { background: #dde5f0; border-left-color: #3D5A80; color: #22405f; }
+.cita-bloque-azul { background: #DCEBEA; border-left-color: #1B6E75; color: #123F44; }
 .cita-bloque-verde { background: #dcf3e2; border-left-color: #1f8a4c; color: #0f4f28; }
 .cita-bloque-rojo { background: #fdeceb; border-left-color: #c0392b; color: #7d221a; text-decoration: line-through; opacity: .75; }
 .cita-bloque-gris { background: #ece7dd; border-left-color: #8a8477; color: #5a564c; }
@@ -1065,7 +1073,7 @@ table.tabla-datos tbody tr:hover { background: var(--fondo); }
 }
 
 .mes-mini-ambar { background: #fff3d6; color: #6b4700; }
-.mes-mini-azul { background: #dde5f0; color: #22405f; }
+.mes-mini-azul { background: #DCEBEA; color: #123F44; }
 .mes-mini-verde { background: #dcf3e2; color: #0f4f28; }
 .mes-mini-rojo { background: #fdeceb; color: #7d221a; text-decoration: line-through; }
 .mes-mini-gris { background: #ece7dd; color: #5a564c; }

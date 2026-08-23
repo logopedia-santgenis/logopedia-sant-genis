@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portal del logopeda — Logopedia Sant Genís</title>
+<title>Portal del logopeda — ConsultaViva</title>
 <link rel="icon" type="image/svg+xml" href="img/icono.svg">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +13,7 @@
 <div class="barra-portal">
   <div style="display:flex;align-items:center;gap:10px;">
     <button class="btn-menu-movil" id="btnMenuMovil" onclick="alternarMenuMovil()" aria-label="Abrir menú">☰</button>
-    <div class="marca"><img src="img/icono.svg" alt=""> Logopedia Sant Genís — Portal del logopeda</div>
+    <div class="marca"><img src="img/icono-oscuro.svg" alt=""> ConsultaViva — Portal del logopeda</div>
   </div>
   <div>
     <span id="nombreUsuario" style="margin-right:16px;"></span>
@@ -1583,7 +1584,7 @@ function imprimirDocumentoInterno(doc) {
   </head><body>
     <div class="aviso">Documento interno — no es una factura fiscal.</div>
     <h1>${titulo} ${esc(doc.numero_formateado)}</h1>
-    <p style="color:#555;margin-top:0;">Logopedia Sant Genís</p>
+    <p style="color:#555;margin-top:0;">ConsultaViva</p>
     <div class="fila"><span>Cliente</span><strong>${esc(doc.nombre_cliente)}</strong></div>
     <div class="fila"><span>Fecha</span><strong>${formatearFecha(doc.fecha)}</strong></div>
     <div class="concepto">${esc(doc.concepto)}</div>

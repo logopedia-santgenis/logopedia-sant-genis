@@ -1,28 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" width="540" height="140">
-  <defs>
-    <linearGradient id="badgeGrad" x1="10%" y1="0%" x2="95%" y2="100%">
-      <stop offset="0%" stop-color="#3D5A80"/>
-      <stop offset="100%" stop-color="#28405F"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Icono: burbuja de diálogo con onda de voz -->
-  <g transform="translate(10,10)">
-    <path d="M60 4C88 3 117 22 117.5 57C118 92 92 117 58 116.5C25 116 3 93 3.5 58C4 25 30 5 60 4Z"
-          fill="url(#badgeGrad)"/>
-    <path d="M32 46c0-9.389 7.611-17 17-17h22c9.389 0 17 7.611 17 17v13c0 9.389-7.611 17-17 17H54l-13 11.5v-11.5h-0.5c-4.694 0-8.5-3.806-8.5-8.5V46z"
-          fill="#FFF8EC"/>
-    <!-- onda de voz dentro de la burbuja -->
-    <rect x="42" y="48" width="5" height="10" rx="2.5" fill="#F2B134"/>
-    <rect x="51" y="42" width="5" height="22" rx="2.5" fill="#3D5A80"/>
-    <rect x="60" y="46" width="5" height="14" rx="2.5" fill="#F2B134"/>
-    <rect x="69" y="40" width="5" height="26" rx="2.5" fill="#3D5A80"/>
-    <circle cx="86" cy="30" r="6" fill="#F2B134"/>
-  </g>
-
-  <!-- Wordmark -->
-  <g transform="translate(150,0)" font-family="'Trebuchet MS', Verdana, sans-serif">
-    <text x="0" y="62" font-size="34" font-weight="700" fill="#28405F">Logopedia</text>
-    <text x="0" y="98" font-size="34" font-weight="700" fill="#F2B134">Sant Genís</text>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="460" height="100">
+  <circle cx="50" cy="72" r="7" fill="#1B6E75"/>
+  <path d="M50,65 C50,50 38,45 30,35 C42,38 50,48 50,58 Z" fill="#F2895B"/>
+  <path d="M50,65 C50,50 62,45 70,35 C58,38 50,48 50,58 Z" fill="#F2895B"/>
+  <text x="118" y="66" font-family="'Plus Jakarta Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="44" font-weight="700" letter-spacing="-0.5">
+    <tspan fill="#1B6E75">Consulta</tspan><tspan fill="#F2895B">Viva</tspan>
+  </text>
 </svg>
