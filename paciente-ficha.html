@@ -76,7 +76,7 @@
   <div class="seccion-tab" data-panel="ficha-contacto">
     <div class="tarjeta">
       <h3 style="margin-top:0;">Ficha Contacto</h3>
-      <p class="meta">Preferencias de comunicación y profesional habitual del paciente.</p>
+      <p class="meta">Preferencias de comunicación y profesional habitual del paciente. Esto se muestra también en la lista de "Pacientes / Contactos" para verlo de un vistazo.</p>
       <div class="campo">
         <textarea id="fPreferenciaContacto" rows="3" placeholder="Ej. Prefiere WhatsApp por las tardes. Profesional habitual: Ester."></textarea>
       </div>
@@ -151,15 +151,9 @@
   <!-- HISTORIA CLÍNICA -->
   <div class="seccion-tab" data-panel="historia-clinica">
     <div class="tarjeta" style="margin-bottom:20px;">
-      <h3 style="margin-top:0;">Nuevo documento de historia clínica</h3>
-      <div class="fila-acciones">
-        <input type="date" id="hcFecha">
-        <input type="text" id="hcDocumento" placeholder="Documento (ej. Informe de evaluación inicial)" style="flex:2;">
-      </div>
-      <div class="fila-acciones" style="margin-top:10px;">
-        <textarea id="hcComentarios" placeholder="Comentarios" style="flex:3;"></textarea>
-        <button class="btn btn-secundario" onclick="crearHistoriaClinica()">Guardar</button>
-      </div>
+      <h3 style="margin-top:0;">Historia clínica</h3>
+      <p class="meta">Recopilación automática y de solo lectura de todas las notas de seguimiento de este paciente, en orden cronológico. Esto es lo que se entrega si el paciente solicita su historial — no incluye los deberes/tareas asignados.</p>
+      <button class="btn btn-secundario" onclick="exportarHistoriaClinicaPDF()">Descargar / imprimir PDF</button>
     </div>
     <div id="listaHistoriaClinica"><div class="cargando">Cargando…</div></div>
   </div>
@@ -528,29 +522,45 @@ async function crearTareaFicha() {
 
 async function cargarHistoriaClinica() {
   const { data } = await supabaseClient
-    .from('historia_clinica').select('*, logopedas(profiles(nombre))').eq('paciente_id', pacienteId)
-    .order('fecha', { ascending: false });
+    .from('fichas_seguimiento').select('*, logopedas(profiles(nombre))').eq('paciente_id', pacienteId)
+    .order('fecha', { ascending: true });
   const cont = document.getElementById('listaHistoriaClinica');
-  cont.innerHTML = (data && data.length) ? data.map(h => `
+  cont.innerHTML = (data && data.length) ? data.map(n => `
     <div class="lista-item">
-      <strong>${esc(h.documento)}</strong>
-      <div class="meta">${formatearFecha(h.fecha)} · ${esc(h.logopedas?.profiles?.nombre || 'Profesional')}</div>
-      ${h.comentarios ? `<p style="color:var(--texto);margin:6px 0 0;">${esc(h.comentarios)}</p>` : ''}
-    </div>`).join('') : '<p class="vacio-panel">Todavía no hay documentos de historia clínica.</p>';
+      <div class="meta">${formatearFecha(n.fecha)} · ${esc(n.logopedas?.profiles?.nombre || 'Profesional')}</div>
+      <p style="color:var(--texto);margin:6px 0 0;">${esc(n.notas)}</p>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay notas de seguimiento registradas.</p>';
 }
 
-async function crearHistoriaClinica() {
-  const documento = document.getElementById('hcDocumento').value.trim();
-  const fecha = document.getElementById('hcFecha').value || fechaLocalISO(new Date());
-  const comentarios = document.getElementById('hcComentarios').value.trim() || null;
-  if (!documento) return;
-  const { data: pac } = await supabaseClient.from('pacientes').select('logopeda_id').eq('id', pacienteId).single();
-  await supabaseClient.from('historia_clinica').insert({
-    paciente_id: pacienteId, logopeda_id: pac?.logopeda_id, fecha, documento, comentarios
-  });
-  document.getElementById('hcDocumento').value = '';
-  document.getElementById('hcComentarios').value = '';
-  await cargarHistoriaClinica();
+async function exportarHistoriaClinicaPDF() {
+  const [{ data: notas }, { data: pac }] = await Promise.all([
+    supabaseClient.from('fichas_seguimiento').select('*, logopedas(profiles(nombre))').eq('paciente_id', pacienteId).order('fecha', { ascending: true }),
+    supabaseClient.from('pacientes').select('nombre, fecha_nacimiento').eq('id', pacienteId).single(),
+  ]);
+
+  const filas = (notas && notas.length) ? notas.map(n => `
+    <div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #ddd;">
+      <div style="font-size:.85rem;color:#555;">${formatearFecha(n.fecha)} · ${esc(n.logopedas?.profiles?.nombre || 'Profesional')}</div>
+      <div style="margin-top:4px;white-space:pre-wrap;">${esc(n.notas)}</div>
+    </div>`).join('') : '<p>No hay notas de seguimiento registradas.</p>';
+
+  const ventana = window.open('', '_blank');
+  if (!ventana) { alert('El navegador bloqueó la ventana emergente. Permite ventanas emergentes para descargar el PDF.'); return; }
+  ventana.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Historia clínica — ${esc(pac?.nombre || '')}</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; color:#1a1a1a; padding: 32px; max-width: 720px; margin:0 auto; }
+      h1 { font-size: 1.3rem; margin-bottom: 4px; }
+      .meta-cabecera { color:#555; font-size:.9rem; margin-bottom: 24px; }
+      @media print { body { padding: 0; } }
+    </style>
+  </head><body>
+    <h1>Historia clínica</h1>
+    <div class="meta-cabecera">${esc(pac?.nombre || 'Paciente')}${pac?.fecha_nacimiento ? ' · Nacimiento: ' + formatearFecha(pac.fecha_nacimiento) : ''}<br>Logopedia Sant Genís — generado el ${new Date().toLocaleDateString('es-ES')}</div>
+    ${filas}
+  </body></html>`);
+  ventana.document.close();
+  ventana.focus();
+  setTimeout(() => ventana.print(), 400);
 }
 
 async function cargarDatosAuxiliares() {

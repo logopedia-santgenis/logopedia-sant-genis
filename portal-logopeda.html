@@ -440,6 +440,7 @@ function pintarPacientes() {
     div.innerHTML = `
       <strong>${esc(p.nombre)}</strong> ${badgeEstado(p.estado)}
       <div class="meta">Nacimiento: ${formatearFecha(p.fecha_nacimiento)}</div>
+      ${p.preferencia_contacto ? `<div class="meta">📱 ${esc(p.preferencia_contacto)}</div>` : ''}
       <div class="fila-acciones">
         <button class="btn btn-outline" data-accion="ficha" data-id="${p.id}">+ Nota de seguimiento</button>
         <button class="btn btn-outline" data-accion="cita" data-id="${p.id}">+ Cita</button>
