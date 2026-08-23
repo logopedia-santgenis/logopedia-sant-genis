@@ -40,6 +40,9 @@
     <button class="tab-link" data-tab="plantillas-doc"><span class="icono-mini">📄</span> Plantillas</button>
     <button class="tab-link" data-tab="info-diagnostica"><span class="icono-mini">🧠</span> Información diagnóstica</button>
 
+    <div class="sidebar-grupo-titulo">Facturación</div>
+    <button class="tab-link" data-tab="facturacion"><span class="icono-mini">🧾</span> Presupuestos y recibos</button>
+
     <div class="sidebar-grupo-titulo">Marketing</div>
     <button class="tab-link" data-tab="campanas"><span class="icono-mini">📣</span> Campañas</button>
 
@@ -232,6 +235,34 @@
         <input type="text" id="idBuscar" placeholder="Buscar por título…" style="flex:1;" oninput="filtrarInfoDiagnostica()">
       </div>
       <div id="listaInfoDiagnostica"><div class="cargando">Cargando…</div></div>
+    </div>
+    <div class="panel seccion-tab" data-panel="facturacion" style="max-width:none;margin:0;padding:0;">
+      <div class="seccion-titulo-fila"><h2>Presupuestos y recibos</h2></div>
+      <p class="meta" style="margin-bottom:16px;">Documentos internos, <strong>no son facturas fiscales</strong> — sirven para llevar el control de presupuestos y cobros. Para la factura fiscal real, Ester debe emitirla desde el programa certificado que use con su gestor (Verifactu).</p>
+      <div class="tarjeta" style="margin-bottom:20px;">
+        <h3 style="margin-top:0;">Nuevo documento</h3>
+        <div class="fila-acciones">
+          <label style="display:flex;align-items:center;gap:6px;"><input type="radio" name="fiTipoDoc" value="presupuesto" checked> Presupuesto</label>
+          <label style="display:flex;align-items:center;gap:6px;"><input type="radio" name="fiTipoDoc" value="recibo"> Recibo</label>
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <select id="fiPaciente" style="flex:2;" onchange="onCambioPacienteFactura()"><option value="">— Sin paciente vinculado —</option></select>
+          <input type="text" id="fiCliente" placeholder="Nombre del cliente" style="flex:2;">
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <input type="number" id="fiImporte" placeholder="Importe €" step="0.01" style="flex:1;">
+          <input type="date" id="fiFecha" style="flex:1;">
+        </div>
+        <textarea id="fiConcepto" rows="3" placeholder="Concepto (ej. Sesión de logopedia — evaluación inicial)" style="width:100%;margin-top:10px;"></textarea>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <button class="btn btn-secundario" onclick="crearDocumentoInterno()">Generar</button>
+        </div>
+        <p class="meta" id="fiEstado"></p>
+      </div>
+      <div class="fila-acciones" style="margin-bottom:14px;">
+        <input type="text" id="fiBuscar" placeholder="Buscar por nº, cliente o concepto…" style="flex:1;" oninput="filtrarDocumentosInternos()">
+      </div>
+      <div id="listaDocumentosInternos"><div class="cargando">Cargando…</div></div>
     </div>
     <div class="panel seccion-tab" data-panel="campanas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Campañas de marketing</h2></div>
@@ -1441,6 +1472,134 @@ async function borrarInfoDiagnostica(id) {
   await cargarInfoDiagnostica();
 }
 
+let DOCUMENTOS_INTERNOS = [];
+
+function poblarSelectPacienteFactura() {
+  const sel = document.getElementById('fiPaciente');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Sin paciente vinculado —</option>' +
+    PACIENTES.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
+}
+
+function onCambioPacienteFactura() {
+  const id = document.getElementById('fiPaciente').value;
+  const paciente = PACIENTES.find(p => p.id === id);
+  if (paciente) document.getElementById('fiCliente').value = paciente.nombre;
+}
+
+async function cargarDocumentosInternos() {
+  poblarSelectPacienteFactura();
+  if (!document.getElementById('fiFecha').value) document.getElementById('fiFecha').value = fechaLocalISO(new Date());
+  const { data } = await supabaseClient
+    .from('documentos_internos').select('*')
+    .eq('logopeda_id', UID)
+    .order('created_at', { ascending: false });
+  DOCUMENTOS_INTERNOS = data || [];
+  pintarDocumentosInternos(DOCUMENTOS_INTERNOS);
+}
+
+function filtrarDocumentosInternos() {
+  const q = document.getElementById('fiBuscar').value.trim().toLowerCase();
+  const filtrados = q ? DOCUMENTOS_INTERNOS.filter(d =>
+    d.numero_formateado.toLowerCase().includes(q) ||
+    d.nombre_cliente.toLowerCase().includes(q) ||
+    d.concepto.toLowerCase().includes(q)
+  ) : DOCUMENTOS_INTERNOS;
+  pintarDocumentosInternos(filtrados);
+}
+
+function pintarDocumentosInternos(lista) {
+  const cont = document.getElementById('listaDocumentosInternos');
+  cont.innerHTML = (lista && lista.length) ? lista.map(d => `
+    <div class="lista-item">
+      <strong>${esc(d.numero_formateado)}</strong> <span class="etiqueta-pill">${d.tipo === 'presupuesto' ? 'Presupuesto' : 'Recibo'}</span>
+      <div class="meta">${esc(d.nombre_cliente)} · ${formatearFecha(d.fecha)} · ${Number(d.importe).toFixed(2)} €</div>
+      <p class="meta" style="white-space:pre-wrap;">${esc(d.concepto)}</p>
+      <div class="fila-acciones" style="margin-top:6px;">
+        <button class="btn btn-outline" onclick="verImprimirDocumentoInterno('${d.id}')">Ver / Imprimir</button>
+        <button class="btn btn-outline" onclick="borrarDocumentoInterno('${d.id}')">Eliminar</button>
+      </div>
+    </div>`).join('') : '<p class="vacio-panel">Todavía no hay presupuestos ni recibos generados.</p>';
+}
+
+async function crearDocumentoInterno() {
+  const estado = document.getElementById('fiEstado');
+  estado.textContent = '';
+  const tipo = document.querySelector('input[name="fiTipoDoc"]:checked').value;
+  const pacienteId = document.getElementById('fiPaciente').value || null;
+  const nombreCliente = document.getElementById('fiCliente').value.trim();
+  const concepto = document.getElementById('fiConcepto').value.trim();
+  const importe = parseFloat(document.getElementById('fiImporte').value);
+  const fecha = document.getElementById('fiFecha').value || fechaLocalISO(new Date());
+
+  if (!nombreCliente) { estado.textContent = 'Falta el nombre del cliente.'; return; }
+  if (!concepto) { estado.textContent = 'Falta el concepto.'; return; }
+  if (!importe || importe <= 0) { estado.textContent = 'Falta un importe válido.'; return; }
+
+  estado.textContent = 'Generando…';
+  const anio = new Date(fecha).getFullYear();
+
+  const { data: numero, error: errNumero } = await supabaseClient.rpc('siguiente_numero_documento_interno', { p_tipo: tipo, p_anio: anio });
+  if (errNumero) { estado.textContent = 'Error generando el número: ' + errNumero.message; return; }
+
+  const prefijo = tipo === 'presupuesto' ? 'PRE' : 'REC';
+  const numeroFormateado = `${prefijo}-${anio}-${String(numero).padStart(4, '0')}`;
+
+  const { data: doc, error: errInsert } = await supabaseClient.from('documentos_internos').insert({
+    tipo, numero, anio, numero_formateado: numeroFormateado,
+    logopeda_id: UID, paciente_id: pacienteId, nombre_cliente: nombreCliente,
+    concepto, importe, fecha
+  }).select().single();
+  if (errInsert) { estado.textContent = 'Error guardando: ' + errInsert.message; return; }
+
+  estado.textContent = numeroFormateado + ' generado ✓';
+  document.getElementById('fiCliente').value = '';
+  document.getElementById('fiConcepto').value = '';
+  document.getElementById('fiImporte').value = '';
+  document.getElementById('fiPaciente').value = '';
+  await cargarDocumentosInternos();
+  imprimirDocumentoInterno(doc);
+}
+
+function verImprimirDocumentoInterno(id) {
+  const doc = DOCUMENTOS_INTERNOS.find(d => d.id === id);
+  if (doc) imprimirDocumentoInterno(doc);
+}
+
+function imprimirDocumentoInterno(doc) {
+  const ventana = window.open('', '_blank');
+  if (!ventana) { alert('El navegador bloqueó la ventana emergente. Permite ventanas emergentes para ver/imprimir.'); return; }
+  const titulo = doc.tipo === 'presupuesto' ? 'Presupuesto' : 'Recibo';
+  ventana.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${titulo} ${esc(doc.numero_formateado)}</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; color:#1a1a1a; padding: 32px; max-width: 640px; margin:0 auto; }
+      h1 { font-size: 1.3rem; margin-bottom: 2px; }
+      .aviso { background:#fff3cd; border:1px solid #ffe08a; padding:8px 12px; border-radius:6px; font-size:.82rem; margin-bottom:20px; }
+      .fila { display:flex; justify-content:space-between; margin:6px 0; }
+      .concepto { white-space:pre-wrap; margin:16px 0; padding:12px 0; border-top:1px solid #ddd; border-bottom:1px solid #ddd; }
+      .total { font-size:1.15rem; font-weight:bold; text-align:right; }
+      @media print { body { padding: 0; } }
+    </style>
+  </head><body>
+    <div class="aviso">Documento interno — no es una factura fiscal.</div>
+    <h1>${titulo} ${esc(doc.numero_formateado)}</h1>
+    <p style="color:#555;margin-top:0;">Logopedia Sant Genís</p>
+    <div class="fila"><span>Cliente</span><strong>${esc(doc.nombre_cliente)}</strong></div>
+    <div class="fila"><span>Fecha</span><strong>${formatearFecha(doc.fecha)}</strong></div>
+    <div class="concepto">${esc(doc.concepto)}</div>
+    <div class="total">Total: ${Number(doc.importe).toFixed(2)} €</div>
+  </body></html>`);
+  ventana.document.close();
+  ventana.focus();
+  setTimeout(() => ventana.print(), 400);
+}
+
+async function borrarDocumentoInterno(id) {
+  if (!confirm('¿Eliminar este documento? No se puede deshacer.')) return;
+  await supabaseClient.from('documentos_internos').delete().eq('id', id);
+  await cargarDocumentosInternos();
+}
+
 async function cargarCampanas() {
   const { data } = await supabaseClient
     .from('campanas_marketing').select('*').eq('logopeda_id', UID)
@@ -1854,6 +2013,7 @@ async function borrarTextoPredefinido(id) {
   await cargarPlantillas();
   await cargarInfoDiagnostica();
   await cargarCampanas();
+  await cargarDocumentosInternos();
   await cargarActividadesGrupales();
   await cargarRecursos();
   await cargarTextosPredefinidos();
