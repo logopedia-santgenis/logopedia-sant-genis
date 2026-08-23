@@ -119,21 +119,34 @@
       <div id="listaTareasAgregadas"><div class="cargando">Cargando…</div></div>
     </div>
 
-    <!-- STUBS: pendientes de construir -->
     <div class="panel seccion-tab" data-panel="trabajos-externos" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Trabajos externos</h2></div>
+      <p class="meta" style="margin:-8px 0 14px;">Cada derivación queda vinculada a un profesional externo con email real, guardado en un directorio compartido por toda la clínica — así lo buscas por nombre o email y no lo vuelves a escribir a mano.</p>
       <div class="tarjeta" style="margin-bottom:20px;">
         <h3 style="margin-top:0;">Nueva derivación / trabajo externo</h3>
         <div class="fila-acciones">
           <select id="tePaciente" style="flex:2;"></select>
-          <input type="text" id="teProfesional" placeholder="Profesional externo" style="flex:2;">
-          <input type="text" id="teEspecialidad" placeholder="Especialidad" style="flex:1;">
+        </div>
+        <div class="fila-acciones" style="margin-top:10px;">
+          <input type="text" id="teFiltroProfesional" placeholder="Buscar profesional por nombre o email…" oninput="filtrarSelectProfesionalExterno()" style="flex:2;">
+        </div>
+        <div class="fila-acciones" style="margin-top:6px;">
+          <select id="teProfesionalSelect" style="flex:2;" onchange="onCambioProfesionalExterno()"></select>
+        </div>
+        <div id="teNuevoProfesionalBloque" style="display:none;margin-top:10px;padding:10px;border:1px dashed var(--borde);border-radius:8px;">
+          <p class="meta" style="margin:0 0 8px;">Profesional nuevo — se guarda en el directorio para reutilizarlo después.</p>
+          <div class="fila-acciones">
+            <input type="text" id="teNuevoNombre" placeholder="Nombre del profesional" style="flex:1;">
+            <input type="email" id="teNuevoEmail" placeholder="Email (obligatorio)" style="flex:1;">
+            <input type="text" id="teNuevoEspecialidad" placeholder="Especialidad" style="flex:1;">
+          </div>
         </div>
         <div class="fila-acciones" style="margin-top:10px;">
           <input type="date" id="teFecha">
           <textarea id="teNotas" placeholder="Notas" style="flex:2;"></textarea>
           <button class="btn btn-secundario" onclick="crearTrabajoExterno()">Guardar</button>
         </div>
+        <p class="meta" id="teError" style="color:#b3261e;margin-top:6px;"></p>
       </div>
       <div id="listaTrabajosExternos"><div class="cargando">Cargando…</div></div>
     </div>
@@ -1273,26 +1286,61 @@ async function crearActividadGrupal() {
   await cargarActividadesGrupales();
 }
 
+let PROFESIONALES_EXTERNOS = [];
+
+async function cargarProfesionalesExternos() {
+  const { data } = await supabaseClient.from('profesionales_externos').select('*').order('nombre', { ascending: true });
+  PROFESIONALES_EXTERNOS = data || [];
+}
+
+function opcionesProfesionalesExternosModal(filtro) {
+  const f = (filtro || '').trim().toLowerCase();
+  const filtrados = PROFESIONALES_EXTERNOS.filter(p => !f || p.nombre.toLowerCase().includes(f) || p.email.toLowerCase().includes(f));
+  return '<option value="__nuevo__">+ Nuevo profesional externo…</option>' +
+    filtrados.map(p => `<option value="${p.id}">${esc(p.nombre)} — ${esc(p.email)}${p.especialidad ? ' (' + esc(p.especialidad) + ')' : ''}</option>`).join('');
+}
+
+function filtrarSelectProfesionalExterno() {
+  const filtro = document.getElementById('teFiltroProfesional').value;
+  const sel = document.getElementById('teProfesionalSelect');
+  sel.innerHTML = opcionesProfesionalesExternosModal(filtro);
+  onCambioProfesionalExterno();
+}
+
+function onCambioProfesionalExterno() {
+  const sel = document.getElementById('teProfesionalSelect');
+  document.getElementById('teNuevoProfesionalBloque').style.display = (sel.value === '__nuevo__') ? 'block' : 'none';
+}
+
 async function cargarTrabajosExternos() {
   const sel = document.getElementById('tePaciente');
   if (sel && sel.options.length === 0) {
     sel.innerHTML = '<option value="">— Elegir paciente —</option>' +
       PACIENTES.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
   }
+  if (!PROFESIONALES_EXTERNOS.length) await cargarProfesionalesExternos();
+  const selProf = document.getElementById('teProfesionalSelect');
+  if (selProf && !selProf.options.length) filtrarSelectProfesionalExterno();
+
   const { data } = await supabaseClient
-    .from('trabajos_externos').select('*, pacientes(nombre)').eq('logopeda_id', UID)
+    .from('trabajos_externos').select('*, pacientes(nombre), profesionales_externos(nombre, email, especialidad)').eq('logopeda_id', UID)
     .order('fecha', { ascending: false });
   const cont = document.getElementById('listaTrabajosExternos');
-  cont.innerHTML = (data && data.length) ? data.map(t => `
+  cont.innerHTML = (data && data.length) ? data.map(t => {
+    const prof = t.profesionales_externos;
+    const nombreProf = prof?.nombre || t.profesional_externo || '—';
+    const especialidadProf = prof?.especialidad || t.especialidad;
+    return `
     <div class="lista-item">
-      <strong>${esc(t.pacientes?.nombre || '—')}</strong> → ${esc(t.profesional_externo)}${t.especialidad ? ` <span class="etiqueta-pill">${esc(t.especialidad)}</span>` : ''}
+      <strong>${esc(t.pacientes?.nombre || '—')}</strong> → ${esc(nombreProf)}${especialidadProf ? ` <span class="etiqueta-pill">${esc(especialidadProf)}</span>` : ''}
       ${badgeEstado(t.estado)}
-      <div class="meta">${t.fecha ? formatearFecha(t.fecha) : '—'}</div>
+      <div class="meta">${t.fecha ? formatearFecha(t.fecha) : '—'} ${prof?.email ? '· ' + esc(prof.email) : '<em>· sin email vinculado (derivación antigua)</em>'}</div>
       ${t.notas ? `<p style="color:var(--texto);margin:6px 0 0;">${esc(t.notas)}</p>` : ''}
       <select onchange="actualizarEstadoTrabajoExterno('${t.id}', this.value)" style="margin-top:6px;">
         ${['pendiente', 'completado', 'cancelado'].map(o => `<option value="${o}" ${o === t.estado ? 'selected' : ''}>${o}</option>`).join('')}
       </select>
-    </div>`).join('') : '<p class="vacio-panel">Todavía no hay trabajos externos registrados.</p>';
+    </div>`;
+  }).join('') : '<p class="vacio-panel">Todavía no hay trabajos externos registrados.</p>';
 }
 
 async function actualizarEstadoTrabajoExterno(id, estado) {
@@ -1301,18 +1349,51 @@ async function actualizarEstadoTrabajoExterno(id, estado) {
 }
 
 async function crearTrabajoExterno() {
+  const errorEl = document.getElementById('teError');
+  errorEl.textContent = '';
   const paciente_id = document.getElementById('tePaciente').value;
-  const profesional_externo = document.getElementById('teProfesional').value.trim();
-  const especialidad = document.getElementById('teEspecialidad').value.trim() || null;
   const fecha = document.getElementById('teFecha').value || null;
   const notas = document.getElementById('teNotas').value.trim() || null;
-  if (!paciente_id || !profesional_externo) return;
-  await supabaseClient.from('trabajos_externos').insert({
-    paciente_id, logopeda_id: UID, profesional_externo, especialidad, fecha, notas, estado: 'pendiente'
+  if (!paciente_id) { errorEl.textContent = 'Elige un paciente.'; return; }
+
+  const selProf = document.getElementById('teProfesionalSelect').value;
+  let profesionalId = null, nombreProf = null, especialidadProf = null;
+
+  if (selProf && selProf !== '__nuevo__') {
+    const existente = PROFESIONALES_EXTERNOS.find(p => p.id === selProf);
+    if (!existente) { errorEl.textContent = 'No se encontró ese profesional, prueba a elegirlo de nuevo.'; return; }
+    profesionalId = existente.id; nombreProf = existente.nombre; especialidadProf = existente.especialidad;
+  } else {
+    const nombreNuevo = document.getElementById('teNuevoNombre').value.trim();
+    const emailNuevo = document.getElementById('teNuevoEmail').value.trim();
+    especialidadProf = document.getElementById('teNuevoEspecialidad').value.trim() || null;
+    if (!nombreNuevo || !emailNuevo) { errorEl.textContent = 'Introduce nombre y email del profesional para poder guardar la derivación.'; return; }
+
+    const yaExiste = PROFESIONALES_EXTERNOS.find(p => p.email.toLowerCase() === emailNuevo.toLowerCase());
+    if (yaExiste) {
+      profesionalId = yaExiste.id; nombreProf = yaExiste.nombre; especialidadProf = yaExiste.especialidad;
+    } else {
+      const { data: nuevo, error: errProf } = await supabaseClient.from('profesionales_externos')
+        .insert({ nombre: nombreNuevo, email: emailNuevo, especialidad: especialidadProf, creado_por: UID })
+        .select('*').single();
+      if (errProf) { errorEl.textContent = 'Error guardando el profesional: ' + errProf.message; return; }
+      PROFESIONALES_EXTERNOS.push(nuevo);
+      profesionalId = nuevo.id; nombreProf = nuevo.nombre; especialidadProf = nuevo.especialidad;
+    }
+  }
+
+  const { error } = await supabaseClient.from('trabajos_externos').insert({
+    paciente_id, logopeda_id: UID, profesional_externo_id: profesionalId,
+    profesional_externo: nombreProf, especialidad: especialidadProf, fecha, notas, estado: 'pendiente'
   });
-  document.getElementById('teProfesional').value = '';
-  document.getElementById('teEspecialidad').value = '';
+  if (error) { errorEl.textContent = 'Error guardando la derivación: ' + error.message; return; }
+
+  document.getElementById('teFiltroProfesional').value = '';
+  document.getElementById('teNuevoNombre').value = '';
+  document.getElementById('teNuevoEmail').value = '';
+  document.getElementById('teNuevoEspecialidad').value = '';
   document.getElementById('teNotas').value = '';
+  filtrarSelectProfesionalExterno();
   await cargarTrabajosExternos();
 }
 
