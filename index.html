@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ConsultaViva — Barcelona</title>
-<meta name="description" content="Centro de logopedia en Barcelona, junto al Hospital Vall d'Hebron. Evaluación, diagnóstico y tratamiento de trastornos del lenguaje, la comunicación, la voz y la deglución. Terapia online y presencial.">
+<title>ConsultaViva — La plataforma para tu clínica</title>
+<meta name="description" content="Web propia, agenda inteligente, fichas clínicas y facturación en un solo sitio. ConsultaViva es la plataforma que construimos y mantenemos por ti.">
 <link rel="icon" type="image/svg+xml" href="img/icono.svg">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="stylesheet" href="style.css">
@@ -16,15 +16,14 @@
     <a href="index.html" class="logo"><img src="img/logo.svg" alt="ConsultaViva" class="logo-img"></a>
     <nav class="menu" id="navMenu">
       <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="quienes-somos.html">¿Quiénes somos?</a></li>
-        <li><a href="otros-servicios.html">Otros servicios</a></li>
-        <li><a href="blog.html">Blog</a></li>
-        <li><a href="contacto.html">Contacto</a></li>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="#solucion">Qué incluye</a></li>
+        <li><a href="#caso">Caso real</a></li>
+        <li><a href="#preguntas">Preguntas</a></li>
       </ul>
       <div class="nav-botones">
-        <a class="btn btn-outline" href="reservar-cita.html">Reservar cita</a>
-        <a class="btn btn-secundario" href="login.html">Acceso plataforma</a>
+        <a class="btn btn-outline" href="login.html">Acceso plataforma</a>
+        <a class="btn btn-secundario" href="#contacto">Pide una demo</a>
       </div>
     </nav>
     <button class="nav-hamburguesa" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
@@ -32,99 +31,199 @@
     </button>
   </div>
 </header>
-<div class="franja-negocio"><div class="franja-negocio-txt">Logopedia Sant Genís</div></div>
 <div class="nav-fondo" id="navFondo"></div>
 
-<section class="hero hero-imagen" style="background-image:url('img/hero-home.jpg');">
-  <h1>Mejorando tu comunicación, transformando tu vida.</h1>
-  <p>En nuestro centro estamos especializados en evaluar, diagnosticar y tratar trastornos del lenguaje, la comunicación, la voz y la deglución. Trabajamos con personas de todas las edades, desde niños hasta adultos y personas de la tercera edad.</p>
-  <a class="btn btn-primario" href="https://api.whatsapp.com/send?phone=34651316989&text=%C2%A1Hola!%20Me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n%20sobre%20los%20servicios%20de%20su%20centro%20de%20logopedia." target="_blank" rel="noopener">Clic para informarte</a>
-  <div class="franja">PREVENCIÓN · EVALUACIÓN · DIAGNÓSTICO · INTERVENCIÓN</div>
+<section class="hero">
+  <h1>Tu clínica, en un solo sitio: de la reserva a la factura.</h1>
+  <p>Web propia con tu marca, agenda inteligente, fichas de paciente y facturación — la plataforma que ConsultaViva construye y mantiene por ti, pensada para logopedas y otros profesionales de la salud.</p>
+  <a class="btn btn-primario" href="#contacto">Pide una demo</a>
+  <div class="franja">SIN CUOTA GENÉRICA · SE ADAPTA A TU CLÍNICA · TÚ NO TOCAS CÓDIGO</div>
 </section>
 
 <section>
-  <h2>Nuestras modalidades</h2>
-  <p class="subtitulo">Ofrecemos terapia online y presencial para que nuestros pacientes elijan la modalidad que mejor se adapta a su situación personal y necesidades.</p>
+  <div class="cv-badge-piloto">
+    <span class="punto"></span>
+    Ya la estamos construyendo junto a Logopedia Sant Genís, nuestra primera clínica
+  </div>
+
+  <h2>El caos de siempre: WhatsApp, papel y un Excel que nadie actualiza</h2>
+  <p class="subtitulo" style="max-width:720px;">
+    Reservas que llegan por WhatsApp mientras estás con un paciente. Fichas en papel que se pierden.
+    Un Excel de cobros que solo entiende quien lo hizo. Herramientas genéricas de reservas que no saben
+    qué es una ficha clínica, ni que cada profesional necesita ver solo lo suyo. Cada clínica termina
+    montando su propio parche — y ese parche se cae justo cuando más lo necesitas.
+  </p>
+</section>
+
+<section id="solucion" style="background:var(--tarjeta);">
+  <h2>Todo lo que necesita tu clínica, conectado</h2>
+  <p class="subtitulo">Nada de módulos sueltos: reserva, agenda, ficha y cobro se hablan entre sí.</p>
   <div class="grid-2">
     <div class="tarjeta">
-      <img src="img/terapia-online.jpg" alt="Terapia online de logopedia" class="tarjeta-imagen">
-      <h3>Terapia online</h3>
-      <p>Tratamiento con un logopeda profesional de forma remota, mediante una plataforma segura y confidencial. Videoconferencia en tiempo real y herramientas interactivas para mejorar las habilidades de comunicación y lenguaje, con la comodidad de hacerlo desde casa.</p>
+      <h3>Web propia con reservas online</h3>
+      <p>Tu web, con tu marca y tus servicios. Las reservas caen directo en tu agenda — nadie tiene que llamarte para confirmar un hueco.</p>
     </div>
     <div class="tarjeta">
-      <img src="img/terapia-presencial.jpg" alt="Terapia presencial de logopedia" class="tarjeta-imagen">
-      <h3>Terapia presencial</h3>
-      <p>En nuestro centro, ubicado en Barcelona, logopeda y paciente trabajan juntos cara a cara para evaluar y tratar los trastornos del lenguaje, la comunicación, la voz y la deglución. Un enfoque cercano, personalizado y colaborativo.</p>
+      <h3>Agenda inteligente</h3>
+      <p>Horarios y festivos configurados a tu medida, sincronizada con Google Calendar. Cada profesional ve solo su propia agenda.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Fichas y seguimiento clínico</h3>
+      <p>Historia clínica, notas de sesión, deberes y recursos para cada paciente — todo en un mismo lugar, accesible desde cualquier dispositivo.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Presupuestos y cobros</h3>
+      <p>Genera presupuestos y recibos con numeración correlativa, sin pelearte con plantillas de Excel ni Word.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Accesos por rol</h3>
+      <p>Administración, profesionales y pacientes o familias entran cada uno a su espacio, con firma digital de documentos incluida.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>La montamos nosotros</h3>
+      <p>Tú nos cuentas cómo trabaja tu clínica hoy. Nosotros construimos y mantenemos la plataforma — tú solo la usas.</p>
     </div>
   </div>
 </section>
 
-<section style="background:var(--tarjeta);padding-bottom:32px;">
-  <h2>¿Conoces la importancia de una detección precoz?</h2>
-  <p class="subtitulo">Detectar y tratar a tiempo transforma el proceso. No esperes más.</p>
-  <div class="contenedor">
-    <img src="img/deteccion-precoz.jpg" alt="Detección precoz de dificultades del lenguaje" class="banner-imagen">
-  </div>
-  <div class="grid-2">
-    <div class="tarjeta">
-      <p>La detección precoz de dificultades en el lenguaje es esencial: cuanto antes se identifiquen y aborden estos problemas, mayores serán las posibilidades de mejorar el desarrollo lingüístico y comunicativo del niño o adulto.</p>
+<section>
+  <h2>De la reserva al cobro, sin que se pierda nada por el camino</h2>
+  <p class="subtitulo">Así se conecta todo dentro de ConsultaViva.</p>
+  <div class="cv-flujo">
+    <div class="cv-paso">
+      <span class="cv-num">1</span>
+      <h3>Reserva</h3>
+      <p>El paciente reserva desde tu web. El hueco desaparece de la agenda al instante.</p>
     </div>
-    <div class="tarjeta">
-      <p>Una intervención oportuna reduce el impacto a largo plazo en el rendimiento académico, las relaciones sociales y la calidad de vida — y puede evitar complicaciones secundarias como baja autoestima o ansiedad.</p>
+    <div class="cv-flecha">→</div>
+    <div class="cv-paso">
+      <span class="cv-num">2</span>
+      <h3>Agenda</h3>
+      <p>La cita aparece en el calendario del profesional correcto, sincronizada con Google Calendar.</p>
     </div>
-  </div>
-  <div class="video-seccion">
-    <div class="video-envoltorio">
-      <iframe src="https://www.youtube-nocookie.com/embed/SsZjf5A10dM" title="Signos de alerta en el desarrollo del lenguaje" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+    <div class="cv-flecha">→</div>
+    <div class="cv-paso">
+      <span class="cv-num">3</span>
+      <h3>Consulta</h3>
+      <p>Ficha clínica, notas y recursos a mano durante la sesión — sin salir a buscar papeles.</p>
     </div>
-    <p class="video-credito">Vídeo: Fundación Salud Infantil — "Signos de alerta en el desarrollo del lenguaje"</p>
+    <div class="cv-flecha">→</div>
+    <div class="cv-paso">
+      <span class="cv-num">4</span>
+      <h3>Cobro</h3>
+      <p>Presupuesto o recibo generado desde la propia ficha, numerado y listo para enviar.</p>
+    </div>
   </div>
 </section>
 
-<section style="background:var(--tarjeta);padding-top:32px;border-top:1px solid rgba(15,40,70,.08);">
-  <h2>Otros servicios</h2>
-  <p class="subtitulo">Además de logopedia, ofrecemos sesiones online para padres y madres.</p>
-  <div class="tarjeta" style="max-width:640px;margin:0 auto;text-align:center;">
-    <h3>Método de estudio para padres</h3>
-    <p>Aprende a ayudar a tus hijos a concentrarse y a crear un hábito de estudio real en casa. Sesiones online, 30€/hora, bajo disponibilidad.</p>
-    <a class="btn btn-secundario" href="otros-servicios.html">Ver más</a>
+<section id="caso" style="background:var(--tarjeta);">
+  <h2>Nuestro primer caso real</h2>
+  <p class="subtitulo">Todavía no tenemos cientos de clientes ni cifras que enseñarte — tenemos algo mejor: una clínica real usándolo cada día.</p>
+  <div class="cv-caso">
+    <span class="cv-caso-etiqueta">Logopedia Sant Genís · Barcelona</span>
+    <h3 style="margin-top:0;">Web pública + plataforma interna completa</h3>
+    <p style="color:var(--texto-suave);">
+      Construimos su web de reservas y, detrás, la plataforma completa: agenda con Google Calendar,
+      fichas clínicas, biblioteca de recursos terapéuticos, presupuestos y recibos, y acceso por roles
+      para administración, logopedas y familias. Es la clínica donde probamos cada función antes de
+      ofrecerla a nadie más.
+    </p>
+    <a class="btn btn-outline" href="santgenis.html">Ver su web en vivo »</a>
   </div>
 </section>
 
-<div class="cta-central">
-  <h2>Hablemos de tu situación</h2>
-  <p>Te brindaremos información detallada y sin compromiso sobre nuestros servicios y cómo podemos ayudarte.</p>
-  <a class="btn btn-primario" href="https://api.whatsapp.com/send?phone=34651316989&text=%C2%A1Hola!%20Me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n%20sobre%20los%20servicios%20de%20su%20centro%20de%20logopedia." target="_blank" rel="noopener">Contactar por WhatsApp</a>
+<section id="preguntas">
+  <h2>Antes de que preguntes</h2>
+  <p class="subtitulo">Las dudas que más nos repiten los profesionales que hablan con nosotros.</p>
+  <div class="cv-faq">
+    <details>
+      <summary>¿Cuánto cuesta?</summary>
+      <p>Cada clínica es distinta — tamaño, número de profesionales, qué necesita y qué no. Por eso hablamos contigo antes de poner un precio, en vez de venderte un plan genérico que te sobra o te queda corto.</p>
+    </details>
+    <details>
+      <summary>¿Cuánto tarda en estar lista?</summary>
+      <p>Tú nos cuentas cómo trabaja tu clínica hoy — horarios, servicios, cómo gestionas ahora las citas y las fichas. Nosotros la montamos y te la entregamos funcionando, sin que tengas que tocar una línea de código.</p>
+    </details>
+    <details>
+      <summary>No soy nada de tecnología, ¿podré usarla?</summary>
+      <p>Está pensada para logopedas y profesionales sanitarios, no para programadores. Si sabes usar WhatsApp, sabes usar ConsultaViva.</p>
+    </details>
+    <details>
+      <summary>¿Qué pasa con los datos de mis pacientes?</summary>
+      <p>Cada clínica tiene su propio espacio y sus propios accesos. Tus datos no se mezclan con los de ninguna otra clínica que use la plataforma.</p>
+    </details>
+    <details>
+      <summary>¿Solo sirve para clínicas de logopedia?</summary>
+      <p>Nació resolviendo el día a día de una clínica de logopedia, pero el mismo sistema — reservas, agenda, fichas, cobros — se adapta a otras consultas y centros de salud. Cuéntanos la tuya y lo vemos juntos.</p>
+    </details>
+  </div>
+</section>
+
+<div class="cta-central" id="contacto">
+  <h2>Cuéntanos cómo trabaja tu clínica hoy</h2>
+  <p>Sin compromiso. Respondemos en persona, no con un bot.</p>
+  <div class="cv-form-lead">
+    <div class="mensaje-error" id="msgErrorLead"></div>
+    <div class="mensaje-ok" id="msgOkLead"></div>
+    <form id="formLead" style="text-align:left;">
+      <div class="campo">
+        <label for="lNombre" style="color:#fff;">Tu nombre</label>
+        <input type="text" id="lNombre" required maxlength="150">
+      </div>
+      <div class="campo">
+        <label for="lClinica" style="color:#fff;">Nombre de tu clínica o consulta</label>
+        <input type="text" id="lClinica" maxlength="200">
+      </div>
+      <div class="campo">
+        <label for="lEmail" style="color:#fff;">Correo electrónico</label>
+        <input type="email" id="lEmail" required maxlength="200">
+      </div>
+      <div class="campo">
+        <label for="lTelefono" style="color:#fff;">Teléfono (opcional)</label>
+        <input type="tel" id="lTelefono" maxlength="30">
+      </div>
+      <div class="campo">
+        <label for="lMensaje" style="color:#fff;">Cuéntanos brevemente cómo trabajas hoy</label>
+        <textarea id="lMensaje" rows="4" maxlength="4000"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primario" style="width:100%;">Enviar y pedir demo</button>
+    </form>
+  </div>
 </div>
 
-<section>
-  <h2>Rincón de la logopedia</h2>
-  <p class="subtitulo">Artículos y recursos sobre comunicación, lenguaje y desarrollo.</p>
-  <div class="articulos">
-    <div class="articulo-tarjeta">
-      <div class="etiqueta">Artículo</div>
-      <h3>Dislexia: comprendiendo el desafío y superando barreras</h3>
-      <a href="blog.html">Leer más »</a>
-    </div>
-    <div class="articulo-tarjeta">
-      <div class="etiqueta">Artículo</div>
-      <h3>¿Cuándo debo ir al logopeda?</h3>
-      <a href="blog.html">Leer más »</a>
-    </div>
-    <div class="articulo-tarjeta">
-      <div class="etiqueta">Artículo</div>
-      <h3>La importancia de la comunicación en el desarrollo del lenguaje</h3>
-      <a href="blog.html">Leer más »</a>
-    </div>
-  </div>
-</section>
-
 <footer class="sitio">
-  <p>Avenida Jordán 30 local 4, Barcelona 08035 · Tel: 931 25 76 27</p>
-  <p>Lunes a Viernes 10:00–14:00 y 16:00–20:00 · Sábado 9:00–13:00</p>
-  <p>© 2026 ConsultaViva · <a href="terminos-condiciones.html">Términos y condiciones</a> · <a href="politica-privacidad.html">Privacidad</a> · <a href="login.html">Acceso a la plataforma</a></p>
+  <p>ConsultaViva — plataforma para clínicas y consultas de salud</p>
+  <p>© 2026 ConsultaViva · <a href="mailto:businesscatserrano@gmail.com">businesscatserrano@gmail.com</a> · <a href="login.html">Acceso a la plataforma</a></p>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+document.getElementById('formLead').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msgError = document.getElementById('msgErrorLead');
+  const msgOk = document.getElementById('msgOkLead');
+  msgError.style.display = 'none';
+  msgOk.style.display = 'none';
+
+  const { error } = await supabaseClient.from('leads_plataforma').insert({
+    nombre: document.getElementById('lNombre').value.trim(),
+    email: document.getElementById('lEmail').value.trim(),
+    telefono: document.getElementById('lTelefono').value.trim() || null,
+    nombre_clinica: document.getElementById('lClinica').value.trim() || null,
+    mensaje: document.getElementById('lMensaje').value.trim() || null
+  });
+
+  if (error) {
+    msgError.textContent = 'No se pudo enviar. Escríbenos directamente a businesscatserrano@gmail.com.';
+    msgError.style.display = 'block';
+    return;
+  }
+  msgOk.textContent = '¡Gracias! Te responderemos en persona en cuanto lo veamos.';
+  msgOk.style.display = 'block';
+  document.getElementById('formLead').reset();
+});
+</script>
 <script src="nav.js" defer></script>
 </body>
 </html>
