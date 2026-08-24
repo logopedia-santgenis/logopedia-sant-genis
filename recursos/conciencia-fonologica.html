@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conciencia fonológica por fonemas — ConsultaViva</title>
+<link rel="icon" type="image/svg+xml" href="../img/icono.svg">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cf-wrap{max-width:760px;margin:0 auto;padding:0 24px 60px;}
+  .cf-intro{text-align:center;}
+  .cf-controles{display:flex;flex-direction:column;gap:14px;background:var(--tarjeta);border-radius:var(--radio);box-shadow:var(--sombra);padding:20px;margin:20px 0;}
+  .cf-fila-control{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .cf-fila-control label{font-weight:700;color:var(--azul-oscuro);font-size:.85rem;min-width:110px;}
+  .cf-pills{display:flex;gap:8px;flex-wrap:wrap;}
+  .cf-pill{border:2px solid var(--borde);background:var(--tarjeta);color:var(--texto);border-radius:999px;padding:8px 18px;font-weight:700;font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;cursor:pointer;transition:.15s;font-size:.92rem;}
+  .cf-pill:hover{border-color:var(--azul);}
+  .cf-pill.activo{background:var(--azul);border-color:var(--azul);color:#fff;}
+  .cf-tabs{display:flex;gap:10px;justify-content:center;margin:22px 0 10px;}
+  .cf-tab{border:none;background:transparent;color:var(--texto-suave);font-weight:700;font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;padding:10px 6px;cursor:pointer;border-bottom:3px solid transparent;font-size:1rem;}
+  .cf-tab.activo{color:var(--azul-oscuro);border-bottom-color:var(--mostaza);}
+  .cf-tarjeta{background:var(--tarjeta);border-radius:var(--radio);box-shadow:var(--sombra);padding:24px;text-align:center;}
+  .cf-progreso{font-size:.85rem;color:var(--texto-suave);font-weight:600;margin-bottom:10px;}
+  .cf-img-marco{background:#fff;border:3px solid var(--borde);border-radius:16px;padding:10px;display:inline-block;min-height:260px;display:flex;align-items:center;justify-content:center;}
+  .cf-img-marco img{max-width:100%;max-height:280px;display:block;border-radius:8px;}
+  .cf-palabra{font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul-oscuro);margin:16px 0 4px;min-height:2.2rem;}
+  .cf-palabra.oculta{visibility:hidden;}
+  .cf-acciones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+  .btn-sonido{display:inline-flex;align-items:center;gap:8px;font-size:1rem;padding:12px 22px;}
+  .cf-marcador{display:flex;justify-content:center;gap:24px;margin:14px 0 4px;font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;font-weight:700;color:var(--azul-oscuro);font-size:.95rem;}
+  .cf-feedback{text-align:center;min-height:26px;font-weight:600;margin-top:10px;}
+  .cf-resumen{text-align:center;padding:20px 0;}
+  .cf-resumen-lista{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0;}
+  .cf-resumen-chip{background:var(--fondo);border:1px solid var(--borde);border-radius:999px;padding:6px 14px;font-size:.85rem;}
+  @media (max-width:600px){
+    .cf-fila-control{flex-direction:column;align-items:flex-start;}
+    .cf-fila-control label{min-width:0;}
+  }
+</style>
+</head>
+<body>
+
+<header class="sitio">
+  <div class="nav-barra">
+    <a href="../index.html" class="logo"><img src="../img/logo.svg" alt="ConsultaViva" class="logo-img"></a>
+  </div>
+</header>
+
+<section>
+  <div class="cf-wrap">
+    <div class="cf-intro">
+      <h1>🔤 Conciencia fonológica por fonemas</h1>
+      <p class="subtitulo">Practicad juntos el sonido de cada letra con imágenes reales. Elegid idioma, fonema y el modo que mejor os vaya.</p>
+    </div>
+
+    <div class="cf-controles">
+      <div class="cf-fila-control">
+        <label>Idioma</label>
+        <div class="cf-pills" id="pillsIdioma"></div>
+      </div>
+      <div class="cf-fila-control">
+        <label>Fonema</label>
+        <div class="cf-pills" id="pillsFonema"></div>
+      </div>
+      <div class="cf-fila-control">
+        <label>Tarjeta</label>
+        <div class="cf-pills" id="pillsVariante">
+          <button class="cf-pill" data-variante="imagen">Solo imagen</button>
+          <button class="cf-pill" data-variante="escritura">Imagen + palabra</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cf-tabs">
+      <button class="cf-tab" data-modo="tarjetas">🃏 Tarjetas</button>
+      <button class="cf-tab" data-modo="juego">🎯 Juego: ¿qué es?</button>
+    </div>
+
+    <!-- MODO TARJETAS -->
+    <div id="vistaTarjetas" class="cf-tarjeta">
+      <div class="cf-progreso" id="tProgreso">1 / 30</div>
+      <div class="cf-img-marco"><img id="tImg" src="" alt=""></div>
+      <div class="cf-palabra" id="tPalabra"></div>
+      <div class="cf-acciones">
+        <button class="btn btn-secundario btn-sonido" onclick="escucharPalabra()">🔊 Escuchar</button>
+        <button class="btn btn-outline" id="btnMostrarPalabra" onclick="alternarPalabra()">👁️ Mostrar palabra</button>
+      </div>
+      <div class="cf-acciones">
+        <button class="btn btn-outline" onclick="tarjetaAnterior()">⬅️ Anterior</button>
+        <button class="btn btn-outline" onclick="tarjetaAleatoria()">🔀 Aleatorio</button>
+        <button class="btn btn-outline" onclick="tarjetaSiguiente()">Siguiente ➡️</button>
+      </div>
+    </div>
+
+    <!-- MODO JUEGO -->
+    <div id="vistaJuego" class="cf-tarjeta" style="display:none;">
+      <div class="cf-marcador">
+        <span>✅ Bien: <span id="jAciertos">0</span></span>
+        <span>🔁 A repasar: <span id="jFallos">0</span></span>
+        <span>📍 <span id="jProgreso">1 / 30</span></span>
+      </div>
+      <p class="meta" style="margin-top:0;">Enseñad la imagen y que el peque diga la palabra en voz alta.</p>
+      <div class="cf-img-marco"><img id="jImg" src="" alt=""></div>
+      <div class="cf-acciones">
+        <button class="btn btn-secundario btn-sonido" onclick="escucharPalabraJuego()">🔊 Escuchar la palabra</button>
+      </div>
+      <div class="cf-acciones">
+        <button class="btn btn-secundario" onclick="marcarJuego(true)">✓ Lo ha dicho bien</button>
+        <button class="btn btn-outline" onclick="marcarJuego(false)">✗ A repasar</button>
+      </div>
+      <div class="cf-feedback" id="jFeedback"></div>
+    </div>
+
+    <!-- RESUMEN FINAL DEL JUEGO -->
+    <div id="vistaResumen" class="cf-tarjeta cf-resumen" style="display:none;">
+      <h2 style="margin-top:0;">¡Ronda terminada! 🎉</h2>
+      <p id="rTexto"></p>
+      <div class="cf-resumen-lista" id="rLista"></div>
+      <div class="cf-acciones">
+        <button class="btn btn-secundario" onclick="repasarFallos()">🔁 Repasar solo las que fallaron</button>
+        <button class="btn btn-outline" onclick="reiniciarJuego()">Empezar de nuevo</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+// Nombres con ortografía correcta (los ficheros de imagen no llevan tildes/ç por compatibilidad)
+const NOMBRES = {
+  autobus:'autobús', bicicleta:'bicicleta', bossa:'bossa', brac:'braç', castell:'castell', ceba:'ceba', cirera:'cirera',
+  escala:'escala', gos:'gos', llapis:'llapis', mosca:'mosca', nas:'nas', ocell:'ocell', pasta:'pasta', pastis:'pastís',
+  piscina:'piscina', sabata:'sabata', sabo:'sabó', sac:'sac', sal:'sal', semafor:'semàfor', serp:'serp', sindria:'síndria',
+  sirena:'sirena', sobre:'sobre', sol:'sol', sopa:'sopa', sorra:'sorra', suc:'suc', tassa:'tassa',
+  arros:'arròs', barril:'barril', carretera:'carretera', carro:'carro', ferradura:'ferradura', gerra:'gerra', gorra:'gorra',
+  guitarra:'guitarra', radio:'ràdio', raim:'raïm', raqueta:'raqueta', raspall:'raspall', rata:'rata', ratoli:'ratolí',
+  rave:'rave', regal:'regal', rei:'rei', rellotge:'rellotge', remolc:'remolc', rinoceront:'rinoceront', riu:'riu',
+  roba:'roba', robot:'robot', roca:'roca', roda:'roda', rosa:'rosa', ruc:'ruc', rusc:'rusc', terra:'terra', torre:'torre',
+  astronauta:'astronauta', bolso:'bolso', camisa:'camisa', casa:'casa', casco:'casco', dinosaurio:'dinosaurio',
+  escoba:'escoba', espaguetis:'espaguetis', fresa:'fresa', girasol:'girasol', gusano:'gusano', isla:'isla', mesa:'mesa',
+  payaso:'payaso', pescado:'pescado', pulsera:'pulsera', queso:'queso', saco:'saco', sandia:'sandía', sapo:'sapo',
+  sello:'sello', semaforo:'semáforo', seta:'seta', silla:'silla', tijeras:'tijeras', tostada:'tostada', vaso:'vaso',
+  arroz:'arroz', burro:'burro', churro:'churro', correr:'correr', jarra:'jarra', perro:'perro', rama:'rama', rana:'rana',
+  regalo:'regalo', reloj:'reloj', remolque:'remolque', rey:'rey', rinoceronte:'rinoceronte', rio:'río', rojo:'rojo',
+  rueda:'rueda', tierra:'tierra', raton:'ratón', zorro:'zorro',
+  abeja:'abeja', babero:'babero', balon:'balón', banana:'banana', banco:'banco', banera:'bañera', bata:'bata',
+  bebe:'bebé', bigote:'bigote', bombero:'bombero', bombilla:'bombilla', bota:'bota', botella:'botella', boton:'botón',
+  brazo:'brazo', brocoli:'brócoli', buho:'búho', bufanda:'bufanda', cabra:'cabra', caballo:'caballo', cubo:'cubo',
+  jabon:'jabón', nube:'nube', tambor:'tambor', tiburon:'tiburón', boca:'boca', barco:'barco'
+};
+
+const ETIQUETAS_IDIOMA = { cat: 'Català', cast: 'Castellano' };
+const ETIQUETAS_FONEMA = { s: '/s/', r: '/r/', b: '/b/' };
+const LANG_TTS = { cat: 'ca-ES', cast: 'es-ES' };
+// Qué fonemas hay disponibles por idioma (Ester los va ampliando poco a poco)
+const DISPONIBLES = { cat: ['s','r'], cast: ['r','s','b'] };
+
+let WORDS = {}; // { 'cat_s': [...palabras...], ... }
+let estado = { idioma: 'cat', fonema: 's', variante: 'imagen', modo: 'tarjetas' };
+let indiceTarjeta = 0;
+let palabraVisible = false;
+
+let juego = { orden: [], indice: 0, aciertos: 0, fallos: [] };
+
+async function cargarDatos() {
+  const r = await fetch('../img/fonemas/words.json');
+  WORDS = await r.json();
+  construirControles();
+  aplicarEstadoInicial();
+}
+
+function construirControles() {
+  const contIdioma = document.getElementById('pillsIdioma');
+  contIdioma.innerHTML = Object.keys(DISPONIBLES).map(id =>
+    `<button class="cf-pill" data-idioma="${id}">${ETIQUETAS_IDIOMA[id]}</button>`).join('');
+  contIdioma.querySelectorAll('.cf-pill').forEach(b => b.addEventListener('click', () => {
+    estado.idioma = b.dataset.idioma;
+    if (!DISPONIBLES[estado.idioma].includes(estado.fonema)) estado.fonema = DISPONIBLES[estado.idioma][0];
+    refrescarPills();
+    reiniciarTodo();
+  }));
+
+  document.getElementById('pillsVariante').querySelectorAll('.cf-pill').forEach(b => b.addEventListener('click', () => {
+    estado.variante = b.dataset.variante;
+    refrescarPills();
+    pintarTarjetaActual();
+  }));
+
+  document.querySelectorAll('.cf-tab').forEach(b => b.addEventListener('click', () => {
+    estado.modo = b.dataset.modo;
+    refrescarPills();
+    document.getElementById('vistaTarjetas').style.display = estado.modo === 'tarjetas' ? '' : 'none';
+    document.getElementById('vistaJuego').style.display = estado.modo === 'juego' ? '' : 'none';
+    document.getElementById('vistaResumen').style.display = 'none';
+    if (estado.modo === 'juego') iniciarJuego();
+  }));
+}
+
+function refrescarFonemaPills() {
+  const cont = document.getElementById('pillsFonema');
+  cont.innerHTML = DISPONIBLES[estado.idioma].map(f =>
+    `<button class="cf-pill" data-fonema="${f}">${ETIQUETAS_FONEMA[f]}</button>`).join('');
+  cont.querySelectorAll('.cf-pill').forEach(b => b.addEventListener('click', () => {
+    estado.fonema = b.dataset.fonema;
+    refrescarPills();
+    reiniciarTodo();
+  }));
+}
+
+function refrescarPills() {
+  refrescarFonemaPills();
+  document.querySelectorAll('#pillsIdioma .cf-pill').forEach(b => b.classList.toggle('activo', b.dataset.idioma === estado.idioma));
+  document.querySelectorAll('#pillsFonema .cf-pill').forEach(b => b.classList.toggle('activo', b.dataset.fonema === estado.fonema));
+  document.querySelectorAll('#pillsVariante .cf-pill').forEach(b => b.classList.toggle('activo', b.dataset.variante === estado.variante));
+  document.querySelectorAll('.cf-tab').forEach(b => b.classList.toggle('activo', b.dataset.modo === estado.modo));
+  document.getElementById('btnMostrarPalabra').style.display = estado.variante === 'escritura' ? 'none' : '';
+}
+
+function aplicarEstadoInicial() {
+  refrescarPills();
+  document.getElementById('vistaTarjetas').style.display = '';
+  reiniciarTodo();
+}
+
+function reiniciarTodo() {
+  indiceTarjeta = 0;
+  palabraVisible = estado.variante === 'escritura';
+  pintarTarjetaActual();
+  if (estado.modo === 'juego') iniciarJuego();
+}
+
+function listaActual() {
+  return WORDS[`${estado.idioma}_${estado.fonema}`] || [];
+}
+
+function rutaImagen(palabraClave, variante) {
+  return `../img/fonemas/${estado.idioma}/${estado.fonema}/${variante}/${palabraClave}.jpg`;
+}
+
+function pintarTarjetaActual() {
+  const lista = listaActual();
+  if (!lista.length) return;
+  const clave = lista[indiceTarjeta];
+  const img = document.getElementById('tImg');
+  img.src = rutaImagen(clave, estado.variante);
+  img.alt = NOMBRES[clave] || clave;
+  img.onerror = () => { img.src = rutaImagen(clave, estado.variante === 'imagen' ? 'escritura' : 'imagen'); };
+  palabraVisible = estado.variante === 'escritura' ? true : false;
+  actualizarPalabraVisible(clave);
+  document.getElementById('tProgreso').textContent = `${indiceTarjeta + 1} / ${lista.length}`;
+}
+
+function actualizarPalabraVisible(clave) {
+  const el = document.getElementById('tPalabra');
+  el.textContent = NOMBRES[clave] || clave;
+  el.classList.toggle('oculta', estado.variante === 'imagen' && !palabraVisible);
+  document.getElementById('btnMostrarPalabra').textContent = palabraVisible ? '🙈 Ocultar palabra' : '👁️ Mostrar palabra';
+}
+
+function alternarPalabra() {
+  palabraVisible = !palabraVisible;
+  const lista = listaActual();
+  actualizarPalabraVisible(lista[indiceTarjeta]);
+}
+
+function tarjetaSiguiente() {
+  const lista = listaActual();
+  indiceTarjeta = (indiceTarjeta + 1) % lista.length;
+  pintarTarjetaActual();
+}
+function tarjetaAnterior() {
+  const lista = listaActual();
+  indiceTarjeta = (indiceTarjeta - 1 + lista.length) % lista.length;
+  pintarTarjetaActual();
+}
+function tarjetaAleatoria() {
+  const lista = listaActual();
+  indiceTarjeta = Math.floor(Math.random() * lista.length);
+  pintarTarjetaActual();
+}
+
+function hablar(texto) {
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(texto);
+  u.lang = LANG_TTS[estado.idioma];
+  u.rate = 0.9;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function escucharPalabra() {
+  const lista = listaActual();
+  const clave = lista[indiceTarjeta];
+  hablar(NOMBRES[clave] || clave);
+}
+
+// ---- Modo juego ----
+function iniciarJuego() {
+  const lista = listaActual();
+  juego.orden = [...lista.keys()].sort(() => Math.random() - 0.5);
+  juego.indice = 0;
+  juego.aciertos = 0;
+  juego.fallos = [];
+  document.getElementById('vistaResumen').style.display = 'none';
+  document.getElementById('vistaJuego').style.display = '';
+  pintarJuegoActual();
+}
+
+function pintarJuegoActual() {
+  const lista = listaActual();
+  if (juego.indice >= juego.orden.length) { mostrarResumen(); return; }
+  const clave = lista[juego.orden[juego.indice]];
+  const img = document.getElementById('jImg');
+  img.src = rutaImagen(clave, 'imagen');
+  img.alt = '¿Qué es?';
+  img.onerror = () => { img.src = rutaImagen(clave, 'escritura'); };
+  document.getElementById('jProgreso').textContent = `${juego.indice + 1} / ${juego.orden.length}`;
+  document.getElementById('jAciertos').textContent = juego.aciertos;
+  document.getElementById('jFallos').textContent = juego.fallos.length;
+  document.getElementById('jFeedback').textContent = '';
+}
+
+function escucharPalabraJuego() {
+  const lista = listaActual();
+  const clave = lista[juego.orden[juego.indice]];
+  hablar(NOMBRES[clave] || clave);
+}
+
+function marcarJuego(acierto) {
+  const lista = listaActual();
+  const clave = lista[juego.orden[juego.indice]];
+  const feedback = document.getElementById('jFeedback');
+  if (acierto) {
+    juego.aciertos++;
+    feedback.textContent = '¡Muy bien! 🎉';
+  } else {
+    juego.fallos.push(clave);
+    feedback.textContent = `Era "${NOMBRES[clave] || clave}" — a repasar 💪`;
+  }
+  juego.indice++;
+  setTimeout(pintarJuegoActual, acierto ? 350 : 900);
+}
+
+function mostrarResumen() {
+  document.getElementById('vistaJuego').style.display = 'none';
+  document.getElementById('vistaResumen').style.display = '';
+  const total = juego.orden.length;
+  document.getElementById('rTexto').textContent = `${juego.aciertos} de ${total} bien dichas.`;
+  const cont = document.getElementById('rLista');
+  if (juego.fallos.length) {
+    cont.innerHTML = '<p class="meta" style="width:100%;">Para repasar:</p>' +
+      juego.fallos.map(c => `<span class="cf-resumen-chip">${NOMBRES[c] || c}</span>`).join('');
+  } else {
+    cont.innerHTML = '<p class="meta">¡Ronda perfecta! 🌟</p>';
+  }
+}
+
+function repasarFallos() {
+  if (!juego.fallos.length) { reiniciarJuego(); return; }
+  const lista = listaActual();
+  const clavesFallo = juego.fallos;
+  juego.orden = clavesFallo.map(c => lista.indexOf(c));
+  juego.indice = 0;
+  juego.aciertos = 0;
+  juego.fallos = [];
+  document.getElementById('vistaResumen').style.display = 'none';
+  document.getElementById('vistaJuego').style.display = '';
+  pintarJuegoActual();
+}
+
+function reiniciarJuego() { iniciarJuego(); }
+
+cargarDatos();
+</script>
+
+</body>
+</html>
