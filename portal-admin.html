@@ -422,19 +422,31 @@ async function cargarPacientesAdmin() {
 }
 
 async function crearPaciente() {
+  const estado = document.getElementById('estadoPaciente');
+  const boton = document.querySelector('button[onclick="crearPaciente()"]');
+  estado.style.color = '';
+  estado.style.fontWeight = '';
   const nombre = document.getElementById('pNombre').value.trim();
   const fecha_nacimiento = document.getElementById('pNacimiento').value || null;
   const tutor_id = document.getElementById('pTutor').value || null;
   const logopeda_id = document.getElementById('pLogopeda').value || null;
-  const estado = document.getElementById('estadoPaciente');
-  if (!nombre) { estado.textContent = 'Falta el nombre.'; return; }
-  if (!tutor_id && !logopeda_id) { estado.textContent = 'Elige al menos un tutor o un logopeda asignado.'; return; }
+  if (!nombre) { estado.textContent = 'Falta el nombre.'; estado.style.color = '#b3261e'; estado.style.fontWeight = '700'; return; }
+  if (!tutor_id && !logopeda_id) { estado.textContent = 'Elige al menos un tutor o un logopeda asignado.'; estado.style.color = '#b3261e'; estado.style.fontWeight = '700'; return; }
 
+  if (boton) boton.disabled = true;
+  estado.textContent = 'Creando…';
   const { data, error } = await supabaseClient.from('pacientes').insert({
     nombre, fecha_nacimiento, tutor_id, logopeda_id, estado: 'activo'
   }).select('id').single();
 
-  if (error) { estado.textContent = 'Error creando el paciente: ' + error.message; return; }
+  if (boton) boton.disabled = false;
+  if (error) {
+    estado.textContent = 'No se pudo crear: ' + error.message + ' — vuelve a intentarlo o avisa si se repite.';
+    estado.style.color = '#b3261e';
+    estado.style.fontWeight = '700';
+    console.error('crearPaciente error:', error);
+    return;
+  }
   window.location.href = `paciente-ficha.html?id=${data.id}`;
 }
 

@@ -142,7 +142,8 @@
     <!-- TAREAS (agregadas) -->
     <div class="panel seccion-tab" data-panel="tareas" style="max-width:none;margin:0;padding:0;">
       <div class="seccion-titulo-fila"><h2>Deberes de pacientes</h2></div>
-      <p class="meta" style="margin:-8px 0 14px;">Ejercicios y deberes para casa asignados desde la ficha de cada paciente. Esto no es lo mismo que el estado de la sesión — eso se marca directamente en el calendario.</p>
+      <p class="meta" style="margin:-8px 0 8px;">Aquí ves <strong>todos</strong> los deberes/ejercicios para casa que has asignado, de todos tus pacientes juntos, y puedes cambiar su estado (pendiente / en curso / completada). Esto no es lo mismo que el estado de la sesión — eso se marca directamente en el calendario.</p>
+      <p class="meta" style="margin:0 0 14px;">Para <strong>asignar deberes nuevos</strong> a un paciente: ve a <a href="#" onclick="cambiarTab('pacientes');return false;">Mis pacientes</a>, busca su ficha en la lista y pulsa el botón <strong>"+ Deberes"</strong>.</p>
       <div class="fila-acciones" style="margin-bottom:14px;">
         <label class="meta">Filtrar:</label>
         <select id="filtroEstadoTareas" onchange="cargarTareasAgregadas()">
@@ -573,18 +574,30 @@ async function cargarPacientes() {
 
 async function crearPacienteRapido() {
   const estado = document.getElementById('estadoNuevoPaciente');
+  const boton = document.querySelector('button[onclick="crearPacienteRapido()"]');
+  estado.style.color = '';
+  estado.style.fontWeight = '';
   const nombre = document.getElementById('npNombre').value.trim();
   const fecha_nacimiento = document.getElementById('npNacimiento').value || null;
   const telefono = document.getElementById('npTelefono').value.trim() || null;
   const email = document.getElementById('npEmail').value.trim() || null;
-  if (!nombre) { estado.textContent = 'Falta el nombre.'; return; }
+  if (!nombre) { estado.textContent = 'Falta el nombre.'; estado.style.color = '#b3261e'; estado.style.fontWeight = '700'; return; }
+  if (!UID) { estado.textContent = 'Todavía se está cargando tu sesión — espera un segundo y vuelve a intentarlo.'; estado.style.color = '#b3261e'; estado.style.fontWeight = '700'; return; }
 
+  if (boton) boton.disabled = true;
   estado.textContent = 'Creando…';
   const { data, error } = await supabaseClient.from('pacientes').insert({
     nombre, fecha_nacimiento, telefono, email, logopeda_id: UID, estado: 'activo'
   }).select('id').single();
 
-  if (error) { estado.textContent = 'Error creando el paciente: ' + error.message; return; }
+  if (boton) boton.disabled = false;
+  if (error) {
+    estado.textContent = 'No se pudo crear: ' + error.message + ' — vuelve a intentarlo o avisa si se repite.';
+    estado.style.color = '#b3261e';
+    estado.style.fontWeight = '700';
+    console.error('crearPacienteRapido error:', error);
+    return;
+  }
   window.location.href = `paciente-ficha.html?id=${data.id}`;
 }
 
