@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/:negocio/portal-admin.html", "destination": "/portal-admin.html" },
+    { "source": "/:negocio/portal-logopeda.html", "destination": "/portal-logopeda.html" },
+    { "source": "/:negocio/portal-cliente.html", "destination": "/portal-cliente.html" },
+    { "source": "/:negocio/paciente-ficha.html", "destination": "/paciente-ficha.html" }
+  ]
+}

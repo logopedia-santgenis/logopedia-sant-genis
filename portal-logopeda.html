@@ -4,16 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal del logopeda — ConsultaViva</title>
-<link rel="icon" type="image/svg+xml" href="img/icono.svg">
-<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/svg+xml" href="/img/icono.svg">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <div class="barra-portal">
   <div style="display:flex;align-items:center;gap:10px;">
     <button class="btn-menu-movil" id="btnMenuMovil" onclick="alternarMenuMovil()" aria-label="Abrir menú">☰</button>
-    <div class="marca"><img src="img/icono-oscuro.svg" alt=""> ConsultaViva — Portal del logopeda</div>
+    <div class="marca"><img src="/img/icono-oscuro.svg" alt=""> ConsultaViva — Portal del logopeda</div>
   </div>
   <div>
     <span id="nombreUsuario" style="margin-right:16px;"></span>
@@ -472,7 +472,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js"></script>
+<script src="/supabase-client.js"></script>
 <script>
 let UID = null;
 let PACIENTES = [];
@@ -1335,7 +1335,7 @@ async function cargarFirmasPendientes() {
     <div class="lista-item">
       <strong>${esc(f.pacientes?.nombre || '—')}</strong> — ${esc(f.titulo)}
       <div class="fila-acciones" style="margin-top:6px;">
-        <input type="text" readonly value="${location.origin}${location.pathname.replace('portal-logopeda.html', '')}firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
+        <input type="text" readonly value="${location.origin}/firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
         <a class="btn btn-outline" href="paciente-ficha.html?id=${f.paciente_id}">Ver ficha »</a>
       </div>
     </div>`).join('') : '<p class="vacio-panel">No hay firmas pendientes.</p>';
@@ -1918,7 +1918,7 @@ function pintarRecursos(recursos) {
 
 function botonRecurso(r) {
   if (!r.contenido_url) return '';
-  const url = esc(r.contenido_url);
+  const url = esc(urlAbsoluta(r.contenido_url));
   if (r.tipo === 'pdf') {
     return `<a class="btn btn-secundario" href="${url}" target="_blank" rel="noopener" download>📄 Descargar PDF</a>`;
   }

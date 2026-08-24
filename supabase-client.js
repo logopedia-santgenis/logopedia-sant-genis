@@ -10,7 +10,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 async function exigirSesion() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) {
-    window.location.href = 'login.html';
+    window.location.href = '/login.html';
     return null;
   }
   return session;
@@ -20,7 +20,7 @@ async function exigirSesion() {
 async function obtenerPerfil(userId) {
   const { data, error } = await supabaseClient
     .from('profiles')
-    .select('*')
+    .select('*, negocios(slug, nombre)')
     .eq('id', userId)
     .single();
   if (error) { console.error('Error obteniendo perfil:', error); return null; }
@@ -28,9 +28,21 @@ async function obtenerPerfil(userId) {
 }
 
 // Si el rol del perfil no coincide con el esperado, redirige a su portal correcto.
-function redirigirSegunRol(rol) {
-  const destino = { admin: 'portal-admin.html', logopeda: 'portal-logopeda.html', cliente: 'portal-cliente.html' }[rol] || 'login.html';
-  window.location.href = destino;
+function redirigirSegunRol(rol, negocioSlug) {
+  const pagina = { admin: 'portal-admin.html', logopeda: 'portal-logopeda.html', cliente: 'portal-cliente.html' }[rol];
+  if (!pagina) { window.location.href = '/login.html'; return; }
+  // Cada negocio/clínica tiene su propio prefijo en la URL (ej. /santgenis/portal-logopeda.html).
+  // Si por lo que sea no hay negocio asociado al perfil, cae a la raíz como red de seguridad.
+  const prefijo = negocioSlug ? `/${negocioSlug}` : '';
+  window.location.href = `${prefijo}/${pagina}`;
+}
+
+// Deduce el prefijo de negocio actual a partir de la URL (ej. "/santgenis/portal-logopeda.html" -> "santgenis").
+// Devuelve cadena vacía si la página está servida desde la raíz (sin negocio en la URL).
+function negocioActualDesdeURL() {
+  const partes = location.pathname.split('/').filter(Boolean);
+  if (partes.length >= 2 && partes[partes.length - 1].endsWith('.html')) return partes[0];
+  return '';
 }
 
 // Si quien ha iniciado sesión es admin, muestra una barra para previsualizar
@@ -40,10 +52,12 @@ function mostrarBarraVistaAdmin(rolReal, vistaActual, contenedorId) {
   if (rolReal !== 'admin') return;
   const cont = document.getElementById(contenedorId);
   if (!cont) return;
+  const prefijo = negocioActualDesdeURL();
+  const p = prefijo ? `/${prefijo}/` : '';
   const vistas = [
-    { id: 'admin', label: 'Administración', href: 'portal-admin.html' },
-    { id: 'logopeda', label: 'Logopeda', href: 'portal-logopeda.html' },
-    { id: 'cliente', label: 'Paciente (demo)', href: 'portal-cliente.html' },
+    { id: 'admin', label: 'Administración', href: `${p}portal-admin.html` },
+    { id: 'logopeda', label: 'Logopeda', href: `${p}portal-logopeda.html` },
+    { id: 'cliente', label: 'Paciente (demo)', href: `${p}portal-cliente.html` },
   ];
   cont.innerHTML = `
     <div style="background:var(--azul-oscuro);color:#fff;padding:10px 24px;font-size:.85rem;display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
@@ -55,7 +69,7 @@ function mostrarBarraVistaAdmin(rolReal, vistaActual, contenedorId) {
 
 async function cerrarSesion() {
   await supabaseClient.auth.signOut();
-  window.location.href = 'login.html';
+  window.location.href = '/login.html';
 }
 
 // Escapa HTML antes de insertar cualquier dato escrito por un usuario (nombre, notas,
@@ -63,6 +77,16 @@ async function cerrarSesion() {
 // campo de texto (nombre, mensaje de contacto...) y ese código se ejecutaría en el
 // navegador de otra persona (logopeda/admin) cuando lo vea. Usar SIEMPRE con datos que
 // vengan de un formulario o de la base de datos y se inserten con innerHTML/template strings.
+// Normaliza una URL de recurso que puede venir como ruta relativa antigua
+// (ej. "recursos/pares-minimos.html") a una ruta absoluta desde la raíz del sitio,
+// para que funcione igual sea cual sea la profundidad de la URL actual (con o sin
+// prefijo de negocio, ej. /santgenis/portal-logopeda.html).
+function urlAbsoluta(url) {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url) || url.startsWith('/')) return url;
+  return '/' + url;
+}
+
 function esc(valor) {
   if (valor === null || valor === undefined) return '';
   return String(valor)

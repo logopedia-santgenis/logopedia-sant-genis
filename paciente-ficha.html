@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ficha del paciente — ConsultaViva</title>
-<link rel="icon" type="image/svg+xml" href="img/icono.svg">
-<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/svg+xml" href="/img/icono.svg">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <div class="barra-portal">
-  <div class="marca"><img src="img/icono-oscuro.svg" alt=""> ConsultaViva</div>
+  <div class="marca"><img src="/img/icono-oscuro.svg" alt=""> ConsultaViva</div>
   <div>
     <span id="nombreUsuario" style="margin-right:16px;"></span>
     <button onclick="cerrarSesion()">Cerrar sesión</button>
@@ -39,7 +39,7 @@
   <!-- DATOS -->
   <div class="seccion-tab" data-panel="datos">
     <div class="tarjeta" style="margin-bottom:20px;text-align:center;max-width:220px;">
-      <img id="fotoPaciente" src="img/icono.svg" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:50%;border:2px solid var(--borde);margin:0 auto 10px;display:block;">
+      <img id="fotoPaciente" src="/img/icono.svg" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:50%;border:2px solid var(--borde);margin:0 auto 10px;display:block;">
       <input type="file" id="fotoArchivo" accept="image/*" style="font-size:.75rem;">
       <button class="btn btn-outline" style="margin-top:8px;" onclick="subirFoto()">Subir foto</button>
       <p class="meta" id="estadoFoto"></p>
@@ -254,7 +254,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js"></script>
+<script src="/supabase-client.js"></script>
 <script>
 const params = new URLSearchParams(window.location.search);
 const pacienteId = params.get('id');
@@ -785,7 +785,7 @@ async function cargarFirmas() {
       ${f.estado === 'pendiente'
         ? `<div class="meta">Sin firmar todavía.</div>
            <div class="fila-acciones" style="margin-top:6px;">
-             <input type="text" readonly value="${location.origin}${location.pathname.replace('paciente-ficha.html', '')}firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
+             <input type="text" readonly value="${location.origin}/firmar-documento.html?id=${f.id}" style="flex:1;" onclick="this.select()">
              <button class="btn btn-outline" onclick="copiarEnlaceFirma('${f.id}')">Copiar enlace</button>
            </div>`
         : `<div class="meta">Firmado por ${esc(f.nombre_firmante) || '—'} el ${formatearFecha(f.firmado_en?.slice(0,10))} · IP ${esc(f.ip_firmante) || '—'}</div>
@@ -794,7 +794,7 @@ async function cargarFirmas() {
 }
 
 function copiarEnlaceFirma(id) {
-  const url = `${location.origin}${location.pathname.replace('paciente-ficha.html', '')}firmar-documento.html?id=${id}`;
+  const url = `${location.origin}/firmar-documento.html?id=${id}`;
   navigator.clipboard?.writeText(url);
 }
 

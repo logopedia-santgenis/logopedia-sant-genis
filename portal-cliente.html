@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mi portal — ConsultaViva</title>
-<link rel="icon" type="image/svg+xml" href="img/icono.svg">
-<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/svg+xml" href="/img/icono.svg">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <div class="barra-portal">
-  <div class="marca"><img src="img/icono-oscuro.svg" alt=""> ConsultaViva — Portal del paciente</div>
+  <div class="marca"><img src="/img/icono-oscuro.svg" alt=""> ConsultaViva — Portal del paciente</div>
   <div>
     <span id="nombreUsuario" style="margin-right:16px;"></span>
     <button onclick="cerrarSesion()">Cerrar sesión</button>
@@ -27,7 +27,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js"></script>
+<script src="/supabase-client.js"></script>
 <script>
 function badgeEstado(estado) {
   const mapa = { pendiente: 'badge-ambar', confirmada: 'badge-azul', realizada: 'badge-verde', cancelada: 'badge-rojo' };
@@ -41,7 +41,7 @@ function renderRecurso(r) {
     const id = 'tj-' + (contadorTarjetas++);
     return `
       <div class="tarjeta-nombrar" style="margin-top:14px;text-align:center;border:1px solid var(--borde);border-radius:12px;padding:16px;">
-        ${r.contenido_url ? `<img src="${r.contenido_url}" alt="" style="max-width:100%;max-height:180px;border-radius:8px;margin-bottom:10px;">` : ''}
+        ${r.contenido_url ? `<img src="${urlAbsoluta(r.contenido_url)}" alt="" style="max-width:100%;max-height:180px;border-radius:8px;margin-bottom:10px;">` : ''}
         <div id="${id}-palabra" style="display:none;font-weight:700;font-size:1.1rem;color:var(--azul-oscuro);margin-bottom:6px;">${esc(r.titulo)}</div>
         <div class="fila-acciones" style="justify-content:center;">
           <button type="button" class="btn btn-outline" onclick="document.getElementById('${id}-palabra').style.display='block';this.style.display='none';">¿Cómo se dice? Mostrar palabra</button>
@@ -54,7 +54,7 @@ function renderRecurso(r) {
     <div style="margin-top:10px;">
       <strong>${esc(r.titulo)}</strong> <span class="meta">(${r.tipo})</span>
       ${r.descripcion ? `<p class="meta">${esc(r.descripcion)}</p>` : ''}
-      ${r.contenido_url ? `<a href="${r.contenido_url}" target="_blank" rel="noopener">Abrir recurso »</a>` : ''}
+      ${r.contenido_url ? `<a href="${urlAbsoluta(r.contenido_url)}" target="_blank" rel="noopener">Abrir recurso »</a>` : ''}
     </div>`;
 }
 

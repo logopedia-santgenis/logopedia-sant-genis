@@ -37,9 +37,9 @@
     <div class="pulso-zona"><div class="pulso" id="pulso"></div></div>
 
     <div class="velocidades">
-      <button class="activo" onclick="cambiarVelocidad(90, this)">Muy lento</button>
+      <button class="activo" onclick="cambiarVelocidad(55, this)">Muy lento</button>
       <button onclick="cambiarVelocidad(70, this)">Lento</button>
-      <button onclick="cambiarVelocidad(55, this)">Normal</button>
+      <button onclick="cambiarVelocidad(90, this)">Normal</button>
     </div>
 
     <div class="frase-practica" id="frase">acompaña cada golpe con el inicio de una palabra, suave y sin prisa</div>
@@ -73,7 +73,7 @@ const FRASES = [
   "hoy... he... jugado... en... el... parque",
 ];
 
-let bpm = 90;
+let bpm = 55;
 let activo = false;
 let intervalo = null;
 

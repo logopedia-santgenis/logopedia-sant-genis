@@ -56,7 +56,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     msg.style.display = 'block';
     return;
   }
-  redirigirSegunRol(perfil.rol);
+  redirigirSegunRol(perfil.rol, perfil.negocios?.slug);
 });
 
 // Si ya hay sesión activa, redirige directo a su portal.
@@ -64,7 +64,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     const perfil = await obtenerPerfil(session.user.id);
-    if (perfil) redirigirSegunRol(perfil.rol);
+    if (perfil) redirigirSegunRol(perfil.rol, perfil.negocios?.slug);
   }
 })();
 </script>
