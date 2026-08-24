@@ -81,19 +81,24 @@ header.sitio {
 
 .logo span { color: var(--verde-whatsapp); }
 
-.marca-negocio {
+.franja-negocio {
+  background: var(--fondo);
+  border-bottom: 1px solid var(--borde);
+  text-align: center;
+  padding: 16px 24px;
+}
+
+.franja-negocio-txt {
   font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
-  font-weight: 600;
-  font-size: .95rem;
-  color: var(--texto-suave);
-  padding-left: 14px;
-  margin-left: 4px;
-  border-left: 1px solid var(--borde);
-  white-space: nowrap;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--azul-oscuro);
+  text-wrap: balance;
 }
 
 @media (max-width: 560px) {
-  .marca-negocio { display: none; }
+  .franja-negocio { padding: 13px 20px; }
+  .franja-negocio-txt { font-size: 1.05rem; }
 }
 
 nav.menu {
